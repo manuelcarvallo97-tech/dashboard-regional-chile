@@ -4,7 +4,7 @@ Dashboard interactivo de indicadores regionales para las 16 regiones de Chile, d
 
 ## 🌐 Ver el dashboard
 
-**[👉 Abrir Dashboard](https://[TU-USUARIO].github.io/[NOMBRE-REPO]/dashboard.html)**
+**[👉 Abrir Dashboard](https://manuelcarvallo97-tech.github.io/dashboard-regional-chile/dashboard.html)**
 
 > Actualizado automáticamente cada vez que se sube un nuevo `dashboard.html`
 
