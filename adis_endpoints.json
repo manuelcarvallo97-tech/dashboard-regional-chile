@@ -1,0 +1,60 @@
+[
+  {
+    "url": "https://adis.gob.cl/",
+    "method": "GET",
+    "post_data": "",
+    "headers": {},
+    "status": 200,
+    "content_type": "text/html",
+    "response_body": null
+  },
+  {
+    "url": "https://www.google.com/recaptcha/api.js?render=explicit",
+    "method": "GET",
+    "post_data": "",
+    "headers": {},
+    "status": 200,
+    "content_type": "text/javascript",
+    "response_body": null
+  },
+  {
+    "url": "https://www.googletagmanager.com/gtag/js?id=G-LPR8R3LZNX",
+    "method": "GET",
+    "post_data": "",
+    "headers": {},
+    "status": 499,
+    "content_type": "text/html",
+    "response_body": null
+  },
+  {
+    "url": "https://api.adis.gob.cl/app?blockui=true&system=true",
+    "method": "OPTIONS",
+    "post_data": "",
+    "headers": {},
+    "status": 200,
+    "content_type": "",
+    "response_body": null
+  },
+  {
+    "url": "https://api.adis.gob.cl/app?blockui=true&system=true",
+    "method": "GET",
+    "post_data": "",
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8"
+    },
+    "status": 200,
+    "content_type": "application/json",
+    "response_body": {
+      "app.version": "8.4.0"
+    }
+  },
+  {
+    "url": "https://adis.gob.cl/fontawesome-webfont.af7ae505a9eed503f8b8.woff2?v=4.7.0",
+    "method": "GET",
+    "post_data": "",
+    "headers": {},
+    "status": 200,
+    "content_type": "application/octet-stream",
+    "response_body": null
+  }
+]

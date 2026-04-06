@@ -1,0 +1,42 @@
+{
+  "https://api.adis.gob.cl/app?blockui=true&system=true": {
+    "body": "{\"app.version\":\"8.4.0\"}",
+    "status": 200
+  },
+  "https://api.adis.gob.cl/api/estadisticas/frecuentes": {
+    "body": "<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Spring Reactive Angular</title>\r\n</head>\r\n<body>\r\n\r\n<h1>Recurso no encontrado 404</h1>\r\n\r\n</body>\r\n</html>",
+    "status": 404
+  },
+  "https://api.adis.gob.cl/api/indicadores/frecuentes": {
+    "body": "<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Spring Reactive Angular</title>\r\n</head>\r\n<body>\r\n\r\n<h1>Recurso no encontrado 404</h1>\r\n\r\n</body>\r\n</html>",
+    "status": 404
+  },
+  "https://api.adis.gob.cl/api/regiones": {
+    "body": "<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Spring Reactive Angular</title>\r\n</head>\r\n<body>\r\n\r\n<h1>Recurso no encontrado 404</h1>\r\n\r\n</body>\r\n</html>",
+    "status": 404
+  },
+  "https://api.adis.gob.cl/api/indicadores": {
+    "body": "<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Spring Reactive Angular</title>\r\n</head>\r\n<body>\r\n\r\n<h1>Recurso no encontrado 404</h1>\r\n\r\n</body>\r\n</html>",
+    "status": 404
+  },
+  "https://api.adis.gob.cl/estadisticas": {
+    "body": "<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Spring Reactive Angular</title>\r\n</head>\r\n<body>\r\n\r\n<h1>Recurso no encontrado 404</h1>\r\n\r\n</body>\r\n</html>",
+    "status": 404
+  },
+  "https://api.adis.gob.cl/frecuentes": {
+    "body": "<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Spring Reactive Angular</title>\r\n</head>\r\n<body>\r\n\r\n<h1>Recurso no encontrado 404</h1>\r\n\r\n</body>\r\n</html>",
+    "status": 404
+  },
+  "https://api.adis.gob.cl/v1/estadisticas/frecuentes": {
+    "body": "<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Spring Reactive Angular</title>\r\n</head>\r\n<body>\r\n\r\n<h1>Recurso no encontrado 404</h1>\r\n\r\n</body>\r\n</html>",
+    "status": 404
+  },
+  "https://api.adis.gob.cl/api/v1/estadisticas": {
+    "body": "<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Spring Reactive Angular</title>\r\n</head>\r\n<body>\r\n\r\n<h1>Recurso no encontrado 404</h1>\r\n\r\n</body>\r\n</html>",
+    "status": 404
+  },
+  "https://api.adis.gob.cl/auth/login": {
+    "body": "<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Spring Reactive Angular</title>\r\n</head>\r\n<body>\r\n\r\n<h1>Recurso no encontrado 404</h1>\r\n\r\n</body>\r\n</html>",
+    "status": 404
+  }
+}

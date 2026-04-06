@@ -1,0 +1,1862 @@
+[
+  {
+    "seriesId": "F049.BPV.PMT.INE9.H15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, male; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.H20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, male; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.H25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, male; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.H30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, male; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.H35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, male; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.H40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, male; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.H45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, male; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.H50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, male; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.H55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, male; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.H60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, male; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.H65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, male; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.H70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, male; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.M15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, female; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.M20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, female; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.M25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, female; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.M30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, female; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.M35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, female; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.M40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, female; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.M45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, female; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.M50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, female; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.M55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, female; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.M60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, female; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.M65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, female; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.BPV.PMT.INE9.M70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Buscan trabajo por primera vez, mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "First-time job seekers, female; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.H15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Reduntant, male; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.H20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Reduntant, male; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.H25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Reduntant, male; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.H30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Reduntant, male; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.H35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Reduntant, male; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.H40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Reduntant, male; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.H45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Reduntant, male; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.H50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Reduntant, male; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.H55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Reduntant, male; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.H60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Reduntant, male; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.H65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Reduntant, male; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.H70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Reduntant, male; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.M15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Redundant, female; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.M20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Redundant, female; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.M25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Redundant, female; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.M30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Redundant, female; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.M35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Redundant, female; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.M40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Redundant, female; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.M45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Redundant, female; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.M50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Redundant, female; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.M55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Redundant, female; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.M60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Redundant, female; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.M65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Redundant, female; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.CES.PMT.INE9.M70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Cesantes mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Redundant, female; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.H15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, male; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.H20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, male; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.H25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, male; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.H30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, male; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.H35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, male; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.H40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, male; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.H45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, male; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.H50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, male; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.H55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, male; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.H60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, male; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.H65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, male; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.H70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, male; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.M15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, female; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.M20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, female; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.M25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, female; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.M30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, female; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.M35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, female; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.M40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, female; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.M45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, female; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.M50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, female; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.M55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, female; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.M60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, female; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.M65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, female; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.DES.PMT.INE9.M70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Desocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Unemployed, female; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.H15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivos hombres; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, male; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.H20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivos hombres; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, male; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.H25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivos hombres; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, male; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.H30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivos hombres; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, male; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.H35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivos hombres; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, male; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.H40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivos hombres; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, male; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.H45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivos hombres; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, male; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.H50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivos hombres; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, male; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.H55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivos hombres; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, male; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.H60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivos hombres; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, male; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.H65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivos hombres; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, male; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.H70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivos hombres; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, male; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.M15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, female; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.M20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, female; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.M25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, female; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.M30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, female; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.M35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, female; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.M40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, female; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.M45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, female; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.M50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, female; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.M55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, female; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.M60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, female; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.M65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, female; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FFT.PMT.INE9.M70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Inactivas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Inactive, female; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.01.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo, total | No Ajustada | INE | Mensual | Miles de Personas",
+    "englishTitle": "Total labor force, total | Not adjusted  | INE | Monthly | Thousands of persons | Percentage",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.23.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo RMS, mensual, INE",
+    "englishTitle": "Workforce RMS Region, monthly, INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.H15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male labour force; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.H20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male labour force; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.H25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male labour force; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.H30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male labour force; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.H35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male labour force; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.H40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male labour force; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.H45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male labour force; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.H50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male labour force; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.H55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male labour force; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.H60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male labour force; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.H65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male labour force; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.H70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male labour force; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.M15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female labour force; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.M20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female labour force; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.M25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female labour force; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.M30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female labour force; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.M35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female labour force; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.M40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female labour force; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.M45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female labour force; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.M50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female labour force; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.M55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female labour force; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.M60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female labour force; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.M65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female labour force; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.PMT.INE9.M70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female labour force; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RAI.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RAN.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RAP.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RAR.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RAT.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RBI.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RCO.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RLI.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RLL.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RLR.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RMA.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RML.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RNB.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RRM.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RTA.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.FTR.STO.INE9.RVA.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Fuerza de trabajo",
+    "englishTitle": "Labour force",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.H15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, male; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.H20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, male; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.H25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, male; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.H30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, male; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.H35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, male; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.H40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, male; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.H45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, male; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.H50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, male; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.H55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, male; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.H60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, male; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.H65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, male; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.H70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupados hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, male; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.M15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, female; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.M20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, female; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.M25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, female; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.M30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, female; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.M35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, female; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.M40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, female; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.M45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, female; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.M50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, female; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.M55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, female; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.M60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, female; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.M65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, female; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.OCU.PMT.INE9.M70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Ocupadas mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Employed, female; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.H15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male population; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.H20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male population; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.H25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male population; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.H30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male population; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.H35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male population; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.H40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male population; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.H45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male population; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.H50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male population; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.H55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male population; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.H60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male population; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.H65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male population; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.H70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población hombres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Male population; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.M15.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 15 a 19 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female population; National labor force, employment, unemployment and idle workers by age and gender, 15 to 19 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.M20.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 20 a 24 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female population; National labor force, employment, unemployment and idle workers by age and gender, 20 to 24 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.M25.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 25 a 29 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female population; National labor force, employment, unemployment and idle workers by age and gender, 25 to 29 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.M30.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 30 a 34 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female population; National labor force, employment, unemployment and idle workers by age and gender, 30 to 34 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.M35.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 35 a 39 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female population; National labor force, employment, unemployment and idle workers by age and gender, 35 to 39 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.M40.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 40 a 44 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female population; National labor force, employment, unemployment and idle workers by age and gender, 40 to 44 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.M45.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 45 a 49 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female population; National labor force, employment, unemployment and idle workers by age and gender, 45 to 49 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.M50.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 50 a 54 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female population; National labor force, employment, unemployment and idle workers by age and gender, 50 to 54 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.M55.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 55 a 59 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female population; National labor force, employment, unemployment and idle workers by age and gender, 55 to 59 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.M60.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 60 a 64 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female population; National labor force, employment, unemployment and idle workers by age and gender, 60 to 64 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.M65.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 65 a 69 años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female population; National labor force, employment, unemployment and idle workers by age and gender, 65 to 69 years; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  },
+  {
+    "seriesId": "F049.POB.PMT.INE9.M70.M",
+    "frequencyCode": "MONTHLY",
+    "spanishTitle": "Población mujeres ; Fuerza de trabajo nacional, empleo, desocupados e inactivos por tramo de edad y por género, 70 y más años; nominal; stock; mensual; miles de personas; INE",
+    "englishTitle": "Female population; National labor force, employment, unemployment and idle workers by age and gender, 70 years and older; nominal; stock; monthly; thousands of people; INE",
+    "firstObservation": "01-03-2010",
+    "lastObservation": "01-02-2026",
+    "updatedAt": "30-03-2026",
+    "createdAt": "30-03-2026"
+  }
+]

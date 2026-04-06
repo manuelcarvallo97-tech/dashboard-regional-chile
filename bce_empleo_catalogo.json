@@ -1,0 +1,374 @@
+[
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.10N.M",
+    "titulo": "Tasa de desocupación nacional mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.11.M",
+    "titulo": "Tasas de desocupación región I mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-02-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.11N.M",
+    "titulo": "Tasa de desocupación región I mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.12.M",
+    "titulo": "Tasas de desocupación región II mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-02-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.12N.M",
+    "titulo": "Tasa de desocupación región II mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.13.M",
+    "titulo": "Tasas de desocupación región III mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-02-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.13N.M",
+    "titulo": "Tasa de desocupación región III mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.14.M",
+    "titulo": "Tasas de desocupación región IV mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-02-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.14N.M",
+    "titulo": "Tasa de desocupación región IV mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.15.M",
+    "titulo": "Tasas de desocupación región V mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-02-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.15N.M",
+    "titulo": "Tasa de desocupación región V mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.16.M",
+    "titulo": "Tasas de desocupación región VI mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-02-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.16N.M",
+    "titulo": "Tasa de desocupación región VI mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.17.M",
+    "titulo": "Tasas de desocupación VII mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-02-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.17N.M",
+    "titulo": "Tasa de desocupación región VII mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.18.M",
+    "titulo": "Tasas de desocupación VIII mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-02-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.18N.M",
+    "titulo": "Tasa de desocupación región VIII mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.19.M",
+    "titulo": "Tasas de desocupación IX mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-02-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.19N.M",
+    "titulo": "Tasa de desocupación IX mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.20.M",
+    "titulo": "Tasas de desocupación X mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-02-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.20N.M",
+    "titulo": "Tasa de desocupación X mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.21.M",
+    "titulo": "Tasas de desocupación XI mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-02-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.21N.M",
+    "titulo": "Tasa de desocupación XI mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.22.M",
+    "titulo": "Tasas de desocupación XII mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-02-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.22N.M",
+    "titulo": "Tasa de desocupación XII mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.23.M",
+    "titulo": "Tasas de desocupación RMS mensual INE. Antigua regionalización (porcentaje).",
+    "ultima": "01-10-2009"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.23N.M",
+    "titulo": "Tasa de desocupación RMS mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.24.M",
+    "titulo": "Tasa de desocupación XIV mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE1.25.M",
+    "titulo": "Tasa de desocupación región XV mensual INE. Nueva regionalización.",
+    "ultima": "01-02-2010"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.11.M",
+    "titulo": "Tasa de desocupación, Región de Tarapacá, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.12.M",
+    "titulo": "Tasa de desocupación, Región de Antofagasta, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.13.M",
+    "titulo": "Tasa de desocupación, Región de Atacama, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.14.M",
+    "titulo": "Tasa de desocupación, Región de Coquimbo, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.15.M",
+    "titulo": "Tasa de desocupación, Región de Valparaíso, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.16.M",
+    "titulo": "Tasa de desocupación, Región del Libertador Gral. Bernardo O'Higgins, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.17.M",
+    "titulo": "Tasa de desocupación, Región del Maule, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.18.M",
+    "titulo": "Tasa de desocupación, región VIII, mensual INE",
+    "ultima": "01-12-2018"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.18N.M",
+    "titulo": "Tasa de desocupación, Región del Biobío, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.19.M",
+    "titulo": "Tasa de desocupación, Región de La Araucanía, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.20.M",
+    "titulo": "Tasa de desocupación, Región de Los Lagos, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.21.M",
+    "titulo": "Tasa de desocupación, Región de Aysén del Gral. Carlos Ibáñez del Campo, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.22.M",
+    "titulo": "Tasa de desocupación, Región de Magallanes y Antártica Chilena, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.23.M",
+    "titulo": "Tasa de desocupación, Región Metropolitana, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.24.M",
+    "titulo": "Tasa de desocupación, Región de Los Ríos, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.25.M",
+    "titulo": "Tasa de desocupación, Región de Arica y parinacota, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.DES.TAS.INE9.26.M",
+    "titulo": "Tasa de desocupación, Región del Ñuble, mensual INE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.11.M",
+    "titulo": "Empleo: Región de Tarapacá, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.12.M",
+    "titulo": "Empleo: Región de Antofagasta, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.13.M",
+    "titulo": "Empleo: Región de Atacama, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.14.M",
+    "titulo": "Empleo: Región de Coquimbo, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.15.M",
+    "titulo": "Empleo: Región de Valparaíso, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.16.M",
+    "titulo": "Empleo: Región del Libertador Gral. Bernardo O'Higgins, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.17.M",
+    "titulo": "Empleo: Región del Maule, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.18N.M",
+    "titulo": "Empleo: Región del Biobío, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.19.M",
+    "titulo": "Empleo: Región de La Araucanía, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.20.M",
+    "titulo": "Empleo: Región de Los Lagos, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.21.M",
+    "titulo": "Empleo: Región de Aysén del Gral. Carlos Ibáñez del Campo, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.22.M",
+    "titulo": "Empleo: Región de Magallanes y Antártica Chilena, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.23.M",
+    "titulo": "Empleo: Región Metropolitana, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.24.M",
+    "titulo": "Empleo: Región de Los Ríos, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.25.M",
+    "titulo": "Empleo:  Región de Arica y parinacota, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  },
+  {
+    "freq": "MONTHLY",
+    "id": "F049.OCU.PMT.INE9.26.M",
+    "titulo": "Empleo: Región del Ñuble, Miles de personas, NENE",
+    "ultima": "01-02-2026"
+  }
+]

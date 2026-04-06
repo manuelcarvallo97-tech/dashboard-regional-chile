@@ -1,0 +1,159 @@
+=== ADIS Report ===
+
+Total requests: 6
+
+── URLs únicas ──
+  https://adis.gob.cl/
+  https://adis.gob.cl/fontawesome-webfont.af7ae505a9eed503f8b8.woff2?v=4.7.0
+  https://api.adis.gob.cl/app?blockui=true&system=true
+  https://www.google.com/recaptcha/api.js?render=explicit
+  https://www.googletagmanager.com/gtag/js?id=G-LPR8R3LZNX
+
+── Detalle ──
+
+[200] GET https://adis.gob.cl/
+
+[200] GET https://www.google.com/recaptcha/api.js?render=explicit
+
+[499] GET https://www.googletagmanager.com/gtag/js?id=G-LPR8R3LZNX
+
+[200] OPTIONS https://api.adis.gob.cl/app?blockui=true&system=true
+
+[200] GET https://api.adis.gob.cl/app?blockui=true&system=true
+  Headers auth: {'Content-Type': 'application/json; charset=utf-8'}
+  Respuesta: {"app.version": "8.4.0"}
+
+[200] GET https://adis.gob.cl/fontawesome-webfont.af7ae505a9eed503f8b8.woff2?v=4.7.0
+
+
+── Pruebas directas ──
+
+[200] https://api.adis.gob.cl/app?blockui=true&system=true
+  {"app.version":"8.4.0"}
+
+[404] https://api.adis.gob.cl/api/estadisticas/frecuentes
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Reactive Angular</title>
+</head>
+<body>
+
+<h1>Recurso no encontrado 404</h1>
+
+</body>
+</html>
+
+[404] https://api.adis.gob.cl/api/indicadores/frecuentes
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Reactive Angular</title>
+</head>
+<body>
+
+<h1>Recurso no encontrado 404</h1>
+
+</body>
+</html>
+
+[404] https://api.adis.gob.cl/api/regiones
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Reactive Angular</title>
+</head>
+<body>
+
+<h1>Recurso no encontrado 404</h1>
+
+</body>
+</html>
+
+[404] https://api.adis.gob.cl/api/indicadores
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Reactive Angular</title>
+</head>
+<body>
+
+<h1>Recurso no encontrado 404</h1>
+
+</body>
+</html>
+
+[404] https://api.adis.gob.cl/estadisticas
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Reactive Angular</title>
+</head>
+<body>
+
+<h1>Recurso no encontrado 404</h1>
+
+</body>
+</html>
+
+[404] https://api.adis.gob.cl/frecuentes
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Reactive Angular</title>
+</head>
+<body>
+
+<h1>Recurso no encontrado 404</h1>
+
+</body>
+</html>
+
+[404] https://api.adis.gob.cl/v1/estadisticas/frecuentes
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Reactive Angular</title>
+</head>
+<body>
+
+<h1>Recurso no encontrado 404</h1>
+
+</body>
+</html>
+
+[404] https://api.adis.gob.cl/api/v1/estadisticas
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Reactive Angular</title>
+</head>
+<body>
+
+<h1>Recurso no encontrado 404</h1>
+
+</body>
+</html>
+
+[404] https://api.adis.gob.cl/auth/login
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Reactive Angular</title>
+</head>
+<body>
+
+<h1>Recurso no encontrado 404</h1>
+
+</body>
+</html>
+
