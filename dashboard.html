@@ -96,12 +96,70 @@ table.dt tr.nacional-row td{background:#f0fdf4!important;font-weight:700;color:#
 .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
 .badge-baja{background:#dcfce7;color:#166534}.badge-alta{background:#fef2f2;color:#991b1b}.badge-media{background:#fef9c3;color:#713f12}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="pdf_minuta.js"></script>
+<style>
+.btn-pdf{display:inline-flex;align-items:center;gap:7px;padding:7px 16px;
+  border-radius:8px;font-size:12px;font-weight:700;
+  background:linear-gradient(135deg,#38bdf8,#0ea5e9);
+  color:#0f172a;border:none;cursor:pointer;
+  box-shadow:0 2px 8px rgba(56,189,248,.35);transition:all .2s;white-space:nowrap;}
+.btn-pdf:hover{transform:translateY(-1px);}
+.btn-pdf svg{width:14px;height:14px;}
+.pdf-overlay{display:none;position:fixed;inset:0;z-index:9000;
+  background:rgba(10,15,30,.75);backdrop-filter:blur(5px);
+  align-items:center;justify-content:center;}
+.pdf-overlay.open{display:flex;}
+.pdf-modal{background:#fff;border-radius:18px;width:500px;max-width:95vw;
+  box-shadow:0 28px 70px rgba(0,0,0,.35);overflow:hidden;
+  animation:pdfIn .22s cubic-bezier(.34,1.3,.64,1);}
+@keyframes pdfIn{from{opacity:0;transform:scale(.92) translateY(14px)}to{opacity:1;transform:none}}
+.pdf-mhdr{background:linear-gradient(135deg,#1a1a2e,#16213e);color:white;
+  padding:22px 26px 18px;display:flex;align-items:flex-start;justify-content:space-between;}
+.pdf-mhdr h2{font-size:15px;font-weight:700;margin-bottom:3px;}
+.pdf-mhdr p{font-size:11px;opacity:.5;}
+.pdf-close{background:none;border:none;color:white;opacity:.45;font-size:22px;
+  cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px;transition:.15s;}
+.pdf-close:hover{opacity:1;background:rgba(255,255,255,.12);}
+.pdf-body{padding:24px 26px;}
+.pdf-label{display:block;font-size:10px;font-weight:800;color:#94a3b8;
+  text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px;}
+.pdf-region-sel{width:100%;padding:9px 13px;border:1.5px solid #e2e8f0;
+  border-radius:9px;font-size:13px;background:white;cursor:pointer;outline:none;margin-bottom:20px;}
+.pdf-region-sel:focus{border-color:#0ea5e9;}
+.pdf-mods{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:22px;}
+.pdf-mod{display:flex;align-items:center;gap:10px;padding:10px 13px;
+  border-radius:10px;border:1.5px solid #e2e8f0;cursor:pointer;transition:all .15s;user-select:none;}
+.pdf-mod:hover{border-color:#0ea5e9;background:#f0f9ff;}
+.pdf-mod.on{border-color:#0ea5e9;background:#e0f2fe;}
+.pdf-mod input{accent-color:#0ea5e9;width:15px;height:15px;cursor:pointer;}
+.pdf-mod .ico{font-size:17px;line-height:1;}
+.pdf-mod .mn{font-size:12px;font-weight:700;color:#1e293b;}
+.pdf-mod .ms{font-size:10px;color:#94a3b8;}
+.pdf-prog{display:none;margin-bottom:16px;}
+.pdf-prog-bar{height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:6px;}
+.pdf-prog-fill{height:100%;background:linear-gradient(90deg,#38bdf8,#0ea5e9);
+  border-radius:99px;width:0%;transition:width .35s ease;}
+.pdf-prog-lbl{font-size:11px;color:#64748b;margin-top:5px;}
+.pdf-btn{width:100%;padding:13px;border-radius:11px;border:none;cursor:pointer;
+  font-size:13px;font-weight:800;background:linear-gradient(135deg,#1a1a2e,#0f3460);
+  color:white;transition:all .2s;box-shadow:0 2px 10px rgba(0,0,0,.22);}
+.pdf-btn:hover{transform:translateY(-1px);}
+.pdf-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+</style>
 </head>
 <body>
 
 <header>
   <h1>📊 Dashboard Regional · Chile</h1>
   <span id="hdr-sub">Selecciona un módulo</span>
+  <button class="btn-pdf" onclick="abrirModalPdf()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M12 3v12m0 0l-4-4m4 4l4-4M3 17v2a2 2 0 002 2h14a2 2 0 002-2v-2"/>
+    </svg>
+    Minuta Regional PDF
+  </button>
 </header>
 
 <!-- ══ NAVEGACIÓN DE MÓDULOS ══ -->
@@ -1925,6 +1983,44 @@ function initCasen(){
   document.getElementById('cs-prest-tipo').onchange=renderCasenPrest;
 }
 </script>
+
+
+<div class="pdf-overlay" id="pdf-overlay" onclick="if(event.target===this)cerrarPdf()">
+  <div class="pdf-modal">
+    <div class="pdf-mhdr">
+      <div><h2>&#x1F4C4; Generar Minuta Regional</h2><p>Formato DCI &mdash; Ministerio del Interior</p></div>
+      <button class="pdf-close" onclick="cerrarPdf()">&#x2715;</button>
+    </div>
+    <div class="pdf-body">
+      <label class="pdf-label">Regi&oacute;n</label>
+      <select class="pdf-region-sel" id="pdf-reg"></select>
+      <label class="pdf-label">Secciones a incluir</label>
+      <div class="pdf-mods">
+        <label class="pdf-mod on" id="pw-demo"><input type="checkbox" id="pc-demo" checked>
+          <span class="ico">&#x1F465;</span><span><div class="mn">Demograf&iacute;a</div><div class="ms">Censo 2024</div></span></label>
+        <label class="pdf-mod on" id="pw-vuln"><input type="checkbox" id="pc-vuln" checked>
+          <span class="ico">&#x1F91D;</span><span><div class="mn">Pob. Vulnerable</div><div class="ms">CASEN 2024</div></span></label>
+        <label class="pdf-mod on" id="pw-econ"><input type="checkbox" id="pc-econ" checked>
+          <span class="ico">&#x1F4C8;</span><span><div class="mn">Econom&iacute;a</div><div class="ms">PIB BCE + CASEN</div></span></label>
+        <label class="pdf-mod on" id="pw-edu"><input type="checkbox" id="pc-edu" checked>
+          <span class="ico">&#x1F393;</span><span><div class="mn">Educaci&oacute;n</div><div class="ms">Censo 2024</div></span></label>
+        <label class="pdf-mod on" id="pw-sal"><input type="checkbox" id="pc-sal" checked>
+          <span class="ico">&#x1F3E5;</span><span><div class="mn">Salud</div><div class="ms">CASEN 2024</div></span></label>
+        <label class="pdf-mod on" id="pw-viv"><input type="checkbox" id="pc-viv" checked>
+          <span class="ico">&#x1F3E0;</span><span><div class="mn">Vivienda</div><div class="ms">Censo 2024</div></span></label>
+        <label class="pdf-mod on" id="pw-seg"><input type="checkbox" id="pc-seg" checked>
+          <span class="ico">&#x1F6E1;</span><span><div class="mn">Seguridad P&uacute;blica</div><div class="ms">LeyStop</div></span></label>
+        <label class="pdf-mod on" id="pw-emp"><input type="checkbox" id="pc-emp" checked>
+          <span class="ico">&#x1F4BC;</span><span><div class="mn">Mercado Laboral</div><div class="ms">BCE / INE</div></span></label>
+      </div>
+      <div class="pdf-prog" id="pdf-prog">
+        <div class="pdf-prog-bar"><div class="pdf-prog-fill" id="pdf-pfill"></div></div>
+        <div class="pdf-prog-lbl" id="pdf-plbl">Preparando...</div>
+      </div>
+      <button class="pdf-btn" id="pdf-gbtn" onclick="generarMinuta()">Generar Minuta PDF</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
