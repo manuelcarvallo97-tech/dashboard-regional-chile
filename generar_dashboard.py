@@ -102,7 +102,13 @@ SECTORES_CORR = SECTORES_ENC_ANUAL
 UNIDAD_CORR = "miles de millones de pesos corrientes (base 2018)"
 UNIDAD_ENC  = "miles de millones de pesos encadenados"
 
-regiones_pib = q("SELECT DISTINCT nombre_region FROM registros_bcn ORDER BY nombre_region")['nombre_region'].tolist()
+# Regiones con datos encadenados base 2018 (serie .A o .T — Los Ríos solo tiene .T)
+regiones_pib = q("""SELECT DISTINCT nombre_region FROM registros_bce
+    WHERE nombre_region IS NOT NULL
+    AND unidad_limpia='miles de millones de pesos encadenados'
+    AND indicador_limpio='PIB'
+    AND series_id LIKE '%.2018.%'
+    ORDER BY nombre_region""")['nombre_region'].tolist()
 
 def periodo_a_label(p, freq='anual'):
     try:
@@ -187,11 +193,63 @@ for sector in SECTORES_ENC_ANUAL:
     pr = leer_por_region(sector, UNIDAD_ENC, 'anual')
     if pr: datos_enc_anual[sector] = pr
 
+# Algunas regiones (ej: Los Ríos) solo tienen serie .T en el BCE.
+# Las completamos sumando los 4 trimestres de cada año.
+def _completar_con_trimestres(sector, unidad_limpia):
+    """Para regiones sin serie .A, construye anual sumando 4 trimestres .T."""
+    df = q(f"""SELECT nombre_region, periodo, valor_corregido as valor
+        FROM registros_bce
+        WHERE indicador_limpio='{sector}' AND unidad_limpia='{unidad_limpia}'
+        AND nombre_region IS NOT NULL AND valor_corregido IS NOT NULL
+        AND series_id LIKE '%.T'
+        ORDER BY nombre_region, periodo""")
+    if df.empty: return {}
+    df['mes'] = df['periodo'].apply(_extraer_mes)
+    df['año'] = df['periodo'].apply(_extraer_año)
+    df = df[df['mes'].isin([1, 4, 7, 10])].copy()
+    resultado = {}
+    for (reg, año), g in df.groupby(['nombre_region', 'año']):
+        if len(g) == 4:
+            if reg not in resultado:
+                resultado[reg] = {}
+            resultado[reg][año] = round(g['valor'].sum(), 4)
+    return resultado
+
+# Detectar regiones con datos trimestrales pero sin anuales y completar
+for sector in SECTORES_ENC_ANUAL:
+    trim_data = _completar_con_trimestres(sector, UNIDAD_ENC)
+    for reg, años in trim_data.items():
+        if reg not in datos_enc_anual.get(sector, {}):
+            if sector not in datos_enc_anual:
+                datos_enc_anual[sector] = {}
+            datos_enc_anual[sector][reg] = años
+
 # Alias para no romper referencias internas
 datos_corr = datos_enc_anual
 
-extra_enc_anual    = leer_nacional('Extrarregional', UNIDAD_ENC, 'anual')
-subtotal_enc_anual = leer_nacional('PIB subtotal regionalizado', UNIDAD_ENC, 'anual')
+# Extrarregional y Subtotal no tienen serie .A en base 2018 en el BCE.
+# Se construyen sumando los 4 trimestres .T de cada año.
+def _sum_trimestres_nacional(indicador_limpio, unidad_limpia):
+    """Suma los 4 trimestres base 2018 de cada año para obtener un valor anual."""
+    df = q(f"""SELECT periodo, valor_corregido as valor
+        FROM registros_bce
+        WHERE indicador_limpio='{indicador_limpio}' AND unidad_limpia='{unidad_limpia}'
+        AND nombre_region IS NULL AND valor_corregido IS NOT NULL
+        AND series_id LIKE '%.T'
+        ORDER BY periodo""")
+    if df.empty: return {}
+    df['mes'] = df['periodo'].apply(_extraer_mes)
+    df['año'] = df['periodo'].apply(_extraer_año)
+    df = df[df['mes'].isin([1, 4, 7, 10])].copy()
+    # Sumar los 4 trimestres por año, solo si están los 4
+    resultado = {}
+    for año, g in df.groupby('año'):
+        if len(g) == 4:
+            resultado[año] = round(g['valor'].sum(), 4)
+    return resultado
+
+extra_enc_anual    = _sum_trimestres_nacional('Extrarregional', UNIDAD_ENC)
+subtotal_enc_anual = _sum_trimestres_nacional('PIB subtotal regionalizado', UNIDAD_ENC)
 extra_corr    = extra_enc_anual
 subtotal_corr = subtotal_enc_anual
 
