@@ -19,7 +19,8 @@ import sqlite3, json, math, pandas as pd
 from pathlib import Path
 
 DB_PATH    = "bcn_indicadores.db"
-CENSO_PATH = "censo_regiones.json"
+CENSO_PATH  = "censo_regiones.json"
+CASEN_PATH  = "casen_regiones.json"
 
 def q(sql):
     conn = sqlite3.connect(DB_PATH)
@@ -65,6 +66,25 @@ datos_seg = q("""
 regiones_seg = sorted(datos_seg['nombre_region'].unique().tolist())
 semanas_clean = [{k: clean(v) for k,v in row.items()} for row in semanas.to_dict('records')]
 datos_seg_clean = [{k: clean(v) for k,v in row.items()} for row in datos_seg.to_dict('records')]
+
+# Delitos desagregados (tabla registros_leystop_delitos)
+try:
+    datos_delitos = q("""
+        SELECT id_semana, id_region, nombre_region, nombre_delito, es_dmcs,
+               ultima_semana_ant, ultima_semana,
+               dias28_ant, dias28,
+               anno_fecha_ant, anno_fecha, umbral
+        FROM registros_leystop_delitos
+        ORDER BY id_semana, id_region, nombre_delito
+    """)
+    datos_delitos_clean = [{k: clean(v) for k,v in row.items()} for row in datos_delitos.to_dict('records')]
+    nombres_delitos = sorted(datos_delitos['nombre_delito'].unique().tolist()) if not datos_delitos.empty else []
+    tiene_tabla_delitos = True
+except Exception as e:
+    datos_delitos_clean = []
+    nombres_delitos = []
+    tiene_tabla_delitos = False
+    import sys; print(f"Aviso: tabla registros_leystop_delitos no disponible: {e}", file=sys.stderr)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # DATOS PIB
@@ -190,6 +210,14 @@ with open(censo_path, encoding='utf-8') as f:
 
 data_censo_json = json.dumps(censo_raw, ensure_ascii=False)
 
+# CASEN 2024
+casen_path = Path(CASEN_PATH)
+if not casen_path.exists():
+    raise FileNotFoundError(f"No se encuentra {CASEN_PATH}. Corre preparar_casen.py primero.")
+with open(casen_path, encoding='utf-8') as f:
+    casen_raw = json.load(f)
+data_casen_json = json.dumps(casen_raw, ensure_ascii=False)
+
 data_emp_json = json.dumps({
     'regiones': regiones_emp,
     'periodos': periodos_emp,
@@ -201,6 +229,12 @@ data_seg_json = json.dumps({
     'semanas': semanas_clean,
     'datos': datos_seg_clean,
     'regiones': regiones_seg,
+}, ensure_ascii=False)
+
+data_delitos_json = json.dumps({
+    'datos': datos_delitos_clean,
+    'nombres_delitos': nombres_delitos,
+    'tiene_datos': tiene_tabla_delitos,
 }, ensure_ascii=False)
 
 data_pib_json = json.dumps({
@@ -257,6 +291,8 @@ header span{{font-size:11px;opacity:.6}}
 .tab-censo:hover{{color:#7c3aed}}.tab-censo.active{{color:#7c3aed;border-bottom-color:#7c3aed;font-weight:600}}
 .tab-emp{{padding:12px 20px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;color:#666;transition:all .2s;white-space:nowrap}}
 .tab-emp:hover{{color:#059669}}.tab-emp.active{{color:#059669;border-bottom-color:#059669;font-weight:600}}
+.tab-casen{{padding:12px 20px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;color:#666;transition:all .2s;white-space:nowrap}}
+.tab-casen:hover{{color:#e11d48}}.tab-casen.active{{color:#e11d48;border-bottom-color:#e11d48;font-weight:600}}
 
 /* ── Layout ── */
 .content{{padding:24px 32px;max-width:1500px;margin:0 auto}}
@@ -331,6 +367,7 @@ table.dt tr.nacional-row td{{background:#f0fdf4!important;font-weight:700;color:
   <div class="mod-btn" onclick="setModulo('pib',this)">📈 PIB Regional</div>
   <div class="mod-btn" onclick="setModulo('censo',this)">🏘 Censo 2024</div>
   <div class="mod-btn" onclick="setModulo('empleo',this)">💼 Empleo</div>
+  <div class="mod-btn" onclick="setModulo('casen',this)">🏠 CASEN 2024</div>
 </nav>
 
 <!-- ══════════════════════════════════════════════════════════════
@@ -341,6 +378,7 @@ table.dt tr.nacional-row td{{background:#f0fdf4!important;font-weight:700;color:
     <div class="tab-seg active" onclick="setTabSeg('resumen',this)">Resumen por región</div>
     <div class="tab-seg" onclick="setTabSeg('evolucion',this)">Evolución temporal</div>
     <div class="tab-seg" onclick="setTabSeg('operativo',this)">Actividad operativa</div>
+    <div class="tab-seg" onclick="setTabSeg('dmcs',this)">🔴 DMCS</div>
   </div>
   <div class="content">
 
@@ -349,6 +387,10 @@ table.dt tr.nacional-row td{{background:#f0fdf4!important;font-weight:700;color:
       <div class="filtros">
         <div class="fg"><label>Semana</label>
           <select id="res-semana" onchange="renderResumen()"></select></div>
+        <div class="fg"><label>Región</label>
+          <select id="res-region" onchange="renderResumen()">
+            <option value="">Todas las regiones</option>
+          </select></div>
       </div>
       <div class="kpi-grid" id="kpi-resumen"></div>
       <div class="card">
@@ -407,6 +449,62 @@ table.dt tr.nacional-row td{{background:#f0fdf4!important;font-weight:700;color:
           <h3>Incautaciones y decomisos</h3>
           <canvas id="chart-incaut" style="max-height:320px"></canvas>
         </div>
+      </div>
+    </div>
+
+    <!-- DMCS -->
+    <div class="section" id="seg-dmcs">
+      <div class="filtros">
+        <div class="fg"><label>Semana</label>
+          <select id="dmcs-semana" onchange="renderDMCS()"></select></div>
+        <div class="fg"><label>Región</label>
+          <select id="dmcs-region" onchange="renderDMCS()">
+            <option value="">Nacional (todas)</option>
+          </select></div>
+        <div class="fg"><label>Delito DMCS</label>
+          <select id="dmcs-delito" onchange="renderDMCS()">
+            <option value="">Todos los DMCS</option>
+          </select></div>
+      </div>
+      <div class="kpi-grid" id="kpi-dmcs"></div>
+      <div class="grid2">
+        <div class="card" style="grid-column:1/2">
+          <h3 id="dmcs-chart-bar-title">DMCS por tipo</h3>
+          <canvas id="chart-dmcs-regiones" style="max-height:380px"></canvas>
+        </div>
+        <div class="card" style="grid-column:2/3">
+          <h3 id="dmcs-chart-pie-title">Distribución DMCS</h3>
+          <canvas id="chart-dmcs-pie" style="max-height:380px"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h3 id="dmcs-tabla-title">Detalle DMCS por región</h3>
+        <div class="tabla-wrap"><table class="dt" id="tabla-dmcs"></table></div>
+        <p class="nota">Var. % calculada respecto al mismo período del año anterior. "Delito más grave" = DMCS con umbral más alto (z-score Carabineros).</p>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <h3 id="dmcs-evo-title" style="margin:0">Evolución semanal DMCS — casos última semana</h3>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div class="fg">
+              <label>Métrica</label>
+              <select id="dmcs-evo-metrica" onchange="renderDMCSEvo()" style="padding:6px 10px;border:1.5px solid #d0d0d0;border-radius:8px;font-size:12px;min-width:160px">
+                <option value="ultima_semana">Casos última semana</option>
+                <option value="dias28">Casos últimos 28 días</option>
+                <option value="anno_fecha">Casos año a la fecha</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Comparar año anterior</label>
+              <select id="dmcs-evo-comparar" onchange="renderDMCSEvo()" style="padding:6px 10px;border:1.5px solid #d0d0d0;border-radius:8px;font-size:12px;min-width:130px">
+                <option value="no">Solo año actual</option>
+                <option value="si">Sí — superponer 2025</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <canvas id="chart-dmcs-evo" style="max-height:340px"></canvas>
+        <p class="nota" id="dmcs-evo-nota"></p>
       </div>
     </div>
 
@@ -630,6 +728,7 @@ table.dt tr.nacional-row td{{background:#f0fdf4!important;font-weight:700;color:
 // DATOS
 // ══════════════════════════════════════════════════════════════
 const SEG  = {data_seg_json};
+const DELITOS = {data_delitos_json};
 const CENSO_DATA = {data_censo_json};
 const PIB  = {data_pib_json};
 
@@ -639,6 +738,7 @@ let charts = {{}}, sortState = {{}};
 // NAV MÓDULOS
 // ══════════════════════════════════════════════════════════════
 const MOD_LABELS = {{'empleo':'💼 Empleo · BCE/INE',
+  casen:'🏠 CASEN 2024 · MIDESO',
   seguridad: '🛡 Seguridad Pública · Ley S.T.O.P',
   pib: '📈 PIB Regional · Banco Central',
   censo: '🏘 Censo 2024 · INE Chile',
@@ -654,6 +754,7 @@ function setModulo(id, btn) {{
   if(id === 'seguridad') renderResumen();
   if(id === 'pib') {{ renderEvolucionPib(); }}
   if(id === 'censo') {{ if(!document.getElementById('censo-region').value) return; renderCenso(); }}
+  if(id === 'casen') {{ renderCasenPob(); }}
 }}
 
 // ══════════════════════════════════════════════════════════════
@@ -667,6 +768,7 @@ function setTabSeg(tab, btn) {{
   if(tab==='resumen')   renderResumen();
   if(tab==='evolucion') renderEvolucionSeg();
   if(tab==='operativo') renderOperativo();
+  if(tab==='dmcs')      renderDMCS();
 }}
 
 let pibTabActual = 'evolucion';
@@ -797,22 +899,26 @@ function poblarRegionSeg(selId, handler) {{
 
 // ── Resumen seg ──────────────────────────────────────────────
 function renderResumen() {{
-  const id_sem = parseInt(document.getElementById('res-semana').value);
-  const filas  = datosParaSemana(id_sem);
-  const sem    = SEG.semanas.find(s => s.id_semana===id_sem);
+  const id_sem    = parseInt(document.getElementById('res-semana').value);
+  const regFiltro = document.getElementById('res-region')?.value || '';
+  let filas       = datosParaSemana(id_sem);
+  if(regFiltro) filas = filas.filter(r => r.nombre_region === regFiltro);
+  const sem       = SEG.semanas.find(s => s.id_semana===id_sem);
 
-  document.getElementById('res-title').textContent = `Casos año a la fecha — ${{sem?.nombre||''}}`;
+  document.getElementById('res-title').textContent = `Casos año a la fecha — ${{sem?.nombre||''}}${{regFiltro?' · '+regFiltro:''}}`;
 
   const totalCasos  = filas.reduce((a,r)=>a+(r.casos_anno_fecha||0),0);
   const totalSemana = filas.reduce((a,r)=>a+(r.casos_ultima_semana||0),0);
-  const varProm  = filas.filter(r=>r.var_anno_fecha!==null).reduce((a,r,_,arr)=>a+r.var_anno_fecha/arr.length,0);
-  const tasaProm = filas.filter(r=>r.tasa_registro!==null).reduce((a,r,_,arr)=>a+r.tasa_registro/arr.length,0);
+  const varArr   = filas.filter(r=>r.var_anno_fecha!==null);
+  const varProm  = varArr.length ? varArr.reduce((a,r)=>a+r.var_anno_fecha,0)/varArr.length : 0;
+  const tasaArr  = filas.filter(r=>r.tasa_registro!==null);
+  const tasaProm = tasaArr.length ? tasaArr.reduce((a,r)=>a+r.tasa_registro,0)/tasaArr.length : 0;
 
   document.getElementById('kpi-resumen').innerHTML = `
-    <div class="kpi azul"><div class="kpi-label">Casos año a la fecha</div><div class="kpi-value">${{num(totalCasos)}}</div><div class="kpi-sub">Total nacional</div></div>
-    <div class="kpi ${{varProm<0?'verde':'rojo'}}"><div class="kpi-label">Variación año a la fecha</div><div class="kpi-value">${{fmtCambio(varProm)}}</div><div class="kpi-sub">Promedio regional</div></div>
-    <div class="kpi azul"><div class="kpi-label">Casos última semana</div><div class="kpi-value">${{num(totalSemana)}}</div><div class="kpi-sub">Nacional</div></div>
-    <div class="kpi amber"><div class="kpi-label">Tasa por 100 mil hab.</div><div class="kpi-value">${{tasaProm.toFixed(1)}}</div><div class="kpi-sub">Promedio regional</div></div>
+    <div class="kpi azul"><div class="kpi-label">Casos año a la fecha</div><div class="kpi-value">${{num(totalCasos)}}</div><div class="kpi-sub">${{regFiltro||'Total nacional'}}</div></div>
+    <div class="kpi ${{varProm<0?'verde':'rojo'}}"><div class="kpi-label">Variación año a la fecha</div><div class="kpi-value">${{fmtCambio(varProm)}}</div><div class="kpi-sub">${{regFiltro?regFiltro:'Promedio regional'}}</div></div>
+    <div class="kpi azul"><div class="kpi-label">Casos última semana</div><div class="kpi-value">${{num(totalSemana)}}</div><div class="kpi-sub">${{regFiltro||'Nacional'}}</div></div>
+    <div class="kpi amber"><div class="kpi-label">Tasa por 100 mil hab.</div><div class="kpi-value">${{tasaProm.toFixed(1)}}</div><div class="kpi-sub">${{regFiltro?regFiltro:'Promedio regional'}}</div></div>
   `;
 
   const cols = ['Región','Casos año a la fecha','Var. año %','Casos sem. actual','Tasa/100mil','Principal delito'];
@@ -912,6 +1018,362 @@ function renderOperativo() {{
       {{label:'Armas de fuego', data:sorted2.map(r=>r.incaut_fuego), backgroundColor:'rgba(220,38,38,.75)',borderRadius:2}},
       {{label:'Armas blancas', data:sorted2.map(r=>r.incaut_blancas), backgroundColor:'rgba(217,119,6,.75)',borderRadius:2}},
     ], {{horizontal:true}});
+}}
+
+
+// ══════════════════════════════════════════════════════════════
+// DMCS — Delitos de Mayor Connotación Social
+// ══════════════════════════════════════════════════════════════
+
+// Nombres exactos como vienen en el JSON de LeyStop
+const DMCS_LISTA = [
+  'HOMICIDIOS Y FEMICIDIOS',
+  'VIOLACIONES Y DELITOS SEXUALES',
+  'LESIONES GRAVES',
+  'LESIONES MENOS GRAVES',
+  'LESIONES LEVES',
+  'ROBOS CON VIOLENCIA E INTIMIDACIÓN',
+  'ROBOS POR SORPRESA',
+  'ROBOS EN LUGARES HABITADOS Y NO HABITADOS',
+  'ROBOS DE VEHÍCULOS Y SUS ACCESORIOS',
+  'OTROS ROBOS CON FUERZA EN LAS COSAS',
+  'HURTOS',
+];
+
+const DMCS_COLORES = [
+  'rgba(220,38,38,.8)','rgba(190,24,93,.8)','rgba(234,88,12,.8)',
+  'rgba(202,138,4,.8)','rgba(101,163,13,.8)','rgba(5,150,105,.8)',
+  'rgba(6,182,212,.8)','rgba(37,99,235,.8)','rgba(99,102,241,.8)',
+  'rgba(147,51,234,.8)','rgba(236,72,153,.8)',
+];
+
+// Helpers para acceder a DELITOS
+function delitosPorSemanaRegion(id_semana, nombre_region) {{
+  return DELITOS.datos.filter(d => d.id_semana === id_semana &&
+    (nombre_region === '' || d.nombre_region === nombre_region));
+}}
+
+function dmcsPorSemanaRegion(id_semana, nombre_region) {{
+  return delitosPorSemanaRegion(id_semana, nombre_region).filter(d => d.es_dmcs === 1);
+}}
+
+function renderDMCS() {{
+  if(!DELITOS.tiene_datos) {{
+    document.getElementById('kpi-dmcs').innerHTML =
+      '<div style="padding:20px;color:#999;font-size:13px">⚠ La tabla de delitos desagregados aún no existe. Corre <strong>actualizar_datos.py</strong> para poblarla.</div>';
+    return;
+  }}
+
+  const id_sem    = parseInt(document.getElementById('dmcs-semana').value);
+  const regFiltro = document.getElementById('dmcs-region').value;
+  const delFiltro = document.getElementById('dmcs-delito').value;
+  const sem       = SEG.semanas.find(s => s.id_semana === id_sem);
+
+  // Datos de todos los delitos para la semana/región seleccionada
+  const todosDelitos = delitosPorSemanaRegion(id_sem, regFiltro);
+  const soloDmcs     = todosDelitos.filter(d => d.es_dmcs === 1);
+
+  // Totales DMCS nacionales o de la región
+  const totalDmcsAnno = soloDmcs.reduce((a,d) => a + (d.anno_fecha||0), 0);
+  const totalDmcsAnt  = soloDmcs.reduce((a,d) => a + (d.anno_fecha_ant||0), 0);
+  const varDmcs       = totalDmcsAnt > 0 ? ((totalDmcsAnno - totalDmcsAnt) / totalDmcsAnt * 100) : null;
+  const totalDmcsSem  = soloDmcs.reduce((a,d) => a + (d.ultima_semana||0), 0);
+  const totalDmcs28   = soloDmcs.reduce((a,d) => a + (d.dias28||0), 0);
+
+  // Total de todos los delitos (para calcular % DMCS)
+  const totalTodosAnno = todosDelitos.reduce((a,d) => a + (d.anno_fecha||0), 0);
+  const pctDmcs = totalTodosAnno > 0 ? (totalDmcsAnno / totalTodosAnno * 100) : 0;
+
+  // Regiones con datos de DMCS
+  const regionesConDatos = [...new Set(soloDmcs.map(d => d.nombre_region))];
+
+  document.getElementById('kpi-dmcs').innerHTML =
+    `<div class="kpi rojo"><div class="kpi-label">DMCS año a la fecha</div><div class="kpi-value">${{num(totalDmcsAnno)}}</div><div class="kpi-sub">${{regFiltro||'Total nacional'}}</div></div>`+
+    `<div class="kpi ${{varDmcs===null?'azul':varDmcs<0?'verde':'rojo'}}"><div class="kpi-label">Variación vs año anterior</div><div class="kpi-value">${{fmtCambio(varDmcs)}}</div><div class="kpi-sub">año a la fecha</div></div>`+
+    `<div class="kpi amber"><div class="kpi-label">DMCS última semana</div><div class="kpi-value">${{num(totalDmcsSem)}}</div><div class="kpi-sub">${{sem?.nombre||''}}</div></div>`+
+    `<div class="kpi azul"><div class="kpi-label">% del total de delitos</div><div class="kpi-value">${{pctDmcs.toFixed(1)}}%</div><div class="kpi-sub">son DMCS (año a la fecha)</div></div>`;
+
+  // ── Títulos dinámicos ──
+  const tituloBase = `${{sem?.nombre||''}}${{regFiltro?' · '+regFiltro:' · Nacional'}}`;
+  document.getElementById('dmcs-chart-bar-title').textContent = `DMCS por tipo — ${{tituloBase}}`;
+  document.getElementById('dmcs-chart-pie-title').textContent = `Distribución DMCS — ${{tituloBase}}`;
+  document.getElementById('dmcs-tabla-title').textContent     = `Detalle DMCS por región — ${{tituloBase}}`;
+  document.getElementById('dmcs-evo-title').textContent       = `Evolución semanal DMCS${{regFiltro?' · '+regFiltro:''}}`;
+
+  // ── Gráfico barras: DMCS por tipo (año a la fecha) ──
+  const dmcsFiltrados = delFiltro
+    ? soloDmcs.filter(d => d.nombre_delito === delFiltro)
+    : soloDmcs;
+
+  // Agrupar por nombre_delito y sumar anno_fecha
+  const sumaPorDelito = {{}};
+  const sumaAntPorDelito = {{}};
+  dmcsFiltrados.forEach(d => {{
+    sumaPorDelito[d.nombre_delito]    = (sumaPorDelito[d.nombre_delito]||0)    + (d.anno_fecha||0);
+    sumaAntPorDelito[d.nombre_delito] = (sumaAntPorDelito[d.nombre_delito]||0) + (d.anno_fecha_ant||0);
+  }});
+
+  const dmcsOrdenados = Object.entries(sumaPorDelito).sort((a,b) => b[1]-a[1]);
+  const barLabels = dmcsOrdenados.map(([k]) => k.length>35 ? k.substring(0,35)+'…' : k);
+  const barVals   = dmcsOrdenados.map(([,v]) => v);
+  const barValsAnt= dmcsOrdenados.map(([k]) => sumaAntPorDelito[k]||0);
+
+  destroyChart('chart-dmcs-regiones');
+  const ctxBar = document.getElementById('chart-dmcs-regiones');
+  if(ctxBar) {{
+    charts['chart-dmcs-regiones'] = new Chart(ctxBar, {{
+      type: 'bar',
+      data: {{
+        labels: barLabels,
+        datasets: [
+          {{label:'2026 (año a la fecha)', data:barVals,
+            backgroundColor: dmcsOrdenados.map((_,i)=>DMCS_COLORES[i%DMCS_COLORES.length]),
+            borderRadius:3}},
+          {{label:'2025 (año a la fecha)', data:barValsAnt,
+            backgroundColor: 'rgba(156,163,175,.5)', borderRadius:3}},
+        ]
+      }},
+      plugins: [ChartDataLabels],
+      options: {{
+        responsive:true, maintainAspectRatio:true, indexAxis:'y',
+        plugins:{{
+          legend:{{display:true,position:'bottom',labels:{{font:{{size:11}},padding:10}}}},
+          tooltip:{{mode:'index',intersect:false}},
+          datalabels:{{
+            display: ctx => ctx.datasetIndex===0 && ctx.dataset.data[ctx.dataIndex]>0,
+            color:'#333', font:{{size:9,weight:'600'}},
+            anchor:'end', align:'end', clamp:true,
+            formatter: v => v>0 ? Math.round(v).toLocaleString('es-CL') : '',
+          }}
+        }},
+        scales:{{
+          x:{{ticks:{{font:{{size:10}}}},grid:{{color:'#f0f0f0'}}}},
+          y:{{ticks:{{font:{{size:10}},maxRotation:0}}}}
+        }}
+      }}
+    }});
+  }}
+
+  // ── Gráfico pie: distribución de DMCS ──
+  destroyChart('chart-dmcs-pie');
+  const ctxPie = document.getElementById('chart-dmcs-pie');
+  if(ctxPie && dmcsOrdenados.length > 0) {{
+    charts['chart-dmcs-pie'] = new Chart(ctxPie, {{
+      type:'doughnut',
+      data:{{
+        labels: dmcsOrdenados.map(([k]) => k.length>30?k.substring(0,30)+'…':k),
+        datasets:[{{
+          data: dmcsOrdenados.map(([,v])=>v),
+          backgroundColor: dmcsOrdenados.map((_,i)=>DMCS_COLORES[i%DMCS_COLORES.length]),
+          borderWidth:2, borderColor:'#fff'
+        }}]
+      }},
+      plugins:[ChartDataLabels],
+      options:{{
+        responsive:true, maintainAspectRatio:true,
+        plugins:{{
+          legend:{{position:'right',labels:{{font:{{size:10}},padding:8}}}},
+          tooltip:{{callbacks:{{label:ctx=>`${{ctx.label}}: ${{Math.round(ctx.parsed).toLocaleString('es-CL')}}`}}}},
+          datalabels:{{
+            display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+            color:'#fff', font:{{size:9,weight:'700'}},
+            formatter: (v,ctx) => {{
+              const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+              return total>0?(v/total*100).toFixed(1)+'%':'';
+            }}
+          }}
+        }}
+      }}
+    }});
+  }}
+
+  // ── Tabla: DMCS por región ──
+  // Agrupar por región y delito
+  const porRegion = {{}};
+  soloDmcs.forEach(d => {{
+    if(!porRegion[d.nombre_region]) porRegion[d.nombre_region] = [];
+    porRegion[d.nombre_region].push(d);
+  }});
+
+  const cols = ['Región','Total DMCS año','Var. %','DMCS última sem.','DMCS 28 días','Delito más grave'];
+  let thead = '<thead><tr>'+cols.map((c,i)=>
+    i===0?`<th>${{c}}</th>`:`<th onclick="sortDT('tabla-dmcs',${{i}})">${{c}}</th>`
+  ).join('')+'</tr></thead>';
+  let tbody = '<tbody>';
+
+  const regionesOrdenadas = Object.entries(porRegion)
+    .sort((a,b) => b[1].reduce((s,d)=>s+(d.anno_fecha||0),0) - a[1].reduce((s,d)=>s+(d.anno_fecha||0),0));
+
+  regionesOrdenadas.forEach(([reg, delitos]) => {{
+    const totAnno  = delitos.reduce((s,d)=>s+(d.anno_fecha||0),0);
+    const totAnt   = delitos.reduce((s,d)=>s+(d.anno_fecha_ant||0),0);
+    const varR     = totAnt>0 ? ((totAnno-totAnt)/totAnt*100) : null;
+    const totSem   = delitos.reduce((s,d)=>s+(d.ultima_semana||0),0);
+    const tot28    = delitos.reduce((s,d)=>s+(d.dias28||0),0);
+    // Delito con mayor umbral (más alarmante)
+    const masGrave = [...delitos].sort((a,b)=>(b.umbral||0)-(a.umbral||0))[0];
+    const cc = clsCambio(varR);
+    const umbralCls = masGrave?.umbral > 1.5 ? 'neg' : masGrave?.umbral > 0.5 ? 'amber' : '';
+    tbody += `<tr>
+      <td>${{reg}}</td>
+      <td>${{num(totAnno)}}</td>
+      <td class="${{cc}}">${{fmtCambio(varR)}}</td>
+      <td>${{num(totSem)}}</td>
+      <td>${{num(tot28)}}</td>
+      <td style="text-align:left;font-size:11px" class="${{umbralCls}}">${{masGrave?masGrave.nombre_delito:'—'}}</td>
+    </tr>`;
+  }});
+  tbody += '</tbody>';
+  document.getElementById('tabla-dmcs').innerHTML = thead+tbody;
+
+  // ── Gráfico evolución — llamar función separada para poder re-renderizar ──
+  renderDMCSEvo();
+}}
+
+// ── Función dedicada al gráfico de evolución (permite refrescar sin re-render completo) ──
+function renderDMCSEvo() {{
+  const delFiltro  = document.getElementById('dmcs-delito').value;
+  const regFiltro  = document.getElementById('dmcs-region').value;
+  const metrica    = document.getElementById('dmcs-evo-metrica')?.value || 'ultima_semana';
+  const comparar   = document.getElementById('dmcs-evo-comparar')?.value || 'no';
+
+  // Mapeo de campo: año actual vs campo año anterior en el mismo registro
+  const campoActual = metrica;                   // ultima_semana | dias28 | anno_fecha
+  const campoAnt    = metrica + '_ant';          // ultima_semana_ant | dias28_ant | anno_fecha_ant
+
+  const metricaLabel = {{
+    ultima_semana: 'Casos última semana',
+    dias28:        'Casos últimos 28 días',
+    anno_fecha:    'Casos año a la fecha',
+  }}[metrica] || metrica;
+
+  const semanasEvo = SEG.semanas;
+  const evoLabels  = semanasEvo.map(s => s.semana);
+
+  // Años disponibles en los datos para el título
+  const annoActual = semanasEvo.length ? (semanasEvo[semanasEvo.length-1].anno || '') : '';
+  const annoAnt    = annoActual ? annoActual - 1 : '';
+
+  document.getElementById('dmcs-evo-title').textContent =
+    `Evolución semanal DMCS — ${{metricaLabel}}${{regFiltro?' · '+regFiltro:''}}`;
+  document.getElementById('dmcs-evo-nota').textContent =
+    comparar === 'si'
+      ? `Línea sólida = ${{annoActual}} · Línea punteada = ${{annoAnt}} (dato "año anterior" guardado en cada registro).`
+      : '';
+
+  const dmcsParaEvo = delFiltro ? [delFiltro] : DMCS_LISTA.slice(0, 6);
+
+  const evoDatasets = [];
+
+  dmcsParaEvo.forEach((nombreDmcs, i) => {{
+    const color = DMCS_COLORES[DMCS_LISTA.indexOf(nombreDmcs) % DMCS_COLORES.length];
+    const labelBase = nombreDmcs.length > 28 ? nombreDmcs.substring(0,28)+'…' : nombreDmcs;
+
+    // ── Año actual ──
+    const dataActual = semanasEvo.map(s => {{
+      const filas = DELITOS.datos.filter(d =>
+        d.id_semana === s.id_semana &&
+        d.nombre_delito === nombreDmcs &&
+        (regFiltro === '' || d.nombre_region === regFiltro)
+      );
+      return filas.reduce((a, d) => a + (d[campoActual] || 0), 0);
+    }});
+
+    evoDatasets.push({{
+      label: comparar === 'si' ? `${{labelBase}} (${{annoActual}})` : labelBase,
+      data: dataActual,
+      borderColor: color,
+      backgroundColor: color.replace('.8)', '.08)'),
+      fill: dmcsParaEvo.length === 1,  // Área solo si es un único delito
+      tension: .35,
+      pointRadius: semanasEvo.length > 20 ? 2 : 4,
+      pointHoverRadius: 6,
+      borderWidth: 2.5,
+      borderDash: [],
+    }});
+
+    // ── Año anterior (si está activado) ──
+    if(comparar === 'si') {{
+      const dataAnt = semanasEvo.map(s => {{
+        const filas = DELITOS.datos.filter(d =>
+          d.id_semana === s.id_semana &&
+          d.nombre_delito === nombreDmcs &&
+          (regFiltro === '' || d.nombre_region === regFiltro)
+        );
+        return filas.reduce((a, d) => a + (d[campoAnt] || 0), 0);
+      }});
+
+      evoDatasets.push({{
+        label: `${{labelBase}} (${{annoAnt}})`,
+        data: dataAnt,
+        borderColor: color,
+        backgroundColor: 'transparent',
+        fill: false,
+        tension: .35,
+        pointRadius: semanasEvo.length > 20 ? 1 : 3,
+        pointHoverRadius: 5,
+        borderWidth: 1.5,
+        borderDash: [6, 3],  // Línea punteada para año anterior
+      }});
+    }}
+  }});
+
+  destroyChart('chart-dmcs-evo');
+  const ctxEvo = document.getElementById('chart-dmcs-evo');
+  if(!ctxEvo) return;
+
+  charts['chart-dmcs-evo'] = new Chart(ctxEvo, {{
+    type: 'line',
+    data: {{labels: evoLabels, datasets: evoDatasets}},
+    options: {{
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: {{mode: 'index', intersect: false}},
+      plugins: {{
+        legend: {{
+          display: true,
+          position: 'bottom',
+          labels: {{
+            font: {{size: 10}},
+            padding: 10,
+            usePointStyle: true,
+            // Diferenciar visualmente sólido vs punteado en la leyenda
+            generateLabels: chart => {{
+              return chart.data.datasets.map((ds, i) => ({{
+                text: ds.label,
+                fillStyle: ds.borderColor,
+                strokeStyle: ds.borderColor,
+                lineWidth: ds.borderWidth,
+                lineDash: ds.borderDash || [],
+                hidden: !chart.isDatasetVisible(i),
+                datasetIndex: i,
+              }}));
+            }}
+          }}
+        }},
+        tooltip: {{
+          mode: 'index',
+          intersect: false,
+          callbacks: {{
+            label: ctx => ` ${{ctx.dataset.label}}: ${{Math.round(ctx.parsed.y).toLocaleString('es-CL')}}`,
+          }}
+        }},
+        datalabels: {{display: false}},
+      }},
+      scales: {{
+        x: {{
+          ticks: {{font: {{size: 10}}, maxRotation: 55, autoSkip: true, maxTicksLimit: 20}},
+          grid: {{display: false}},
+        }},
+        y: {{
+          ticks: {{font: {{size: 10}}}},
+          grid: {{color: '#f0f0f0'}},
+          title: {{display: true, text: metricaLabel, font: {{size: 10}}}},
+          beginAtZero: true,
+        }}
+      }}
+    }}
+  }});
 }}
 
 // ══════════════════════════════════════════════════════════════
@@ -1622,10 +2084,32 @@ function makeLine2(id,labels,datasets,tipo='line') {{
 // INIT
 // ══════════════════════════════════════════════════════════════
 window.onload = function() {{
-  // Seguridad
+  // Seguridad — semanas
   poblarSemana('res-semana', renderResumen);
   poblarSemana('op-semana', renderOperativo);
+  poblarSemana('dmcs-semana', renderDMCS);
   poblarRegionSeg('evo-seg-region', renderEvolucionSeg);
+
+  // Filtros región en Resumen y DMCS
+  ['res-region', 'dmcs-region'].forEach(selId => {{
+    const sel = document.getElementById(selId);
+    if(!sel) return;
+    SEG.regiones.forEach(r => {{
+      const o = document.createElement('option');
+      o.value = r; o.textContent = r; sel.appendChild(o);
+    }});
+  }});
+
+  // Filtro delito en DMCS — usar nombres reales de la DB si están disponibles
+  const selDelito = document.getElementById('dmcs-delito');
+  const listaDelitos = DELITOS.tiene_datos && DELITOS.nombres_delitos.length
+    ? DELITOS.nombres_delitos.filter(d => DMCS_LISTA.includes(d))
+    : DMCS_LISTA;
+  listaDelitos.forEach(d => {{
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d; selDelito.appendChild(o);
+  }});
+
   renderResumen();
 
   // PIB — selects de región
@@ -1661,6 +2145,9 @@ window.onload = function() {{
 
   // Censo — poblar selects
   poblarSelectsCenso();
+
+  // CASEN 2024
+  initCasen();
 }};
 </script>
 
@@ -1732,11 +2219,420 @@ window.onload = function() {{
 
   </div>
 </div><!-- /mod-empleo -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     MÓDULO: CASEN 2024
+══════════════════════════════════════════════════════════════ -->
+<div class="modulo" id="mod-casen">
+  <div class="tabs">
+    <div class="tab-casen active" onclick="setTabCasen('pobreza',this)">Pobreza por ingresos</div>
+    <div class="tab-casen" onclick="setTabCasen('severa',this)">Pobreza severa</div>
+    <div class="tab-casen" onclick="setTabCasen('multi',this)">Pobreza multidimensional</div>
+    <div class="tab-casen" onclick="setTabCasen('ingreso',this)">Ingresos</div>
+    <div class="tab-casen" onclick="setTabCasen('salud',this)">Salud</div>
+  </div>
+  <div class="content">
+
+    <!-- ═══ POBREZA POR INGRESOS ═══ -->
+    <div class="section active" id="casen-pobreza">
+      <div class="filtros">
+        <div class="fg"><label>Región</label><select id="cp-r" onchange="syncCS('cp-r');renderCasenPob()"></select></div>
+      </div>
+      <div class="kpi-grid" id="cp-kpi"></div>
+      <div class="grid2">
+        <div class="card"><h3>Evolución pobreza (% personas)</h3><canvas id="cp-evo" style="max-height:280px"></canvas></div>
+        <div class="card"><h3>Índices FGT: Brecha y Severidad</h3><canvas id="cp-fgt" style="max-height:280px"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Comparación regional 2024</h3>
+        <div class="tabla-wrap"><table class="dt" id="cp-tabla"></table></div>
+        <p class="nota">FGT1 = brecha promedio; FGT2 = severidad (pondera más a los más pobres). Fuente: CASEN 2024, MIDESO.</p>
+      </div>
+    </div>
+
+    <!-- ═══ POBREZA SEVERA ═══ -->
+    <div class="section" id="casen-severa">
+      <div class="filtros">
+        <div class="fg"><label>Región</label><select id="csv-r" onchange="syncCS('csv-r');renderCasenSevera()"></select></div>
+      </div>
+      <div class="kpi-grid" id="csv-kpi"></div>
+      <div class="grid2">
+        <div class="card"><h3>Distribución 2024 (% personas)</h3><canvas id="csv-pie" style="max-height:300px"></canvas></div>
+        <div class="card"><h3>Comparación 2022 vs 2024 por región</h3><canvas id="csv-comp" style="max-height:300px"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Ranking regional — Pobreza Severa 2024</h3>
+        <div class="tabla-wrap"><table class="dt" id="csv-tabla"></table></div>
+        <p class="nota">Pobreza severa: personas en situación simultánea de pobreza por ingresos y pobreza multidimensional.</p>
+      </div>
+    </div>
+
+    <!-- ═══ POBREZA MULTIDIMENSIONAL ═══ -->
+    <div class="section" id="casen-multi">
+      <div class="filtros">
+        <div class="fg"><label>Región</label><select id="cm-r" onchange="syncCS('cm-r');renderCasenMulti()"></select></div>
+      </div>
+      <div class="kpi-grid" id="cm-kpi"></div>
+      <div class="grid2">
+        <div class="card"><h3>Carencias por indicador 2024 (% hogares)</h3><canvas id="cm-car" style="max-height:360px"></canvas></div>
+        <div class="card"><h3>Contribución por dimensión 2024 (%)</h3><canvas id="cm-dim" style="max-height:300px"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Comparación regional — Incidencia multidimensional 2024</h3>
+        <div class="tabla-wrap"><table class="dt" id="cm-tabla"></table></div>
+        <p class="nota">Met. 2024 incluye nuevos indicadores vs met. 2015 (aprendizaje, alimentos, cuidados, trato igualitario, seguridad, conectividad).</p>
+      </div>
+    </div>
+
+    <!-- ═══ INGRESOS ═══ -->
+    <div class="section" id="casen-ingreso">
+      <div class="filtros">
+        <div class="fg"><label>Región</label><select id="ci-r" onchange="syncCS('ci-r');renderCasenIngreso()"></select></div>
+        <div class="fg"><label>Tipo de ingreso</label>
+          <select id="ci-tipo" onchange="renderCasenIngreso()">
+            <option value="Ingreso monetario">Ingreso monetario (total)</option>
+            <option value="Ingreso autónomo">Ingreso autónomo</option>
+            <option value="Ingreso del trabajo">Ingreso del trabajo</option>
+            <option value="Subsidios monetarios">Subsidios monetarios</option>
+          </select></div>
+      </div>
+      <div class="kpi-grid" id="ci-kpi"></div>
+      <div class="grid2">
+        <div class="card"><h3 id="ci-title">Evolución ingreso promedio hogares</h3><canvas id="ci-evo" style="max-height:260px"></canvas></div>
+        <div class="card"><h3>Pobreza relativa — % personas bajo 50% de la mediana</h3><canvas id="ci-prel" style="max-height:260px"></canvas></div>
+      </div>
+      <div class="card"><h3>Composición ingreso monetario 2024 — todas las regiones</h3><canvas id="ci-comp" style="max-height:260px"></canvas></div>
+      <div class="card">
+        <h3>Comparación regional — Ingresos 2024</h3>
+        <div class="tabla-wrap"><table class="dt" id="ci-tabla"></table></div>
+        <p class="nota">Cifras en $ de noviembre de cada año. Ingresos corregidos por no respuesta. Fuente: CASEN 2024.</p>
+      </div>
+    </div>
+
+    <!-- ═══ SALUD ═══ -->
+    <div class="section" id="casen-salud">
+      <div class="filtros">
+        <div class="fg"><label>Región</label><select id="cs-r" onchange="syncCS('cs-r');renderCasenSalud()"></select></div>
+        <div class="fg"><label>Tipo de prestación</label>
+          <select id="cs-prest-tipo" onchange="renderCasenPrest()">
+            <option value="Consulta médica general">Consulta médica general</option>
+            <option value="Consulta de urgencia">Consulta de urgencia</option>
+            <option value="Atención de salud mental">Atención de salud mental</option>
+            <option value="Consulta de especialidad">Consulta de especialidad</option>
+            <option value="Atención dental">Atención dental</option>
+            <option value="Exámenes de laboratorio">Exámenes de laboratorio</option>
+            <option value="Controles médicos">Controles médicos</option>
+            <option value="Hospitalizaciones/cirugías">Hospitalizaciones/cirugías</option>
+          </select></div>
+      </div>
+      <div class="kpi-grid" id="cs-kpi"></div>
+      <div class="grid2">
+        <div class="card"><h3>Sistema previsional 2024</h3><canvas id="cs-prev" style="max-height:280px"></canvas></div>
+        <div class="card"><h3>Evolución FONASA vs Isapre (%)</h3><canvas id="cs-fon" style="max-height:280px"></canvas></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Problemas para obtener atención médica (% Tuvo)</h3><canvas id="cs-prob" style="max-height:260px"></canvas></div>
+        <div class="card"><h3>Cobertura AUGE-GES (%)</h3><canvas id="cs-ges" style="max-height:260px"></canvas></div>
+      </div>
+      <div class="card"><h3 id="cs-prest-title">Prestaciones recibidas — comparación regional 2024</h3><canvas id="cs-prest" style="max-height:260px"></canvas></div>
+      <div class="card">
+        <h3>Comparación regional — Salud 2024</h3>
+        <div class="tabla-wrap"><table class="dt" id="cs-tabla"></table></div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /mod-casen -->
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CASEN 2024
+// ══════════════════════════════════════════════════════════════
+const CASEN = {data_casen_json};
+
+function casenReg(id){{return CASEN.datos[document.getElementById(id).value];}}
+function fp(v,d=1){{return v==null?'—':v.toFixed(d)+'%';}}
+function fm(v){{return v==null?'—':'$'+Math.round(v/1000).toLocaleString('es-CL')+' mil';}}
+function fdiff(v){{return v==null?'—':(v>0?'+':'')+v.toFixed(1)+' p.p.';}}
+function clsDiff(v){{return v==null?'':v<0?'pos':'neg';}}
+
+function syncCS(id){{
+  const v=document.getElementById(id).value;
+  ['cp-r','csv-r','cm-r','ci-r','cs-r'].forEach(x=>{{const e=document.getElementById(x);if(e)e.value=v;}});
+}}
+
+function poblarSelectsCasen(){{
+  ['cp-r','csv-r','cm-r','ci-r','cs-r'].forEach(id=>{{
+    const sel=document.getElementById(id);if(!sel)return;
+    CASEN.regiones.forEach(r=>{{const o=document.createElement('option');o.value=r;o.textContent=r;sel.appendChild(o);}});
+    sel.value='Metropolitana de Santiago';
+  }});
+}}
+
+function setTabCasen(tab,btn){{
+  document.querySelectorAll('.tab-casen').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#mod-casen .section').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('casen-'+tab).classList.add('active');
+  if(tab==='pobreza')  renderCasenPob();
+  if(tab==='severa')   renderCasenSevera();
+  if(tab==='multi')    renderCasenMulti();
+  if(tab==='ingreso')  renderCasenIngreso();
+  if(tab==='salud')    renderCasenSalud();
+}}
+
+function mkLineC(id,labels,datasets){{
+  destroyChart(id);const ctx=document.getElementById(id);if(!ctx)return;
+  charts[id]=new Chart(ctx,{{type:'line',data:{{labels,datasets}},options:{{
+    responsive:true,maintainAspectRatio:true,
+    plugins:{{legend:{{display:datasets.length>1,position:'bottom',labels:{{font:{{size:11}}}}}},tooltip:{{mode:'index',intersect:false}}}},
+    scales:{{x:{{ticks:{{font:{{size:10}},maxRotation:55}},grid:{{display:false}}}},y:{{ticks:{{font:{{size:10}}}},grid:{{color:'#f0f0f0'}}}}}}
+  }}}});
+}}
+function mkBarC(id,labels,datasets,horiz=false){{
+  destroyChart(id);const ctx=document.getElementById(id);if(!ctx)return;
+  charts[id]=new Chart(ctx,{{type:'bar',data:{{labels,datasets}},plugins:[ChartDataLabels],options:{{
+    responsive:true,maintainAspectRatio:true,indexAxis:horiz?'y':'x',
+    plugins:{{
+      legend:{{display:datasets.length>1,position:'bottom',labels:{{font:{{size:11}},padding:10}}}},
+      tooltip:{{mode:'index',intersect:false}},
+      datalabels:{{display:c=>{{const v=c.dataset.data[c.dataIndex];return v!=null&&Math.abs(v)>0.3;}},
+        color:'#fff',font:{{size:8,weight:'700'}},anchor:'center',align:'center',
+        formatter:v=>v==null?'':v.toFixed(1)+'%',clamp:true}}
+    }},
+    scales:{{
+      x:{{ticks:{{font:{{size:9}},maxRotation:horiz?0:55}},grid:{{display:horiz}}}},
+      y:{{ticks:{{font:{{size:10}}}},grid:{{color:'#f0f0f0'}}}}
+    }}
+  }}}});
+}}
+function mkBarHC(id,labels,datasets){{
+  destroyChart(id);const ctx=document.getElementById(id);if(!ctx)return;
+  charts[id]=new Chart(ctx,{{type:'bar',data:{{labels,datasets}},plugins:[ChartDataLabels],options:{{
+    responsive:true,maintainAspectRatio:true,indexAxis:'y',
+    plugins:{{legend:{{display:false}},tooltip:{{mode:'index',intersect:false}},
+      datalabels:{{display:c=>{{const v=c.dataset.data[c.dataIndex];return v!=null&&v>0.5;}},
+        color:'#333',font:{{size:8,weight:'600'}},anchor:'end',align:'end',clamp:true,formatter:v=>v==null?'':v.toFixed(1)+'%'}}}},
+    scales:{{x:{{ticks:{{font:{{size:9}}}},grid:{{color:'#f0f0f0'}},max:100}},y:{{ticks:{{font:{{size:9}}}}}}}}
+  }}}});
+}}
+function mkPieC(id,labels,data,colors){{
+  destroyChart(id);const ctx=document.getElementById(id);if(!ctx)return;
+  charts[id]=new Chart(ctx,{{type:'doughnut',data:{{labels,datasets:[{{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}}]}},
+    plugins:[ChartDataLabels],options:{{responsive:true,maintainAspectRatio:true,
+      plugins:{{legend:{{position:'right',labels:{{font:{{size:11}},padding:10}}}},
+        tooltip:{{callbacks:{{label:c=>' '+c.label+': '+c.parsed.toFixed(1)+'%'}}}},
+        datalabels:{{display:c=>c.dataset.data[c.dataIndex]>2,color:'#fff',font:{{size:9,weight:'700'}},formatter:v=>v.toFixed(1)+'%'}}
+    }}}}}});
+}}
+function cTHead(tId,cols){{
+  return '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${{c}}</th>`:`<th onclick="sortDT('${{tId}}',${{i}})">${{c}}</th>`).join('')+'</tr></thead>';
+}}
+function cTRow(vals,isAct,cls=[]){{
+  return `<tr style="${{isAct?'background:#fff7ed;font-weight:600':''}}">`+vals.map((v,i)=>`<td class="${{cls[i]||''}}">${{v}}</td>`).join('')+'</tr>';
+}}
+
+// ── POBREZA POR INGRESOS ──────────────────────────────────────
+function renderCasenPob(){{
+  const r=casenReg('cp-r');if(!r)return;
+  const pi=r.pobreza_ingresos, fgt=r.fgt, AÑOS=CASEN.años_pob;
+  const ext=pi['Pobreza extrema']||{{}}, nxt=pi['Pobreza no extrema']||{{}}, tot=pi['Pobreza total']||{{}};
+  const v24=tot['2024'], v22=tot['2022'], vx24=ext['2024']||0;
+  const d=v24!=null&&v22!=null?+(v24-v22).toFixed(2):null;
+  const fgt1=fgt['FGT1_Brecha']?.['2024'], fgt2=fgt['FGT2_Severidad']?.['2024'];
+  const cls=v=>v>15?'rojo':v>10?'amber':'verde';
+  document.getElementById('cp-kpi').innerHTML=
+    `<div class="kpi ${{cls(v24)}}"><div class="kpi-label">Pobreza total 2024</div><div class="kpi-value">${{fp(v24)}}</div><div class="kpi-sub">% personas</div></div>`+
+    `<div class="kpi ${{vx24>5?'rojo':'verde'}}"><div class="kpi-label">Pobreza extrema 2024</div><div class="kpi-value">${{fp(vx24)}}</div><div class="kpi-sub">% personas</div></div>`+
+    `<div class="kpi ${{d==null?'':d<0?'verde':'rojo'}}"><div class="kpi-label">Variación 2022→2024</div><div class="kpi-value">${{fdiff(d)}}</div><div class="kpi-sub">puntos porcentuales</div></div>`+
+    `<div class="kpi amber"><div class="kpi-label">Brecha FGT1 2024</div><div class="kpi-value">${{fp(fgt1,2)}}</div><div class="kpi-sub">índice</div></div>`+
+    `<div class="kpi rojo"><div class="kpi-label">Severidad FGT2 2024</div><div class="kpi-value">${{fp(fgt2,2)}}</div><div class="kpi-sub">índice</div></div>`+
+    `<div class="kpi azul"><div class="kpi-label">No pobreza 2024</div><div class="kpi-value">${{fp(pi['No pobreza']?.['2024'])}}</div><div class="kpi-sub">% personas</div></div>`;
+  mkLineC('cp-evo',AÑOS,[
+    {{label:'Pobreza extrema',data:AÑOS.map(a=>ext[a]||null),borderColor:'rgba(220,38,38,.9)',backgroundColor:'rgba(220,38,38,.08)',tension:.3,fill:true,pointRadius:3}},
+    {{label:'Pobreza no extrema',data:AÑOS.map(a=>nxt[a]||null),borderColor:'rgba(217,119,6,.9)',backgroundColor:'rgba(217,119,6,.08)',tension:.3,fill:true,pointRadius:3}}
+  ]);
+  mkLineC('cp-fgt',AÑOS,[
+    {{label:'FGT1: Brecha',data:AÑOS.map(a=>fgt['FGT1_Brecha']?.[a]||null),borderColor:'rgba(217,119,6,.9)',backgroundColor:'transparent',tension:.3,pointRadius:3}},
+    {{label:'FGT2: Severidad',data:AÑOS.map(a=>fgt['FGT2_Severidad']?.[a]||null),borderColor:'rgba(220,38,38,.9)',backgroundColor:'transparent',tension:.3,pointRadius:3}}
+  ]);
+  const isAct=document.getElementById('cp-r').value;
+  const rows=CASEN.regiones.map(rn=>{{
+    const d2=CASEN.datos[rn]; const p=d2.pobreza_ingresos, f=d2.fgt;
+    const t24=p['Pobreza total']?.['2024']||null, t22=p['Pobreza total']?.['2022']||null;
+    const dv=t24!=null&&t22!=null?+(t24-t22).toFixed(2):null;
+    return {{r:rn,tot:t24,ext:p['Pobreza extrema']?.['2024']||null,var:dv,b:f['FGT1_Brecha']?.['2024']||null,sv:f['FGT2_Severidad']?.['2024']||null}};
+  }}).sort((a,b)=>(b.tot||0)-(a.tot||0));
+  document.getElementById('cp-tabla').innerHTML=
+    cTHead('cp-tabla',['Región','Pobreza total 2024','Pobreza extrema 2024','Var. 2022→2024','FGT1 Brecha','FGT2 Severidad'])+
+    '<tbody>'+rows.map(x=>cTRow([x.r,fp(x.tot),fp(x.ext),fdiff(x.var),fp(x.b,2),fp(x.sv,2)],x.r===isAct,
+      ['',x.tot>15?'neg':x.tot<10?'pos':'',x.ext>5?'neg':'',clsDiff(x.var),'',''])).join('')+'</tbody>';
+}}
+
+// ── POBREZA SEVERA ────────────────────────────────────────────
+function renderCasenSevera(){{
+  const r=casenReg('csv-r');if(!r)return;
+  const ps=r.pobreza_severa;
+  const s24=ps['Pobreza Severa']?.['2024']||null, s22=ps['Pobreza Severa']?.['2022']||null;
+  const d=s24!=null&&s22!=null?+(s24-s22).toFixed(2):null;
+  document.getElementById('csv-kpi').innerHTML=
+    `<div class="kpi ${{s24>8?'rojo':s24>5?'amber':'verde'}}"><div class="kpi-label">Pobreza Severa 2024</div><div class="kpi-value">${{fp(s24)}}</div><div class="kpi-sub">% personas</div></div>`+
+    `<div class="kpi"><div class="kpi-label">Pobreza Severa 2022</div><div class="kpi-value">${{fp(s22)}}</div><div class="kpi-sub">% personas</div></div>`+
+    `<div class="kpi ${{d==null?'':d<0?'verde':'rojo'}}"><div class="kpi-label">Variación 2022→2024</div><div class="kpi-value">${{fdiff(d)}}</div><div class="kpi-sub">puntos porcentuales</div></div>`+
+    `<div class="kpi azul"><div class="kpi-label">Solo pob. ingresos 2024</div><div class="kpi-value">${{fp(ps['Sólo pobreza por ingresos']?.['2024'])}}</div><div class="kpi-sub">% personas</div></div>`;
+  mkPieC('csv-pie',['Pob. Severa','Solo ingresos','Solo multidim.','No pobreza'],
+    ['Pobreza Severa','Sólo pobreza por ingresos','Sólo pobreza multidimensional','No pobreza'].map(c=>ps[c]?.['2024']||0),
+    ['#dc2626','#f59e0b','#3b82f6','#16a34a']);
+  const lbls=CASEN.regiones.map(rn=>rn.replace('Metropolitana de Santiago','RM').replace('Arica y Parinacota','Arica'));
+  mkBarC('csv-comp',lbls,[
+    {{label:'2022',data:CASEN.regiones.map(rn=>CASEN.datos[rn].pobreza_severa['Pobreza Severa']?.['2022']||null),backgroundColor:'rgba(220,38,38,.3)',borderRadius:2}},
+    {{label:'2024',data:CASEN.regiones.map(rn=>CASEN.datos[rn].pobreza_severa['Pobreza Severa']?.['2024']||null),backgroundColor:'rgba(220,38,38,.85)',borderRadius:2}}
+  ]);
+  const isAct=document.getElementById('csv-r').value;
+  const rows=CASEN.regiones.map(rn=>{{
+    const d2=CASEN.datos[rn].pobreza_severa;
+    return {{r:rn,s24:d2['Pobreza Severa']?.['2024']||null,s22:d2['Pobreza Severa']?.['2022']||null,
+            ing:d2['Sólo pobreza por ingresos']?.['2024']||null,mu:d2['Sólo pobreza multidimensional']?.['2024']||null}};
+  }}).sort((a,b)=>(b.s24||0)-(a.s24||0));
+  document.getElementById('csv-tabla').innerHTML=
+    cTHead('csv-tabla',['Región','Pob. Severa 2024','Pob. Severa 2022','Solo Ingresos','Solo Multidim.'])+
+    '<tbody>'+rows.map(x=>cTRow([x.r,fp(x.s24),fp(x.s22),fp(x.ing),fp(x.mu)],x.r===isAct,
+      ['',(x.s24>8?'neg':x.s24<5?'pos':''),'','',''])).join('')+'</tbody>';
+}}
+
+// ── POBREZA MULTIDIMENSIONAL ──────────────────────────────────
+function renderCasenMulti(){{
+  const r=casenReg('cm-r');if(!r)return;
+  const mi=r.multi_incidencia, car=r.carencias, con=r.contribucion_dims;
+  const h24=mi.met2024_2024_hog, h22=mi.met2024_2022_hog, p24=mi.met2024_2024_per;
+  const d=h24!=null&&h22!=null?+(h24-h22).toFixed(2):null;
+  document.getElementById('cm-kpi').innerHTML=
+    `<div class="kpi ${{h24>20?'rojo':h24>12?'amber':'verde'}}"><div class="kpi-label">Incidencia hogares 2024</div><div class="kpi-value">${{fp(h24)}}</div><div class="kpi-sub">Met. 2024</div></div>`+
+    `<div class="kpi ${{p24>20?'rojo':p24>15?'amber':'verde'}}"><div class="kpi-label">Incidencia personas 2024</div><div class="kpi-value">${{fp(p24)}}</div><div class="kpi-sub">Met. 2024</div></div>`+
+    `<div class="kpi ${{d==null?'':d<0?'verde':'rojo'}}"><div class="kpi-label">Var. hogares 2022→2024</div><div class="kpi-value">${{fdiff(d)}}</div><div class="kpi-sub">puntos porcentuales</div></div>`+
+    `<div class="kpi azul"><div class="kpi-label">Met. 2015 comparación</div><div class="kpi-value">${{fp(mi.met2015_2024_hog)}}</div><div class="kpi-sub">% hogares 2024</div></div>`;
+  const inds=CASEN.indicadores_multi;
+  const indS=inds.map(i=>i.replace('Aprendizaje escolar en el establecimiento','Aprendizaje escolar').replace('Apoyo en cuidado de personas con dependencia funcional','Apoyo en cuidado'));
+  const pal=['#7c3aed','#8b5cf6','#a78bfa','#6d28d9','#dc2626','#ef4444','#f87171','#fca5a5',
+             '#2563eb','#3b82f6','#60a5fa','#93c5fd','#16a34a','#22c55e','#4ade80','#86efac',
+             '#d97706','#f59e0b','#fbbf24','#fde68a'];
+  mkBarHC('cm-car',indS,[{{label:'% hogares carentes',data:inds.map(i=>car[i]||null),backgroundColor:pal,borderRadius:3}}]);
+  const dims=CASEN.dimensiones_multi;
+  mkPieC('cm-dim',dims,dims.map(d2=>con[d2]||null),['#7c3aed','#dc2626','#2563eb','#16a34a','#f59e0b']);
+  const isAct=document.getElementById('cm-r').value;
+  const rows=CASEN.regiones.map(rn=>{{
+    const m=CASEN.datos[rn].multi_incidencia;
+    return {{r:rn,h24:m.met2024_2024_hog,h22:m.met2024_2022_hog,p24:m.met2024_2024_per,m15:m.met2015_2024_hog}};
+  }}).sort((a,b)=>(b.h24||0)-(a.h24||0));
+  document.getElementById('cm-tabla').innerHTML=
+    cTHead('cm-tabla',['Región','Hogares 2024 (met.2024)','Hogares 2022 (met.2024)','Personas 2024','Hogares 2024 (met.2015)'])+
+    '<tbody>'+rows.map(x=>cTRow([x.r,fp(x.h24),fp(x.h22),fp(x.p24),fp(x.m15)],x.r===isAct,
+      ['',(x.h24>20?'neg':x.h24<12?'pos':''),'','',''])).join('')+'</tbody>';
+}}
+
+// ── INGRESOS ──────────────────────────────────────────────────
+function renderCasenIngreso(){{
+  const r=casenReg('ci-r');if(!r)return;
+  const tipo=document.getElementById('ci-tipo').value;
+  const ing=r.ingresos[tipo]||{{}}, AÑOS=CASEN.años_ing;
+  const v24=ing['2024'], v22=ing['2022'];
+  const varN=v24!=null&&v22!=null?+((v24/v22-1)*100).toFixed(1):null;
+  const rm24=CASEN.datos['Metropolitana de Santiago'].ingresos[tipo]?.['2024']||null;
+  const brecha=v24!=null&&rm24!=null?+((v24/rm24-1)*100).toFixed(1):null;
+  const pr24=r.pob_relativa['Ingreso monetario']?.['2024']||null;
+  const aut24=r.composicion_ing['Ingreso autónomo']?.['2024']||null;
+  const sub24=r.composicion_ing['Subsidios monetarios']?.['2024']||null;
+  document.getElementById('ci-kpi').innerHTML=
+    `<div class="kpi azul"><div class="kpi-label">${{tipo}} 2024</div><div class="kpi-value">${{v24?'$'+Math.round(v24/1000).toLocaleString('es-CL')+' mil':'—'}}</div><div class="kpi-sub">promedio hogar</div></div>`+
+    `<div class="kpi ${{varN==null?'':varN>0?'verde':'rojo'}}"><div class="kpi-label">Var. nominal 2022→2024</div><div class="kpi-value">${{varN==null?'—':(varN>0?'+':'')+varN+'%'}}</div><div class="kpi-sub">pesos nominales</div></div>`+
+    `<div class="kpi ${{brecha==null?'azul':brecha>=0?'verde':'rojo'}}"><div class="kpi-label">Relación vs RM 2024</div><div class="kpi-value">${{brecha==null?'—':(brecha>0?'+':'')+brecha+'%'}}</div><div class="kpi-sub"></div></div>`+
+    `<div class="kpi ${{pr24>25?'rojo':pr24>18?'amber':'verde'}}"><div class="kpi-label">Pobreza relativa 2024</div><div class="kpi-value">${{fp(pr24)}}</div><div class="kpi-sub">< 50% mediana ing.mon.</div></div>`+
+    `<div class="kpi amber"><div class="kpi-label">Ingreso autónomo 2024</div><div class="kpi-value">${{fp(aut24)}}</div><div class="kpi-sub">% del ing. monetario</div></div>`+
+    `<div class="kpi rojo"><div class="kpi-label">Subsidios monetarios 2024</div><div class="kpi-value">${{fp(sub24)}}</div><div class="kpi-sub">% del ing. monetario</div></div>`;
+  document.getElementById('ci-title').textContent=tipo+' — evolución 2006–2024 ($ nominales)';
+  mkLineC('ci-evo',AÑOS,[{{label:tipo,data:AÑOS.map(a=>ing[a]||null),borderColor:'rgba(37,99,235,.9)',backgroundColor:'rgba(37,99,235,.08)',tension:.3,fill:true,pointRadius:4}}]);
+  mkLineC('ci-prel',CASEN.años_ing,[{{label:'% < 50% mediana',data:CASEN.años_ing.map(a=>r.pob_relativa['Ingreso monetario']?.[a]||null),borderColor:'rgba(220,38,38,.9)',backgroundColor:'rgba(220,38,38,.08)',tension:.3,fill:true,pointRadius:3}}]);
+  const lbls=CASEN.regiones.map(rn=>rn.replace('Metropolitana de Santiago','RM').replace('Arica y Parinacota','Arica'));
+  mkBarC('ci-comp',lbls,[
+    {{label:'Ingreso autónomo %',data:CASEN.regiones.map(rn=>CASEN.datos[rn].composicion_ing['Ingreso autónomo']?.['2024']||null),backgroundColor:'rgba(37,99,235,.75)',borderRadius:2}},
+    {{label:'Subsidios %',data:CASEN.regiones.map(rn=>CASEN.datos[rn].composicion_ing['Subsidios monetarios']?.['2024']||null),backgroundColor:'rgba(220,38,38,.7)',borderRadius:2}}
+  ]);
+  const isAct=document.getElementById('ci-r').value;
+  const fM=v=>v?'$'+Math.round(v/1000).toLocaleString('es-CL')+' mil':'—';
+  const rows=CASEN.regiones.map(rn=>{{
+    const d2=CASEN.datos[rn];
+    return {{r:rn,mon:d2.ingresos['Ingreso monetario']?.['2024']||null,trab:d2.ingresos['Ingreso del trabajo']?.['2024']||null,
+            pr:d2.pob_relativa['Ingreso monetario']?.['2024']||null,aut:d2.composicion_ing['Ingreso autónomo']?.['2024']||null}};
+  }}).sort((a,b)=>(b.mon||0)-(a.mon||0));
+  document.getElementById('ci-tabla').innerHTML=
+    cTHead('ci-tabla',['Región','Ing. monetario 2024','Ing. del trabajo 2024','Pob. relativa 2024','% Autónomo 2024'])+
+    '<tbody>'+rows.map(x=>cTRow([x.r,fM(x.mon),fM(x.trab),fp(x.pr),fp(x.aut)],x.r===isAct,['','','',x.pr>25?'neg':x.pr<18?'pos':'',''])).join('')+'</tbody>';
+}}
+
+// ── SALUD ─────────────────────────────────────────────────────
+function renderCasenPrest(){{
+  const tipoSel=document.getElementById('cs-prest-tipo').value;
+  document.getElementById('cs-prest-title').textContent=tipoSel+' — comparación regional 2024';
+  const lbls=CASEN.regiones.map(rn=>rn.replace('Metropolitana de Santiago','RM').replace('Arica y Parinacota','Arica'));
+  mkBarC('cs-prest',lbls,[{{label:'% personas que recibió',data:CASEN.regiones.map(rn=>CASEN.datos[rn].prestaciones[tipoSel]?.['2024']||null),backgroundColor:'rgba(37,99,235,.75)',borderRadius:3}}]);
+}}
+function renderCasenSalud(){{
+  const r=casenReg('cs-r');if(!r)return;
+  const prev=r.previsional, at=r.atencion_medica, prob=r.prob_atencion, ges=r.auge_ges;
+  const fon24=prev['Sistema Público FONASA']?.['2024']||null;
+  const isa24=prev['Isapre']?.['2024']||null;
+  const aten24=at['Sí']?.['2024']||null;
+  const prob24=prob['Tuvo']?.['2024']||null;
+  const ges24=ges['Si']?.['2024']||null;
+  document.getElementById('cs-kpi').innerHTML=
+    `<div class="kpi azul"><div class="kpi-label">FONASA 2024</div><div class="kpi-value">${{fp(fon24)}}</div><div class="kpi-sub">% afiliados</div></div>`+
+    `<div class="kpi"><div class="kpi-label">Isapre 2024</div><div class="kpi-value">${{fp(isa24)}}</div><div class="kpi-sub">% afiliados</div></div>`+
+    `<div class="kpi verde"><div class="kpi-label">Recibió atención médica</div><div class="kpi-value">${{fp(aten24)}}</div><div class="kpi-sub">ante problema de salud 2024</div></div>`+
+    `<div class="kpi ${{prob24>40?'rojo':prob24>30?'amber':'verde'}}"><div class="kpi-label">Tuvo problema p/ atenderse</div><div class="kpi-value">${{fp(prob24)}}</div><div class="kpi-sub">2024</div></div>`+
+    `<div class="kpi ${{ges24<70?'rojo':ges24<80?'amber':'verde'}}"><div class="kpi-label">Cubierto AUGE-GES 2024</div><div class="kpi-value">${{fp(ges24)}}</div><div class="kpi-sub">de quienes estuvieron en tto.</div></div>`;
+  const catsPrev=['Sistema Público FONASA','Isapre','FF.AA. y del Orden','Ninguno (particular)'];
+  mkPieC('cs-prev',catsPrev,catsPrev.map(c=>prev[c]?.['2024']||0),['#2563eb','#f59e0b','#6366f1','#94a3b8']);
+  const AÑOS_S=CASEN.años_sal;
+  mkLineC('cs-fon',AÑOS_S,[
+    {{label:'FONASA',data:AÑOS_S.map(a=>prev['Sistema Público FONASA']?.[a]||null),borderColor:'rgba(37,99,235,.9)',backgroundColor:'transparent',tension:.3,pointRadius:3}},
+    {{label:'Isapre',data:AÑOS_S.map(a=>prev['Isapre']?.[a]||null),borderColor:'rgba(217,119,6,.9)',backgroundColor:'transparent',tension:.3,pointRadius:3}}
+  ]);
+  const AÑOS_P=CASEN.años_prob;
+  mkLineC('cs-prob',AÑOS_P,[{{label:'% Tuvo problemas p/ atenderse',data:AÑOS_P.map(a=>prob['Tuvo']?.[a]||null),borderColor:'rgba(220,38,38,.9)',backgroundColor:'rgba(220,38,38,.08)',tension:.3,fill:true,pointRadius:4}}]);
+  const AÑOS_G=CASEN.años_ges;
+  mkLineC('cs-ges',AÑOS_G,[
+    {{label:'Sí cubierto',data:AÑOS_G.map(a=>ges['Si']?.[a]||null),borderColor:'rgba(22,163,74,.9)',backgroundColor:'rgba(22,163,74,.08)',tension:.3,fill:true,pointRadius:3}},
+    {{label:'No cubierto',data:AÑOS_G.map(a=>ges['No']?.[a]||null),borderColor:'rgba(220,38,38,.9)',backgroundColor:'transparent',tension:.3,pointRadius:3}}
+  ]);
+  renderCasenPrest();
+  const isAct=document.getElementById('cs-r').value;
+  const rows=CASEN.regiones.map(rn=>{{
+    const d2=CASEN.datos[rn];
+    return {{r:rn,fon:d2.previsional['Sistema Público FONASA']?.['2024']||null,
+            isa:d2.previsional['Isapre']?.['2024']||null,
+            aten:d2.atencion_medica['Sí']?.['2024']||null,
+            prob:d2.prob_atencion['Tuvo']?.['2024']||null,
+            ges:d2.auge_ges['Si']?.['2024']||null}};
+  }}).sort((a,b)=>(b.fon||0)-(a.fon||0));
+  document.getElementById('cs-tabla').innerHTML=
+    cTHead('cs-tabla',['Región','FONASA 2024','Isapre 2024','Recibió atención','Tuvo problemas','Cubierto AUGE-GES'])+
+    '<tbody>'+rows.map(x=>cTRow([x.r,fp(x.fon),fp(x.isa),fp(x.aten),fp(x.prob),fp(x.ges)],x.r===isAct,
+      ['','','',x.aten<85?'neg':'pos',x.prob>40?'neg':x.prob<25?'pos':'',x.ges<70?'neg':x.ges>80?'pos':''])).join('')+'</tbody>';
+}}
+
+function initCasen(){{
+  poblarSelectsCasen();
+  document.getElementById('ci-tipo').onchange=renderCasenIngreso;
+  document.getElementById('cs-prest-tipo').onchange=renderCasenPrest;
+}}
+</script>
+
 </body>
 </html>"""
 
 
-html = html.replace('{data_seg_json}', data_seg_json)           .replace('{data_pib_json}', data_pib_json)           .replace('{data_censo_json}', data_censo_json)           .replace('{data_emp_json}', data_emp_json)
+html = html.replace('{data_seg_json}', data_seg_json)           .replace('{data_delitos_json}', data_delitos_json)           .replace('{data_pib_json}', data_pib_json)           .replace('{data_censo_json}', data_censo_json)           .replace('{data_emp_json}', data_emp_json)           .replace('{data_casen_json}', data_casen_json)
 
 with open('dashboard.html', 'w', encoding='utf-8') as f:
     f.write(html)

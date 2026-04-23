@@ -1,145 +1,142 @@
 # Dashboard Regional Chile 🇨🇱
 
-Dashboard interactivo de indicadores regionales para las 16 regiones de Chile, desarrollado para la División de Coordinación Interministerial del Ministerio del Interior.
+Dashboard interactivo de indicadores regionales para las 16 regiones de Chile, desarrollado para la División de Coordinación Interministerial del Ministerio del Interior y Seguridad Pública.
 
 ## 🌐 Ver el dashboard
 
 **[👉 Abrir Dashboard](https://manuelcarvallo97-tech.github.io/dashboard-regional-chile/dashboard.html)**
 
-> Actualizado automáticamente cada vez que se sube un nuevo `dashboard.html`
+> `main` → producción (GitHub Pages) · `dev` → desarrollo activo
 
 ---
 
 ## 📊 Módulos disponibles
 
-| Módulo | Fuente | Frecuencia | Cobertura |
-|--------|--------|------------|-----------|
-| 🛡 Seguridad Pública | Carabineros · LeyStop | Semanal | 2026 |
-| 📈 PIB Regional | Banco Central de Chile | Trimestral / Anual | 2010–2024 |
-| 💼 Empleo | Banco Central de Chile / INE | Mensual | 2010–2026 |
-| 🏘 Censo 2024 | INE Chile | Puntual | 2024 |
+| Módulo | Fuente | Frecuencia | Cobertura | Estado |
+|--------|--------|------------|-----------|--------|
+| 🛡 Seguridad Pública | Carabineros · LeyStop | Semanal | 2026 | ✅ Activo |
+| 📈 PIB Regional | Banco Central de Chile | Trimestral / Anual | 2010–2025 | ✅ Activo |
+| 💼 Empleo | Banco Central de Chile / INE | Mensual | 2010–2026 | ✅ Activo |
+| 🏘 Censo 2024 | INE Chile | Puntual | 2024 | ✅ Activo |
+| 🏠 CASEN 2024 | MIDESO | Bienal | 2024 | ✅ Activo |
+
+### 🛡 Seguridad Pública — pestañas
+
+| Pestaña | Descripción |
+|---------|-------------|
+| Resumen por región | Casos año a la fecha, variación %, tasa por 100 mil hab. Filtro por semana y región. |
+| Evolución temporal | Serie histórica por región e indicador |
+| Actividad operativa | Controles, fiscalizaciones, incautaciones por región |
+| 🔴 DMCS | Delitos de Mayor Connotación Social — valores absolutos, comparación año anterior, evolución semanal con línea punteada año anterior |
 
 ---
 
-## 🗂 Estructura del repositorio
+## 🗂 Archivos clave
 
 ```
 📁 raíz del repositorio
-├── dashboard.html          ← Dashboard principal (se abre en GitHub Pages)
-├── README.md               ← Este archivo
-│
-├── 📁 scripts/             ← Scripts Python de descarga y generación
-│   ├── bce_api.py          ← Descarga PIB desde API Banco Central
-│   ├── bce_empleo.py       ← Descarga empleo regional desde API BCE
-│   ├── bcn_scraper.py      ← Scraping indicadores BCN SIIT
-│   ├── limpiar_datos.py    ← Limpieza y normalización de datos
-│   ├── leystop_scraper.py  ← Scraping seguridad desde LeyStop
-│   └── generar_dashboard.py← Genera dashboard.html desde SQLite
-│
-├── 📁 data/                ← Archivos de datos procesados
-│   └── censo_regiones.json ← Datos Censo 2024 procesados
-│
-└── 📁 docs/                ← Documentación adicional (opcional)
+├── dashboard.html                  ← Dashboard publicado en GitHub Pages
+├── README.md                       ← Este archivo
+├── generar_dashboard.py            ← Genera dashboard.html desde SQLite ⭐
+├── actualizar_datos.py             ← Descarga incremental BCE + LeyStop
+├── cargar_historico_delitos.py     ← Carga inicial tabla DMCS (correr 1 vez)
+├── parche_pdf_dashboard.py         ← Agrega botón Minuta PDF al dashboard
+├── actualizar_datos.bat            ← ⭐ Script principal de actualización
+├── desarrollar.bat                 ← Regenera HTML y sube a rama dev
+├── bce_api.py                      ← Descarga PIB desde API BCE
+├── bce_empleo.py                   ← Descarga empleo regional desde API BCE
+├── bcn_scraper.py                  ← Scraping BCN SIIT
+├── limpiar_datos.py                ← Limpieza y normalización datos BCE
+├── leystop_scraper.py              ← Scraping LeyStop histórico
+├── censo_regiones.json             ← Datos Censo 2024 procesados
+└── casen_regiones.json             ← Datos CASEN 2024 procesados
 ```
 
----
-
-## 🚀 Cómo actualizar el dashboard
-
-### Opción A — Subir solo el HTML (más simple)
-
-1. Corre los scrapers que necesites actualizar:
-   ```bash
-   python scripts/bce_empleo.py        # Actualiza empleo
-   python scripts/leystop_scraper.py   # Actualiza seguridad
-   ```
-
-2. Regenera el dashboard:
-   ```bash
-   python scripts/generar_dashboard.py
-   ```
-
-3. Sube `dashboard.html` a GitHub:
-   - Ve a tu repositorio en github.com
-   - Arrastra el archivo `dashboard.html` al repositorio
-   - Haz clic en **Commit changes**
-   - En ~1 minuto el sitio se actualiza automáticamente
-
-### Opción B — GitHub Desktop (recomendado)
-
-1. Instala [GitHub Desktop](https://desktop.github.com/)
-2. Clona este repositorio
-3. Copia los archivos actualizados a la carpeta local
-4. En GitHub Desktop: **Commit** → **Push origin**
+> `bcn_indicadores.db`, `env.local`, `*.db` → en `.gitignore`, nunca se suben
 
 ---
 
-## ⚙️ Instalación local
+## 🗄 Estructura SQLite (`bcn_indicadores.db`)
+
+| Tabla | Descripción | Filas aprox. |
+|-------|-------------|-------------|
+| `registros_leystop` | LeyStop — resumen semanal por región (top-5 delitos) | ~2.700 |
+| `registros_leystop_delitos` | LeyStop — 21 tipos de delito × semana × región | ~50.000 |
+| `leystop_semanas` | Catálogo de semanas LeyStop | ~175 |
+| `registros_bce` | BCE — PIB trimestral/anual por región | ~5.000 |
+| `registros_bce_empleo` | BCE — Empleo mensual por región | ~4.000 |
+| `registros_bcn` | BCN SIIT — indicadores varios | ~7.700 |
+| `bce_catalogo` | Catálogo de series BCE | — |
+| `registros_adis` | ADIS RSH — pendiente integración | vacía |
+
+---
+
+## 🚀 Flujo de trabajo
+
+### Actualización semanal de datos (producción)
+
+```
+Doble clic en actualizar_datos.bat
+```
+
+Hace todo: descarga BCE + LeyStop → genera HTML → aplica parche PDF → sube a `main` → publica en GitHub Pages.
+
+**Requisitos:**
+- Cable de red (el WiFi del Ministerio bloquea GitHub y LeyStop)
+- `git config http.sslVerify false` configurado al menos una vez
+
+### Desarrollo de mejoras al dashboard
+
+```
+Doble clic en desarrollar.bat
+```
+
+Regenera el HTML con los últimos cambios en `generar_dashboard.py` y sube a la rama `dev` (sin tocar producción).
+
+Cuando el cambio esté aprobado, pasar a producción:
+
+```bash
+git checkout main
+git merge dev
+git push origin main
+git checkout dev
+```
+
+### Carga histórica de delitos DMCS (solo una vez)
+
+```bash
+python cargar_historico_delitos.py
+```
+
+Descarga el array completo de 21 tipos de delito para todas las semanas disponibles en la DB. Tarda ~20 minutos. Es inteligente: si se interrumpe y se vuelve a correr, salta lo ya descargado.
+
+---
+
+## ⚙️ Instalación desde cero
 
 ### Requisitos
-- Python 3.10 o superior
-- Las siguientes librerías:
 
 ```bash
-pip install pandas requests selenium webdriver-manager python-dotenv
+pip install pandas requests python-dotenv
 ```
 
-### Credenciales (archivo `env.local`)
-
-Crea un archivo `env.local` en la carpeta `Scrap` con:
+### Credenciales (`env.local`)
 
 ```
-BDE_USER=tu@email.cl          # Usuario API Banco Central
-BDE_PASS=tucontraseña         # Contraseña API Banco Central
-USER=12345678                  # RUT sin puntos ni dígito verificador (para ADIS)
-PASS=tucontraseña             # Contraseña ADIS
+BDE_USER=tu@email.cl
+BDE_PASS=tucontraseña
 ```
 
-> ⚠️ **Nunca subas `env.local` o `bcn_indicadores.db` a GitHub** (ya están en `.gitignore`)
-
-### Ejecución completa desde cero
+### Primera ejecución completa
 
 ```bash
-# 1. Descargar datos BCE (PIB)
-python scripts/bce_api.py
-
-# 2. Descargar empleo regional
-python scripts/bce_empleo.py
-
-# 3. Descargar seguridad LeyStop
-python scripts/leystop_scraper.py
-
-# 4. Limpiar datos BCE
-python scripts/limpiar_datos.py
-
-# 5. Generar dashboard
-python scripts/generar_dashboard.py
-```
-
----
-
-## 🔧 Configurar GitHub Pages (primera vez)
-
-1. Ve a tu repositorio en github.com
-2. **Settings** → **Pages**
-3. En **Source** selecciona: `Deploy from a branch`
-4. En **Branch** selecciona: `main` y carpeta `/ (root)`
-5. Haz clic en **Save**
-6. Espera ~2 minutos y tu sitio estará en:
-   `https://[TU-USUARIO].github.io/[NOMBRE-REPO]/`
-
----
-
-## 📁 Archivos que NO se suben a GitHub
-
-Agrega estos al `.gitignore`:
-
-```
-env.local
-bcn_indicadores.db
-*.db
-__pycache__/
-*.pyc
+python bce_api.py                    # PIB regional
+python bce_empleo.py                 # Empleo regional
+python bcn_scraper.py                # Indicadores BCN
+python limpiar_datos.py              # Normalización BCE
+python leystop_scraper.py            # Seguridad histórico
+python cargar_historico_delitos.py   # Delitos desagregados
+python generar_dashboard.py          # Generar HTML
 ```
 
 ---
@@ -148,20 +145,34 @@ __pycache__/
 
 | Fuente | URL | Acceso |
 |--------|-----|--------|
-| Banco Central de Chile (BDE) | [si3.bcentral.cl](https://si3.bcentral.cl) | Requiere registro gratuito |
+| Banco Central de Chile | [si3.bcentral.cl](https://si3.bcentral.cl) | Registro gratuito |
 | BCN SIIT | [siit.bcn.cl](https://siit.bcn.cl) | Público |
 | LeyStop Carabineros | [leystop.carabineros.cl](https://leystop.carabineros.cl) | Público |
-| ADIS RSH | [adis.gob.cl](https://adis.gob.cl) | Requiere cuenta institucional |
 | Censo 2024 INE | [ine.gob.cl](https://ine.gob.cl) | Público |
+| CASEN 2024 MIDESO | [observatorio.ministeriodesarrollosocial.gob.cl](https://observatorio.ministeriodesarrollosocial.gob.cl) | Público |
+| ADIS RSH | [adis.gob.cl](https://adis.gob.cl) | Cuenta institucional — pendiente |
 
 ---
 
 ## 📝 Notas técnicas
 
-- El dashboard es un **HTML autónomo** — no requiere servidor ni base de datos para visualizarse
-- Todos los datos están embebidos en el HTML al momento de generarlo
-- Compatible con Chrome, Firefox, Edge y Safari modernos
-- Optimizado para pantallas ≥1280px
+- El dashboard es un **HTML autónomo** — todos los datos están embebidos al momento de generar. No requiere servidor ni conexión para visualizarse.
+- Compatible con Chrome, Firefox, Edge y Safari modernos.
+- Optimizado para pantallas ≥ 1280px.
+- SSL del Ministerio requiere `verify=False` en requests a LeyStop y `git config http.sslVerify false` para GitHub.
+
+---
+
+## 📋 Changelog
+
+| Versión | Fecha | Cambios |
+|---------|-------|---------|
+| 1.0 | Ene 2026 | Dashboard inicial: PIB, Empleo, Censo, Seguridad básica |
+| 1.1 | Feb 2026 | Módulo CASEN 2024 |
+| 1.2 | Abr 2026 | Pestaña DMCS con datos reales de LeyStop Registros |
+| 1.2 | Abr 2026 | Filtro de región en Resumen de Seguridad |
+| 1.2 | Abr 2026 | Comparación año anterior en evolución DMCS |
+| 1.2 | Abr 2026 | Rama `dev` / `main` para desarrollo vs producción |
 
 ---
 
