@@ -173,6 +173,7 @@ python generar_dashboard.py          # Generar HTML
 | 1.2 | Abr 2026 | Filtro de región en Resumen de Seguridad |
 | 1.2 | Abr 2026 | Comparación año anterior en evolución DMCS |
 | 1.2 | Abr 2026 | Rama `dev` / `main` para desarrollo vs producción |
+| 1.2 | Apr 2026 | Se refactorizó completamente el módulo PIB Regional del dashboard para trabajar exclusivamente en términos reales: se corrigió un bug que mezclaba series anuales y trimestrales causando valores inflados en el primer trimestre de cada año, se eliminaron los indicadores en pesos corrientes reemplazándolos por volumen encadenado a precios del año anterior en toda la cadena de cálculo (Python y JavaScript), y se agregaron dos nuevas métricas a las tablas de Sectores productivos y Resumen nacional: la variación interanual real por cada período del rango seleccionado (vs mismo trimestre del año anterior en frecuencia trimestral) y el CAGR calculado dinámicamente según los filtros de año definidos por el usuario. |
 
 ---
 

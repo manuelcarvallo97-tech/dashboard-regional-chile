@@ -91,11 +91,14 @@ except Exception as e:
 # ══════════════════════════════════════════════════════════════════════════════
 SECTORES_TRIM = ["PIB","PIB Producción de bienes","PIB Minería",
     "PIB Industria manufacturera","PIB Resto de bienes","PIB Comercio","PIB Servicios"]
-SECTORES_CORR = ["PIB","PIB Agropecuario-silvícola","PIB Minería",
+# Sectores con datos encadenados anuales (series empalmadas, volumen a precios año anterior)
+SECTORES_ENC_ANUAL = ["PIB","PIB Agropecuario-silvícola","PIB Minería",
     "PIB Industria manufacturera","PIB Construcción","PIB Comercio",
     "PIB Servicios financieros y empresariales","PIB Servicios personales",
     "PIB Administración pública","PIB Restaurantes y hoteles",
     "PIB Electricidad, gas y agua","PIB Pesca"]
+# Mantenemos SECTORES_CORR solo como alias para compatibilidad interna
+SECTORES_CORR = SECTORES_ENC_ANUAL
 UNIDAD_CORR = "miles de millones de pesos corrientes (base 2018)"
 UNIDAD_ENC  = "miles de millones de pesos encadenados"
 
@@ -118,6 +121,16 @@ def sk(t):
     try: return int(t)*10
     except: return 99999
 
+def _extraer_mes(p):
+    """Extrae el mes numérico del campo periodo (formato DD-MM-YYYY)."""
+    try: return int(p.split('-')[1])
+    except: return None
+
+def _extraer_año(p):
+    """Extrae el año del campo periodo (formato DD-MM-YYYY)."""
+    try: return p.split('-')[2]
+    except: return None
+
 def leer_por_region(indicador_limpio, unidad_limpia, freq):
     df = q(f"""SELECT nombre_region, periodo, valor_corregido as valor
         FROM registros_bce
@@ -125,10 +138,45 @@ def leer_por_region(indicador_limpio, unidad_limpia, freq):
         AND nombre_region IS NOT NULL AND valor_corregido IS NOT NULL
         ORDER BY nombre_region, periodo""")
     if df.empty: return {}
+    df['mes'] = df['periodo'].apply(_extraer_mes)
+    df['año'] = df['periodo'].apply(_extraer_año)
+
+    if freq == 'trimestral':
+        # Solo meses de inicio de trimestre
+        df = df[df['mes'].isin([1, 4, 7, 10])].copy()
+        # Verificar que sea una serie verdaderamente trimestral:
+        # Para cada (region, año) deben existir exactamente 4 trimestres.
+        # Si una región/año tiene solo mes=1, es una serie anual disfrazada → excluir.
+        conteo = df.groupby(['nombre_region', 'año'])['mes'].count().reset_index()
+        conteo.columns = ['nombre_region', 'año', 'n_trim']
+        df = df.merge(conteo, on=['nombre_region', 'año'])
+        df = df[df['n_trim'] >= 3].copy()  # ≥3 trimestres = serie trimestral válida
+    else:  # anual
+        # Solo mes=1 (inicio del período anual)
+        df = df[df['mes'] == 1].copy()
+        # Excluir años donde también hay datos trimestrales (mes 4,7,10 en la misma serie):
+        # Detectar qué años tienen múltiples trimestres
+        df_all = q(f"""SELECT nombre_region, periodo, valor_corregido
+            FROM registros_bce
+            WHERE indicador_limpio='{indicador_limpio}' AND unidad_limpia='{unidad_limpia}'
+            AND nombre_region IS NOT NULL AND valor_corregido IS NOT NULL""")
+        df_all['mes'] = df_all['periodo'].apply(_extraer_mes)
+        df_all['año'] = df_all['periodo'].apply(_extraer_año)
+        # Contar trimestres distintos por (region, año)
+        conteo_all = df_all.groupby(['nombre_region', 'año'])['mes'].count().reset_index()
+        conteo_all.columns = ['nombre_region', 'año', 'n_obs']
+        años_trim = conteo_all[conteo_all['n_obs'] >= 3][['nombre_region', 'año']].drop_duplicates()
+        # Excluir esos años de la serie anual (son trimestrales, no anuales)
+        df = df.merge(años_trim, on=['nombre_region', 'año'], how='left', indicator=True)
+        df = df[df['_merge'] == 'left_only'].drop(columns=['_merge'])
+
     df['label'] = df['periodo'].apply(lambda p: periodo_a_label(p, freq))
     pr = {}
     for reg in df['nombre_region'].unique():
-        pr[reg] = df[df['nombre_region']==reg][['label','valor']].set_index('label')['valor'].to_dict()
+        sub = df[df['nombre_region'] == reg][['label', 'valor']].copy()
+        # Ante duplicados residuales, tomar el primero (no sumar)
+        sub = sub.drop_duplicates(subset='label', keep='first')
+        pr[reg] = sub.set_index('label')['valor'].to_dict()
     return pr
 
 def leer_nacional(indicador_limpio, unidad_limpia, freq):
@@ -138,8 +186,26 @@ def leer_nacional(indicador_limpio, unidad_limpia, freq):
         AND nombre_region IS NULL AND valor_corregido IS NOT NULL
         ORDER BY periodo""")
     if df.empty: return {}
+    df['mes'] = df['periodo'].apply(_extraer_mes)
+    df['año'] = df['periodo'].apply(_extraer_año)
+
+    if freq == 'trimestral':
+        df = df[df['mes'].isin([1, 4, 7, 10])].copy()
+        conteo = df.groupby('año')['mes'].count().reset_index()
+        conteo.columns = ['año', 'n_trim']
+        df = df.merge(conteo, on='año')
+        df = df[df['n_trim'] >= 3].copy()
+    else:
+        df = df[df['mes'] == 1].copy()
+        conteo_all = df.groupby('año')['mes'].count().reset_index()
+        conteo_all.columns = ['año', 'n_obs']
+        años_trim = conteo_all[conteo_all['n_obs'] >= 3][['año']].drop_duplicates()
+        df = df.merge(años_trim, on='año', how='left', indicator=True)
+        df = df[df['_merge'] == 'left_only'].drop(columns=['_merge'])
+
     df['label'] = df['periodo'].apply(lambda p: periodo_a_label(p, freq))
-    return df[['label','valor']].set_index('label')['valor'].to_dict()
+    df = df.drop_duplicates(subset='label', keep='first')
+    return df.set_index('label')['valor'].to_dict()
 
 datos_trim = {}
 for sector in SECTORES_TRIM:
@@ -151,19 +217,26 @@ for sector in SECTORES_TRIM:
 extra_trim_enc   = leer_nacional('Extrarregional', UNIDAD_ENC, 'trimestral')
 subtotal_trim_enc = leer_nacional('PIB subtotal regionalizado', UNIDAD_ENC, 'trimestral')
 
-datos_corr = {}
-for sector in SECTORES_CORR:
-    pr = leer_por_region(sector, UNIDAD_CORR, 'anual')
-    if pr: datos_corr[sector] = pr
+# ── Datos anuales: encadenados (volumen a precios año anterior, series empalmadas) ──
+datos_enc_anual = {}
+for sector in SECTORES_ENC_ANUAL:
+    pr = leer_por_region(sector, UNIDAD_ENC, 'anual')
+    if pr: datos_enc_anual[sector] = pr
 
-extra_corr    = leer_nacional('Extrarregional', UNIDAD_CORR, 'anual')
-subtotal_corr = leer_nacional('PIB subtotal regionalizado', UNIDAD_CORR, 'anual')
+# Alias para no romper referencias internas
+datos_corr = datos_enc_anual
+
+extra_enc_anual    = leer_nacional('Extrarregional', UNIDAD_ENC, 'anual')
+subtotal_enc_anual = leer_nacional('PIB subtotal regionalizado', UNIDAD_ENC, 'anual')
+extra_corr    = extra_enc_anual
+subtotal_corr = subtotal_enc_anual
 
 periodos_trim_raw = sorted(
     q("SELECT DISTINCT periodo FROM registros_bce WHERE indicador_limpio='PIB' AND unidad_limpia='Porcentaje' AND nombre_region IS NOT NULL")['periodo'].tolist())
 trimestres = sorted(set(periodo_a_label(p,'trimestral') for p in periodos_trim_raw), key=sk)
 años_trim  = sorted(set(t.split('.')[1] for t in trimestres))
-años_corr  = sorted(set(yr for rd in datos_corr.values() for rv in rd.values() for yr in rv.keys()))
+años_enc_anual = sorted(set(yr for rd in datos_enc_anual.values() for rv in rd.values() for yr in rv.keys()))
+años_corr = años_enc_anual
 
 # ══════════════════════════════════════════════════════════════════════════════
 # DATOS EMPLEO
@@ -240,16 +313,21 @@ data_delitos_json = json.dumps({
 data_pib_json = json.dumps({
     'regiones': regiones_pib,
     'años_trim': años_trim,
-    'años_corr': años_corr,
+    'años_enc_anual': años_enc_anual,
+    'años_corr': años_enc_anual,          # alias para compatibilidad JS
     'trimestres': trimestres,
     'sectores_trim': SECTORES_TRIM,
-    'sectores_corr': SECTORES_CORR,
+    'sectores_enc_anual': SECTORES_ENC_ANUAL,
+    'sectores_corr': SECTORES_ENC_ANUAL,  # alias
     'datos_trim': datos_trim,
-    'datos_corr': datos_corr,
+    'datos_enc_anual': datos_enc_anual,   # encadenados anuales (fuente de verdad)
+    'datos_corr': datos_enc_anual,        # alias
     'extra_trim_enc': extra_trim_enc,
-    'extra_corr': extra_corr,
+    'extra_enc_anual': extra_enc_anual,
+    'extra_corr': extra_enc_anual,        # alias
     'subtotal_trim_enc': subtotal_trim_enc,
-    'subtotal_corr': subtotal_corr,
+    'subtotal_enc_anual': subtotal_enc_anual,
+    'subtotal_corr': subtotal_enc_anual,  # alias
 }, ensure_ascii=False)
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -562,6 +640,7 @@ table.dt tr.nacional-row td{{background:#f0fdf4!important;font-weight:700;color:
       <div class="card">
         <h3 id="pib-sec-title">Sectores productivos</h3>
         <div class="tabla-wrap"><table class="dt" id="tabla-sec"></table></div>
+        <p class="nota" id="pib-sec-nota"></p>
       </div>
     </div>
 
@@ -1379,15 +1458,16 @@ function renderDMCSEvo() {{
 // ══════════════════════════════════════════════════════════════
 // PIB — helpers
 // ══════════════════════════════════════════════════════════════
+// Todos los indicadores usan volumen encadenado (precios año anterior, series empalmadas)
 const PIB_INDICADORES = {{
   anual: [
-    {{v:'corrientes', l:'Miles de millones de pesos corrientes'}},
-    {{v:'peso_corr',  l:'Peso % del PIB nacional (pesos corrientes)'}},
+    {{v:'miles_enc', l:'Miles de millones de pesos encadenados (vol.)'}},
+    {{v:'peso_enc',  l:'Peso % del PIB nacional (encadenados)'}},
   ],
   trimestral: [
     {{v:'var_pct',   l:'Variación % vs mismo trimestre año anterior'}},
-    {{v:'miles_enc', l:'Miles de millones de pesos encadenados'}},
-    {{v:'peso_enc',  l:'Peso % del PIB nacional (pesos encadenados)'}},
+    {{v:'miles_enc', l:'Miles de millones de pesos encadenados (vol.)'}},
+    {{v:'peso_enc',  l:'Peso % del PIB nacional (encadenados)'}},
   ]
 }};
 
@@ -1420,44 +1500,63 @@ function filtrarPib(ps, desde, hasta) {{
 }}
 function getCorr(sector,region,t)  {{ try{{return PIB.datos_corr[sector][region][t]??null;}}catch{{return null;}} }}
 function getTrim(sector,clave,region,t) {{ try{{return PIB.datos_trim[sector][clave][region][t]??null;}}catch{{return null;}} }}
+// getValPib: siempre usa encadenados.
+// - freq anual:      lee PIB.datos_enc_anual (volumen, series empalmadas)
+// - freq trimestral: lee PIB.datos_trim (encadenados trimestrales)
+// ind: 'miles_enc' → valor nominal encadenado | 'var_pct' → variación % | 'peso_enc' → % nac.
 function getValPib(sector,ind,region,t) {{
-  if(ind==='corrientes'||ind==='peso_corr') return getCorr(sector,region,t);
-  return getTrim(sector,ind==='peso_enc'?'miles_enc':ind,region,t);
+  // Determinar si el período es trimestral (contiene '.') o anual
+  const esTrim = String(t).includes('.');
+  if(esTrim) {{
+    return getTrim(sector, ind==='peso_enc'?'miles_enc':ind, region, t);
+  }} else {{
+    // Anual: siempre encadenados
+    try {{ return PIB.datos_enc_anual[sector][region][t]??null; }} catch{{ return null; }}
+  }}
+}}
+function getEncAnual(sector,region,t) {{
+  try {{ return PIB.datos_enc_anual[sector][region][t]??null; }} catch{{ return null; }}
 }}
 function getPIBNacional(ind,t) {{
-  if(ind==='peso_corr'||ind==='corrientes') {{
-    const sub=PIB.subtotal_corr[t]??null, ext=PIB.extra_corr[t]??null;
+  const esTrim = String(t).includes('.');
+  if(esTrim) {{
+    const sub=PIB.subtotal_trim_enc[t]??null, ext=PIB.extra_trim_enc[t]??null;
     if(sub===null&&ext===null) return null;
     return (sub||0)+(ext||0);
   }} else {{
-    const sub=PIB.subtotal_trim_enc[t]??null, ext=PIB.extra_trim_enc[t]??null;
+    // Anual: encadenados
+    const sub=PIB.subtotal_enc_anual[t]??null, ext=PIB.extra_enc_anual[t]??null;
     if(sub===null&&ext===null) return null;
     return (sub||0)+(ext||0);
   }}
 }}
 function calcPeso(sector,ind,region,t) {{
-  // Peso de cada sector sobre el PIB REGIONAL (no nacional)
-  const v=getValPib(sector,ind,region,t);
-  const pibReg=getValPib('PIB',ind,region,t);
-  if(v===null||!pibReg||pibReg===0) return null; return (v/pibReg)*100;
+  // % del sector sobre PIB REGIONAL — siempre en encadenados para coherencia
+  const esTrim = String(t).includes('.');
+  const v   = esTrim ? getTrim(sector,'miles_enc',region,t) : getEncAnual(sector,region,t);
+  const tot = esTrim ? getTrim('PIB','miles_enc',region,t)  : getEncAnual('PIB',region,t);
+  if(v===null||!tot||tot===0) return null;
+  return (v/tot)*100;
 }}
 function calcPesoNacional(region,ind,t) {{
-  const v=(ind==='peso_corr'||ind==='corrientes')?getCorr('PIB',region,t):getTrim('PIB',ind==='peso_enc'?'miles_enc':ind,region,t);
-  const total=getPIBNacional(ind,t);
+  const esTrim = String(t).includes('.');
+  const v   = esTrim ? getTrim('PIB','miles_enc',region,t) : getEncAnual('PIB',region,t);
+  const total = getPIBNacional(ind,t);
   if(v===null||!total) return null; return (v/total)*100;
 }}
 function fmtPib(v,ind) {{
   if(v===null||v===undefined) return '—';
-  if(['var_pct','peso_enc','peso_corr'].includes(ind)) return v.toFixed(2)+'%';
+  if(['var_pct','peso_enc'].includes(ind)) return v.toFixed(2)+'%';
+  if(ind==='cagr') return (v>0?'+':'')+v.toFixed(2)+'%';
   return Math.round(v).toLocaleString('es-CL');
 }}
 function colorClsPib(v,ind) {{
-  if(!['var_pct','peso_enc','peso_corr'].includes(ind)) return '';
+  if(!['var_pct','peso_enc','cagr'].includes(ind)) return '';
   return v>0?'pos':v<0?'neg':'';
 }}
-function getPeriodosPib(freq) {{ return freq==='anual'?PIB.años_corr:PIB.trimestres; }}
+function getPeriodosPib(freq) {{ return freq==='anual'?PIB.años_enc_anual:PIB.trimestres; }}
 function getSectoresPib(freq) {{ return freq==='anual'?PIB.sectores_corr:PIB.sectores_trim; }}
-function getAñosPib(freq) {{ return freq==='anual'?PIB.años_corr:PIB.años_trim; }}
+function getAñosPib(freq) {{ return freq==='anual'?PIB.años_enc_anual:PIB.años_trim; }}
 
 function setRegionPib(r) {{
   regionPibActual = r;
@@ -1502,7 +1601,7 @@ function renderEvolucionPib() {{
     return;
   }}
 
-  const esPeso = ind.startsWith('peso_');
+  const esPeso = ind === 'peso_enc';
   const vals   = esPeso ? ps.map(t=>calcPesoNacional(regionPibActual,ind,t)) : ps.map(t=>getValPib('PIB',ind,regionPibActual,t));
   const noNull = vals.filter(v=>v!==null);
   const ultimo = noNull[noNull.length-1];
@@ -1510,15 +1609,91 @@ function renderEvolucionPib() {{
   const prev   = freq==='anual'?noNull[noNull.length-2]:noNull[noNull.length-5];
   const lPrev  = freq==='anual'?ps.filter((_,i)=>vals[i]!==null).slice(-2)[0]:ps.filter((_,i)=>vals[i]!==null).slice(-5)[0];
   const prom   = noNull.length?noNull.reduce((a,b)=>a+b,0)/noNull.length:null;
+  const cagr   = calcCAGR('PIB', regionPibActual, desde, hasta, freq);
 
   let kh='';
   if(ultimo!==null) kh+=`<div class="kpi ${{ind==='var_pct'?(ultimo>=0?'verde':'rojo'):''}}"><div class="kpi-label">Último período</div><div class="kpi-value">${{fmtPib(ultimo,ind)}}</div><div class="kpi-sub">${{lUlt||''}}</div></div>`;
   if(prev!==null)   kh+=`<div class="kpi ${{ind==='var_pct'?(prev>=0?'verde':'rojo'):''}}"><div class="kpi-label">${{freq==='anual'?'Año anterior':'Mismo trim. año ant.'}}</div><div class="kpi-value">${{fmtPib(prev,ind)}}</div><div class="kpi-sub">${{lPrev||''}}</div></div>`;
-  if(prom!==null)   kh+=`<div class="kpi"><div class="kpi-label">Promedio período</div><div class="kpi-value">${{fmtPib(prom,ind)}}</div><div class="kpi-sub">${{desde}}–${{hasta}}</div></div>`;
+  if(prom!==null&&!esPeso) kh+=`<div class="kpi"><div class="kpi-label">Promedio período</div><div class="kpi-value">${{fmtPib(prom,ind)}}</div><div class="kpi-sub">${{desde}}–${{hasta}}</div></div>`;
+  if(cagr!==null) kh+=`<div class="kpi ${{cagr>=0?'verde':'rojo'}}"><div class="kpi-label">CAGR (vol. encadenado)</div><div class="kpi-value">${{fmtPib(cagr,'cagr')}}</div><div class="kpi-sub">${{desde}}–${{hasta}}</div></div>`;
   document.getElementById('pib-kpi-evo').innerHTML=kh;
 
   const bg=vals.map(v=>{{if(v===null)return'rgba(0,0,0,0)';if(['var_pct','peso_enc','peso_corr'].includes(ind))return v>=0?'rgba(22,163,74,.75)':'rgba(220,38,38,.75)';return'rgba(37,99,235,.75)';}});
   makeBarPib('pib-chart-evo',ps,[{{label:lbl,data:vals,backgroundColor:bg,borderRadius:3}}]);
+}}
+
+// ── Variación interanual encadenada ──────────────────────────
+// Calcula var% real (encadenados) de un sector/región respecto al año anterior.
+// Anual:      enc[año]  / enc[año-1]  - 1
+// Trimestral: enc[Trim.Año] / enc[Trim.Año-1] - 1
+function calcVarEnc(sector, region, t) {{
+  const esTrim = String(t).includes('.');
+  if(esTrim) {{
+    const [trim, yr] = t.split('.');
+    const tAnt = `${{trim}}.${{parseInt(yr)-1}}`;
+    const v1 = getTrim(sector,'miles_enc',region,t);
+    const v0 = getTrim(sector,'miles_enc',region,tAnt);
+    if(v1===null||v0===null||v0===0) return null;
+    return (v1/v0 - 1)*100;
+  }} else {{
+    const v1 = getEncAnual(sector,region,t);
+    const v0 = getEncAnual(sector,region,String(parseInt(t)-1));
+    if(v1===null||v0===null||v0===0) return null;
+    return (v1/v0 - 1)*100;
+  }}
+}}
+// Variación interanual para el total nacional (subtotal+extrarregional)
+function calcVarNacional(t) {{
+  const esTrim = String(t).includes('.');
+  const v1 = getPIBNacional('miles_enc',t);
+  let tAnt;
+  if(esTrim) {{
+    const [trim,yr] = t.split('.');
+    tAnt = `${{trim}}.${{parseInt(yr)-1}}`;
+  }} else {{
+    tAnt = String(parseInt(t)-1);
+  }}
+  const v0 = getPIBNacional('miles_enc',tAnt);
+  if(v1===null||v0===null||v0===0) return null;
+  return (v1/v0 - 1)*100;
+}}
+// Variación para extrarregional
+function calcVarExtra(t) {{
+  const esTrim = String(t).includes('.');
+  const v1 = esTrim ? (PIB.extra_trim_enc[t]??null) : (PIB.extra_enc_anual[t]??null);
+  let tAnt;
+  if(esTrim) {{ const [tr,yr]=t.split('.'); tAnt=`${{tr}}.${{parseInt(yr)-1}}`; }}
+  else {{ tAnt = String(parseInt(t)-1); }}
+  const v0 = esTrim ? (PIB.extra_trim_enc[tAnt]??null) : (PIB.extra_enc_anual[tAnt]??null);
+  if(v1===null||v0===null||v0===0) return null;
+  return (v1/v0 - 1)*100;
+}}
+
+// ── CAGR helper ───────────────────────────────────────────────
+// Calcula CAGR usando siempre encadenados (miles_enc) sin importar el ind activo.
+// Para freq anual: usa datos_enc_anual directamente.
+// Para freq trimestral: suma los 4 trimestres del primer y último año del rango
+//   para construir un valor anual comparable, luego aplica CAGR.
+function calcCAGR(sector, region, desde, hasta, freq) {{
+  if(freq === 'anual') {{
+    const v0 = getEncAnual(sector, region, desde);
+    const v1 = getEncAnual(sector, region, hasta);
+    const n  = parseInt(hasta) - parseInt(desde);
+    if(v0===null||v1===null||v0===0||n<=0) return null;
+    return (Math.pow(v1/v0, 1/n) - 1) * 100;
+  }} else {{
+    // Trimestral: sumar los 4 trimestres del año inicial y final
+    const sumaAnio = (yr) => {{
+      const ts = ['I','II','III','IV'].map(t => `${{t}}.${{yr}}`);
+      const vals = ts.map(t => getTrim(sector,'miles_enc',region,t)).filter(v=>v!==null);
+      return vals.length === 4 ? vals.reduce((a,b)=>a+b,0) : null;
+    }};
+    const v0 = sumaAnio(desde);
+    const v1 = sumaAnio(hasta);
+    const n  = parseInt(hasta) - parseInt(desde);
+    if(v0===null||v1===null||v0===0||n<=0) return null;
+    return (Math.pow(v1/v0, 1/n) - 1) * 100;
+  }}
 }}
 
 // ── Sectores PIB ──────────────────────────────────────────────
@@ -1532,18 +1707,68 @@ function renderSectores() {{
   const lbl   = PIB_INDICADORES[freq].find(o=>o.v===ind)?.l||ind;
   document.getElementById('pib-sec-title').textContent=(regionPibActual||'Región')+' — sectores — '+lbl;
   if(!regionPibActual){{document.getElementById('tabla-sec').innerHTML='<tr><td colspan="99" style="padding:20px;color:#aaa;text-align:center">Selecciona una región</td></tr>';return;}}
-  const esPeso=ind.startsWith('peso_');
-  let thead='<thead><tr><th>Sector</th>'+ps.map((p,i)=>`<th onclick="sortDT('tabla-sec',${{i+1}})">${{p}}</th>`).join('')+'</tr></thead>';
-  let tbody='<tbody>';
-  sects.forEach(sector=>{{
-    const esTotal=sector==='PIB';
-    const vals=ps.map(t=>esPeso?calcPeso(sector,ind,regionPibActual,t):getValPib(sector,ind,regionPibActual,t));
-    tbody+=`<tr><td class="${{esTotal?'total':''}}">${{DISP[sector]||sector}}</td>`;
-    vals.forEach(v=>{{const cc=v!==null?colorClsPib(v,ind):'';tbody+=`<td class="${{esTotal?'total':''}} ${{cc}}">${{fmtPib(v,ind)}}</td>`;}});
-    tbody+='</tr>';
+
+  const esPeso  = ind === 'peso_enc';
+  const añoDesde = desde;
+  const añoHasta = hasta;
+  const nAnios   = parseInt(añoHasta) - parseInt(añoDesde);
+  const lblCagr  = nAnios > 0 ? `CAGR ${{añoDesde}}–${{añoHasta}}` : 'CAGR';
+  const lblVar   = freq === 'anual' ? 'Var. interanual (%)' : 'Var. mismo trim. año ant. (%)';
+
+  // Encabezado: Sector | períodos... | CAGR
+  // Subencabezado: (vacío) | valor / var% alternados | —
+  let thead = '<thead>';
+  // Fila 1: títulos de columnas de período (cada período ocupa 2 columnas: valor + var%)
+  thead += '<tr>'
+    + '<th rowspan="2" style="vertical-align:middle">Sector</th>'
+    + ps.map(p => `<th colspan="2" style="text-align:center;border-left:1px solid #2d3a55">${{p}}</th>`).join('')
+    + `<th rowspan="2" onclick="sortDT('tabla-sec',${{ps.length*2+1}})" style="vertical-align:middle;background:#0f3460;border-left:2px solid #38bdf8;min-width:80px">${{lblCagr}}</th>`
+    + '</tr>';
+  // Fila 2: sub-encabezados valor / var% para cada período
+  thead += '<tr>'
+    + ps.map((_,i) =>
+        `<th onclick="sortDT('tabla-sec',${{i*2+1}})" style="font-size:10px;font-weight:500;border-left:1px solid #2d3a55">Vol. enc.</th>`
+      + `<th onclick="sortDT('tabla-sec',${{i*2+2}})" style="font-size:10px;font-weight:500;color:#38bdf8">${{freq==='anual'?'Var. %':'Var. %¹'}}</th>`
+    ).join('')
+    + '</tr>';
+  thead += '</thead>';
+
+  // CSS para colorear celdas de variación
+  const clsVar = v => v===null?'': v>0?'pos':'neg';
+
+  let tbody = '<tbody>';
+  sects.forEach(sector => {{
+    const esTotal = sector === 'PIB';
+    const nombreDisp = DISP[sector] || sector;
+
+    // Valores principales (encadenados o peso)
+    const vals = ps.map(t => esPeso ? calcPeso(sector,ind,regionPibActual,t)
+                                    : getValPib(sector,ind,regionPibActual,t));
+    // Variación interanual encadenada para cada período (siempre encadenados, ind irrelevante)
+    const vars = ps.map(t => esPeso ? null : calcVarEnc(sector, regionPibActual, t));
+    const cagr = calcCAGR(sector, regionPibActual, añoDesde, añoHasta, freq);
+
+    tbody += `<tr><td class="${{esTotal?'total':''}}" style="font-weight:${{esTotal?700:500}}">${{nombreDisp}}</td>`;
+    ps.forEach((_,i) => {{
+      const v   = vals[i];
+      const vr  = vars[i];
+      const ccV = v!==null  ? colorClsPib(v,ind) : '';
+      const ccR = vr!==null ? clsVar(vr)         : '';
+      tbody += `<td class="${{esTotal?'total':''}} ${{ccV}}" style="border-left:1px solid #e8e8e8">${{fmtPib(v,ind)}}</td>`;
+      tbody += `<td class="${{esTotal?'total':''}} ${{ccR}}" style="font-size:11px">${{vr!==null?(vr>0?'+':'')+vr.toFixed(1)+'%':'—'}}</td>`;
+    }});
+    const ccCagr = cagr!==null ? colorClsPib(cagr,'cagr') : '';
+    tbody += `<td class="${{esTotal?'total':''}} ${{ccCagr}}" style="border-left:2px solid #e0e7ff;font-weight:${{esTotal?700:600}}">${{fmtPib(cagr,'cagr')}}</td>`;
+    tbody += '</tr>';
   }});
-  tbody+='</tbody>';
-  document.getElementById('tabla-sec').innerHTML=thead+tbody;
+  tbody += '</tbody>';
+
+  document.getElementById('tabla-sec').innerHTML = thead + tbody;
+  const notaVar = freq==='trimestral' ? ' ¹Variación respecto al mismo trimestre del año anterior.' : '';
+  document.getElementById('pib-sec-nota').textContent =
+    `Volumen encadenado a precios del año anterior, series empalmadas.`
+    + (nAnios>0?` CAGR calculado sobre volumen encadenado (${{añoDesde}}→${{añoHasta}}, ${{nAnios}} año${{nAnios!==1?'s':''}}).`:'')
+    + notaVar;
 }}
 
 // ── Resumen PIB ───────────────────────────────────────────────
@@ -1554,26 +1779,116 @@ function renderResumenPib() {{
   const hasta = document.getElementById('pib-res-hasta').value;
   const ps    = filtrarPib(getPeriodosPib(freq),desde,hasta);
   const lbl   = PIB_INDICADORES[freq].find(o=>o.v===ind)?.l||ind;
-  const esPeso=ind.startsWith('peso_');
+  const esPeso = ind === 'peso_enc';
   document.getElementById('pib-res-title').textContent='PIB por región — '+lbl;
-  let thead='<thead><tr><th>Región</th>'+ps.map((p,i)=>`<th onclick="sortDT('tabla-res',${{i+1}})">${{p}}</th>`).join('')+'</tr></thead>';
-  let tbody='<tbody>';
-  PIB.regiones.forEach(reg=>{{
-    const vals=ps.map(t=>esPeso?calcPesoNacional(reg,ind,t):getValPib('PIB',ind,reg,t));
-    tbody+=`<tr><td>${{reg}}</td>`;
-    vals.forEach(v=>{{const cc=v!==null?colorClsPib(v,ind):'';tbody+=`<td class="${{cc}}">${{fmtPib(v,ind)}}</td>`;}});
-    tbody+='</tr>';
+
+  const añoDesde = desde;
+  const añoHasta = hasta;
+  const nAnios   = parseInt(añoHasta) - parseInt(añoDesde);
+  const lblCagr  = nAnios > 0 ? `CAGR ${{añoDesde}}–${{añoHasta}}` : 'CAGR';
+
+  const clsVar = v => v===null?'': v>0?'pos':'neg';
+
+  // Encabezado doble: por cada período, 2 columnas (vol. enc. + var%)
+  let thead = '<thead>';
+  thead += '<tr>'
+    + '<th rowspan="2" style="vertical-align:middle">Región</th>'
+    + ps.map(p => `<th colspan="2" style="text-align:center;border-left:1px solid #2d3a55">${{p}}</th>`).join('')
+    + `<th rowspan="2" onclick="sortDT('tabla-res',${{ps.length*2+1}})" style="vertical-align:middle;background:#0f3460;border-left:2px solid #38bdf8;min-width:80px">${{lblCagr}}</th>`
+    + '</tr>';
+  thead += '<tr>'
+    + ps.map((_,i) =>
+        `<th onclick="sortDT('tabla-res',${{i*2+1}})" style="font-size:10px;font-weight:500;border-left:1px solid #2d3a55">Vol. enc.</th>`
+      + `<th onclick="sortDT('tabla-res',${{i*2+2}})" style="font-size:10px;font-weight:500;color:#38bdf8">${{freq==='anual'?'Var. %':'Var. %¹'}}</th>`
+    ).join('')
+    + '</tr>';
+  thead += '</thead>';
+
+  // Filas regiones
+  let tbody = '<tbody>';
+  PIB.regiones.forEach(reg => {{
+    const vals = ps.map(t => esPeso ? calcPesoNacional(reg,ind,t) : getValPib('PIB',ind,reg,t));
+    const vars = ps.map(t => esPeso ? null : calcVarEnc('PIB', reg, t));
+    const cagr = calcCAGR('PIB', reg, añoDesde, añoHasta, freq);
+    tbody += `<tr><td>${{reg}}</td>`;
+    ps.forEach((_,i) => {{
+      const v  = vals[i];
+      const vr = vars[i];
+      const ccV = v!==null  ? colorClsPib(v,ind) : '';
+      const ccR = vr!==null ? clsVar(vr)         : '';
+      tbody += `<td class="${{ccV}}" style="border-left:1px solid #e8e8e8">${{fmtPib(v,ind)}}</td>`;
+      tbody += `<td class="${{ccR}}" style="font-size:11px">${{vr!==null?(vr>0?'+':'')+vr.toFixed(1)+'%':'—'}}</td>`;
+    }});
+    const ccCagr = cagr!==null ? colorClsPib(cagr,'cagr') : '';
+    tbody += `<td class="${{ccCagr}}" style="border-left:2px solid #e0e7ff;font-weight:600">${{fmtPib(cagr,'cagr')}}</td>`;
+    tbody += '</tr>';
   }});
-  const extraVals=ps.map(t=>{{
-    if(esPeso){{const vE=ind==='peso_corr'?PIB.extra_corr[t]:PIB.extra_trim_enc[t];const tot=getPIBNacional(ind,t);return(vE&&tot)?(vE/tot*100):null;}}
-    return ind==='corrientes'?PIB.extra_corr[t]:PIB.extra_trim_enc[t]??null;
+
+  // Extrarregional
+  const extraVals = ps.map(t => {{
+    if(esPeso) {{
+      const vE = String(t).includes('.') ? PIB.extra_trim_enc[t] : PIB.extra_enc_anual[t];
+      const tot = getPIBNacional(ind,t); return(vE&&tot)?(vE/tot*100):null;
+    }}
+    return String(t).includes('.') ? (PIB.extra_trim_enc[t]??null) : (PIB.extra_enc_anual[t]??null);
   }});
-  tbody+='<tr class="extra-row"><td>Extrarregional</td>'+extraVals.map(v=>{{const cc=v!==null?colorClsPib(v,ind):'';return`<td class="${{cc}}">${{fmtPib(v,ind)}}</td>`;}}).join('')+'</tr>';
-  const totalVals=ps.map(t=>{{const nac=getPIBNacional(ind,t);if(esPeso)return nac?100:null;return nac;}});
-  tbody+='<tr class="nacional-row"><td>Total nacional</td>'+totalVals.map(v=>`<td>${{fmtPib(v,ind)}}</td>`).join('')+'</tr>';
-  tbody+='</tbody>';
-  document.getElementById('tabla-res').innerHTML=thead+tbody;
-  document.getElementById('pib-res-nota').textContent=esPeso?'% calculado sobre el total nacional (subtotal regional + extrarregional). La suma de regiones + extrarregional = 100%.':'';
+  const extraVars = ps.map(t => esPeso ? null : calcVarExtra(t));
+  const cagrExtra = (() => {{
+    if(freq==='anual') {{
+      const v0=PIB.extra_enc_anual[desde]??null, v1=PIB.extra_enc_anual[hasta]??null;
+      const n=parseInt(hasta)-parseInt(desde);
+      return(v0&&v1&&v0>0&&n>0)?(Math.pow(v1/v0,1/n)-1)*100:null;
+    }}
+    const sumaE = yr => ['I','II','III','IV'].map(t=>`${{t}}.${{yr}}`).reduce((a,t)=>a+(PIB.extra_trim_enc[t]??0),0);
+    const v0=sumaE(desde), v1=sumaE(hasta), n=parseInt(hasta)-parseInt(desde);
+    return(v0&&v1&&v0>0&&n>0)?(Math.pow(v1/v0,1/n)-1)*100:null;
+  }})();
+  tbody += '<tr class="extra-row"><td>Extrarregional</td>';
+  ps.forEach((_,i) => {{
+    const v  = extraVals[i];
+    const vr = extraVars[i];
+    const ccV = v!==null  ? colorClsPib(v,ind) : '';
+    const ccR = vr!==null ? clsVar(vr)         : '';
+    tbody += `<td class="${{ccV}}" style="border-left:1px solid #e8e8e8">${{fmtPib(v,ind)}}</td>`;
+    tbody += `<td class="${{ccR}}" style="font-size:11px">${{vr!==null?(vr>0?'+':'')+vr.toFixed(1)+'%':'—'}}</td>`;
+  }});
+  tbody += `<td style="border-left:2px solid #e0e7ff">${{fmtPib(cagrExtra,'cagr')}}</td></tr>`;
+
+  // Total nacional
+  const totalVals = ps.map(t => {{
+    const nac = getPIBNacional(ind,t);
+    if(esPeso) return nac?100:null;
+    return nac;
+  }});
+  const totalVars = ps.map(t => esPeso ? null : calcVarNacional(t));
+  const cagrNac = (() => {{
+    if(freq==='anual') {{
+      const v0=getPIBNacional(ind,desde), v1=getPIBNacional(ind,hasta), n=parseInt(hasta)-parseInt(desde);
+      return(v0&&v1&&v0>0&&n>0)?(Math.pow(v1/v0,1/n)-1)*100:null;
+    }}
+    const sumaN = yr => ['I','II','III','IV'].map(t=>`${{t}}.${{yr}}`).reduce((a,t)=>{{const v=getPIBNacional(ind,t);return a+(v??0);}},0);
+    const v0=sumaN(desde), v1=sumaN(hasta), n=parseInt(hasta)-parseInt(desde);
+    return(v0&&v1&&v0>0&&n>0)?(Math.pow(v1/v0,1/n)-1)*100:null;
+  }})();
+  tbody += '<tr class="nacional-row"><td>Total nacional</td>';
+  ps.forEach((_,i) => {{
+    const v  = totalVals[i];
+    const vr = totalVars[i];
+    const ccR = vr!==null ? clsVar(vr) : '';
+    tbody += `<td>${{fmtPib(v,ind)}}</td>`;
+    tbody += `<td class="${{ccR}}" style="font-size:11px;font-weight:700">${{vr!==null?(vr>0?'+':'')+vr.toFixed(1)+'%':'—'}}</td>`;
+  }});
+  tbody += `<td style="border-left:2px solid #e0e7ff;font-weight:700">${{fmtPib(cagrNac,'cagr')}}</td></tr>`;
+
+  tbody += '</tbody>';
+  document.getElementById('tabla-res').innerHTML = thead + tbody;
+  const notaPeso = esPeso ? '% calculado sobre el total nacional (subtotal regional + extrarregional). La suma de regiones + extrarregional = 100%.' : '';
+  const notaVar  = freq==='trimestral' ? ' ¹Variación respecto al mismo trimestre del año anterior.' : '';
+  document.getElementById('pib-res-nota').textContent =
+    'Volumen encadenado a precios del año anterior, series empalmadas.'
+    + (notaPeso?' '+notaPeso:'')
+    + (nAnios>0?` CAGR calculado sobre volumen encadenado (${{añoDesde}}→${{añoHasta}}).`:'')
+    + notaVar;
 }}
 
 
