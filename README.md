@@ -178,6 +178,7 @@ python generar_dashboard.py          # Generar HTML
 | 1.2 | Apr 2026 | Toggle var% PIB + fix regiones vacias |
 | 1.2 | Apr 2026 | arreglo de los rios |
 | 1.2 | Apr 2026 | +checkbox |
+| 1.2 | Apr 2026 | Actualizacion dashboard |
 
 ---
 
