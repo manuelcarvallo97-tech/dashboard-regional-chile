@@ -1964,7 +1964,7 @@ function cpct(n,d) {{ return d>0?(n/d*100):0; }}
 function censoDlChart(canvasId, nombre) {{
   const c=document.getElementById(canvasId); if(!c) return;
   const a=document.createElement('a');
-  a.download=`censo_${{nombre}}_${{new Date().toISOString().slice(0,10)}}.png`;
+  a.download='censo_'+nombre+'_'+new Date().toISOString().slice(0,10)+'.png';
   a.href=c.toDataURL('image/png'); a.click();
 }}
 // Descarga CSV de tabla
@@ -1972,11 +1972,14 @@ function censoDlTable(tableId, nombre) {{
   const t=document.getElementById(tableId); if(!t) return;
   let csv='';
   t.querySelectorAll('tr').forEach(row=>{{
-    csv+=Array.from(row.querySelectorAll('th,td')).map(c=>'"'+c.textContent.trim().replace(/"/g,'""')+'"').join(',')+'\n';
+    const cells=Array.from(row.querySelectorAll('th,td')).map(c=>{{
+      const v=c.textContent.trim(); return '"'+v.split('"').join('""')+'"';
+    }});
+    csv+=cells.join(',')+String.fromCharCode(13,10);
   }});
   const a=document.createElement('a');
-  a.download=`censo_${{nombre}}_${{new Date().toISOString().slice(0,10)}}.csv`;
-  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv); a.click();
+  a.download='censo_'+nombre+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.href='data:text/csv;charset=utf-8,%EF%BB%BF'+encodeURIComponent(csv); a.click();
 }}
 
 // getCensoReg: '0' o vacío → nacional
