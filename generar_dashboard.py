@@ -2747,203 +2747,7 @@ window.onload = function() {{
   // CASEN 2024
   initCasen();
 }};
-</script>
 
-
-<!-- ══════════════════════════════════════════════════════════════
-     MÓDULO: EMPLEO
-══════════════════════════════════════════════════════════════ -->
-<div class="modulo" id="mod-empleo">
-  <div class="tabs">
-    <div class="tab-emp active" onclick="setTabEmp('resumen',this)">Resumen comparativo</div>
-    <div class="tab-emp" onclick="setTabEmp('evolucion',this)">Evolución por región</div>
-    <div class="tab-emp" onclick="setTabEmp('ranking',this)">Ranking regional</div>
-  </div>
-  <div class="content">
-
-    <!-- Resumen -->
-    <div class="section active" id="emp-resumen">
-      <div class="filtros">
-        <div class="fg"><label>Período</label><select id="emp-res-periodo" onchange="renderEmpResumen()"></select></div>
-        <div class="fg"><label>Indicador</label>
-          <select id="emp-res-ind" onchange="renderEmpResumen()">
-            <option value="tasa">Tasa de desocupación (%)</option>
-            <option value="ocupados">Ocupados (miles de personas)</option>
-            <option value="ft">Fuerza de trabajo* (miles)</option>
-          </select></div>
-      </div>
-      <div class="kpi-grid" id="emp-kpi-resumen"></div>
-      <div class="card"><h3 id="emp-res-chart-title">Tasa de desocupación por región</h3>
-        <canvas id="emp-chart-resumen" style="max-height:320px"></canvas></div>
-      <div class="card"><h3>Comparativa regional</h3>
-        <div class="tabla-wrap"><table class="dt" id="emp-tabla-resumen"></table></div>
-        <p class="nota">* Fuerza de trabajo = Ocupados / (1 - Tasa/100)</p>
-      </div>
-    </div>
-
-    <!-- Evolución -->
-    <div class="section" id="emp-evolucion">
-      <div class="filtros">
-        <div class="fg"><label>Región</label><select id="emp-evo-region" onchange="renderEmpEvolucion()"></select></div>
-        <div class="fg"><label>Año desde</label><select id="emp-evo-desde" onchange="renderEmpEvolucion()"></select></div>
-        <div class="fg"><label>Año hasta</label><select id="emp-evo-hasta" onchange="renderEmpEvolucion()"></select></div>
-      </div>
-      <div class="kpi-grid" id="emp-kpi-evo"></div>
-      <div class="card"><h3 id="emp-evo-title-tasa">Tasa de desocupación (%)</h3>
-        <canvas id="emp-chart-evo-tasa" style="max-height:260px"></canvas></div>
-      <div class="grid2">
-        <div class="card"><h3 id="emp-evo-title-ocup">Ocupados (miles)</h3>
-          <canvas id="emp-chart-evo-ocup" style="max-height:220px"></canvas></div>
-        <div class="card"><h3 id="emp-evo-title-ft">Fuerza de trabajo* (miles)</h3>
-          <canvas id="emp-chart-evo-ft" style="max-height:220px"></canvas></div>
-      </div>
-    </div>
-
-    <!-- Ranking -->
-    <div class="section" id="emp-ranking">
-      <div class="filtros">
-        <div class="fg"><label>Período</label><select id="emp-rank-periodo" onchange="renderEmpRanking()"></select></div>
-      </div>
-      <div class="grid2">
-        <div class="card"><h3>Mayor desocupación</h3>
-          <canvas id="emp-chart-rank-alta" style="max-height:320px"></canvas></div>
-        <div class="card"><h3>Menor desocupación</h3>
-          <canvas id="emp-chart-rank-baja" style="max-height:320px"></canvas></div>
-      </div>
-      <div class="card"><h3 id="emp-rank-title">Ranking completo</h3>
-        <div class="tabla-wrap"><table class="dt" id="emp-tabla-ranking"></table></div>
-      </div>
-    </div>
-
-  </div>
-</div><!-- /mod-empleo -->
-
-
-<!-- ══════════════════════════════════════════════════════════════
-     MÓDULO: CASEN 2024
-══════════════════════════════════════════════════════════════ -->
-<div class="modulo" id="mod-casen">
-  <div class="tabs">
-    <div class="tab-casen active" onclick="setTabCasen('pobreza',this)">Pobreza por ingresos</div>
-    <div class="tab-casen" onclick="setTabCasen('severa',this)">Pobreza severa</div>
-    <div class="tab-casen" onclick="setTabCasen('multi',this)">Pobreza multidimensional</div>
-    <div class="tab-casen" onclick="setTabCasen('ingreso',this)">Ingresos</div>
-    <div class="tab-casen" onclick="setTabCasen('salud',this)">Salud</div>
-  </div>
-  <div class="content">
-
-    <!-- ═══ POBREZA POR INGRESOS ═══ -->
-    <div class="section active" id="casen-pobreza">
-      <div class="filtros">
-        <div class="fg"><label>Región</label><select id="cp-r" onchange="syncCS('cp-r');renderCasenPob()"></select></div>
-      </div>
-      <div class="kpi-grid" id="cp-kpi"></div>
-      <div class="grid2">
-        <div class="card"><h3>Evolución pobreza (% personas)</h3><canvas id="cp-evo" style="max-height:280px"></canvas></div>
-        <div class="card"><h3>Índices FGT: Brecha y Severidad</h3><canvas id="cp-fgt" style="max-height:280px"></canvas></div>
-      </div>
-      <div class="card">
-        <h3>Comparación regional 2024</h3>
-        <div class="tabla-wrap"><table class="dt" id="cp-tabla"></table></div>
-        <p class="nota">FGT1 = brecha promedio; FGT2 = severidad (pondera más a los más pobres). Fuente: CASEN 2024, MIDESO.</p>
-      </div>
-    </div>
-
-    <!-- ═══ POBREZA SEVERA ═══ -->
-    <div class="section" id="casen-severa">
-      <div class="filtros">
-        <div class="fg"><label>Región</label><select id="csv-r" onchange="syncCS('csv-r');renderCasenSevera()"></select></div>
-      </div>
-      <div class="kpi-grid" id="csv-kpi"></div>
-      <div class="grid2">
-        <div class="card"><h3>Distribución 2024 (% personas)</h3><canvas id="csv-pie" style="max-height:300px"></canvas></div>
-        <div class="card"><h3>Comparación 2022 vs 2024 por región</h3><canvas id="csv-comp" style="max-height:300px"></canvas></div>
-      </div>
-      <div class="card">
-        <h3>Ranking regional — Pobreza Severa 2024</h3>
-        <div class="tabla-wrap"><table class="dt" id="csv-tabla"></table></div>
-        <p class="nota">Pobreza severa: personas en situación simultánea de pobreza por ingresos y pobreza multidimensional.</p>
-      </div>
-    </div>
-
-    <!-- ═══ POBREZA MULTIDIMENSIONAL ═══ -->
-    <div class="section" id="casen-multi">
-      <div class="filtros">
-        <div class="fg"><label>Región</label><select id="cm-r" onchange="syncCS('cm-r');renderCasenMulti()"></select></div>
-      </div>
-      <div class="kpi-grid" id="cm-kpi"></div>
-      <div class="grid2">
-        <div class="card"><h3>Carencias por indicador 2024 (% hogares)</h3><canvas id="cm-car" style="max-height:360px"></canvas></div>
-        <div class="card"><h3>Contribución por dimensión 2024 (%)</h3><canvas id="cm-dim" style="max-height:300px"></canvas></div>
-      </div>
-      <div class="card">
-        <h3>Comparación regional — Incidencia multidimensional 2024</h3>
-        <div class="tabla-wrap"><table class="dt" id="cm-tabla"></table></div>
-        <p class="nota">Met. 2024 incluye nuevos indicadores vs met. 2015 (aprendizaje, alimentos, cuidados, trato igualitario, seguridad, conectividad).</p>
-      </div>
-    </div>
-
-    <!-- ═══ INGRESOS ═══ -->
-    <div class="section" id="casen-ingreso">
-      <div class="filtros">
-        <div class="fg"><label>Región</label><select id="ci-r" onchange="syncCS('ci-r');renderCasenIngreso()"></select></div>
-        <div class="fg"><label>Tipo de ingreso</label>
-          <select id="ci-tipo" onchange="renderCasenIngreso()">
-            <option value="Ingreso monetario">Ingreso monetario (total)</option>
-            <option value="Ingreso autónomo">Ingreso autónomo</option>
-            <option value="Ingreso del trabajo">Ingreso del trabajo</option>
-            <option value="Subsidios monetarios">Subsidios monetarios</option>
-          </select></div>
-      </div>
-      <div class="kpi-grid" id="ci-kpi"></div>
-      <div class="grid2">
-        <div class="card"><h3 id="ci-title">Evolución ingreso promedio hogares</h3><canvas id="ci-evo" style="max-height:260px"></canvas></div>
-        <div class="card"><h3>Pobreza relativa — % personas bajo 50% de la mediana</h3><canvas id="ci-prel" style="max-height:260px"></canvas></div>
-      </div>
-      <div class="card"><h3>Composición ingreso monetario 2024 — todas las regiones</h3><canvas id="ci-comp" style="max-height:260px"></canvas></div>
-      <div class="card">
-        <h3>Comparación regional — Ingresos 2024</h3>
-        <div class="tabla-wrap"><table class="dt" id="ci-tabla"></table></div>
-        <p class="nota">Cifras en $ de noviembre de cada año. Ingresos corregidos por no respuesta. Fuente: CASEN 2024.</p>
-      </div>
-    </div>
-
-    <!-- ═══ SALUD ═══ -->
-    <div class="section" id="casen-salud">
-      <div class="filtros">
-        <div class="fg"><label>Región</label><select id="cs-r" onchange="syncCS('cs-r');renderCasenSalud()"></select></div>
-        <div class="fg"><label>Tipo de prestación</label>
-          <select id="cs-prest-tipo" onchange="renderCasenPrest()">
-            <option value="Consulta médica general">Consulta médica general</option>
-            <option value="Consulta de urgencia">Consulta de urgencia</option>
-            <option value="Atención de salud mental">Atención de salud mental</option>
-            <option value="Consulta de especialidad">Consulta de especialidad</option>
-            <option value="Atención dental">Atención dental</option>
-            <option value="Exámenes de laboratorio">Exámenes de laboratorio</option>
-            <option value="Controles médicos">Controles médicos</option>
-            <option value="Hospitalizaciones/cirugías">Hospitalizaciones/cirugías</option>
-          </select></div>
-      </div>
-      <div class="kpi-grid" id="cs-kpi"></div>
-      <div class="grid2">
-        <div class="card"><h3>Sistema previsional 2024</h3><canvas id="cs-prev" style="max-height:280px"></canvas></div>
-        <div class="card"><h3>Evolución FONASA vs Isapre (%)</h3><canvas id="cs-fon" style="max-height:280px"></canvas></div>
-      </div>
-      <div class="grid2">
-        <div class="card"><h3>Problemas para obtener atención médica (% Tuvo)</h3><canvas id="cs-prob" style="max-height:260px"></canvas></div>
-        <div class="card"><h3>Cobertura AUGE-GES (%)</h3><canvas id="cs-ges" style="max-height:260px"></canvas></div>
-      </div>
-      <div class="card"><h3 id="cs-prest-title">Prestaciones recibidas — comparación regional 2024</h3><canvas id="cs-prest" style="max-height:260px"></canvas></div>
-      <div class="card">
-        <h3>Comparación regional — Salud 2024</h3>
-        <div class="tabla-wrap"><table class="dt" id="cs-tabla"></table></div>
-      </div>
-    </div>
-
-  </div>
-</div><!-- /mod-casen -->
-
-<script>
 // ══════════════════════════════════════════════════════════════
 // CASEN 2024
 // ══════════════════════════════════════════════════════════════
@@ -3226,6 +3030,198 @@ function initCasen(){{
 }}
 </script>
 
+<!-- ══════════════════════════════════════════════════════════════
+     MÓDULO: EMPLEO
+══════════════════════════════════════════════════════════════ -->
+<div class="modulo" id="mod-empleo">
+  <div class="tabs">
+    <div class="tab-emp active" onclick="setTabEmp('resumen',this)">Resumen comparativo</div>
+    <div class="tab-emp" onclick="setTabEmp('evolucion',this)">Evolución por región</div>
+    <div class="tab-emp" onclick="setTabEmp('ranking',this)">Ranking regional</div>
+  </div>
+  <div class="content">
+
+    <!-- Resumen -->
+    <div class="section active" id="emp-resumen">
+      <div class="filtros">
+        <div class="fg"><label>Período</label><select id="emp-res-periodo" onchange="renderEmpResumen()"></select></div>
+        <div class="fg"><label>Indicador</label>
+          <select id="emp-res-ind" onchange="renderEmpResumen()">
+            <option value="tasa">Tasa de desocupación (%)</option>
+            <option value="ocupados">Ocupados (miles de personas)</option>
+            <option value="ft">Fuerza de trabajo* (miles)</option>
+          </select></div>
+      </div>
+      <div class="kpi-grid" id="emp-kpi-resumen"></div>
+      <div class="card"><h3 id="emp-res-chart-title">Tasa de desocupación por región</h3>
+        <canvas id="emp-chart-resumen" style="max-height:320px"></canvas></div>
+      <div class="card"><h3>Comparativa regional</h3>
+        <div class="tabla-wrap"><table class="dt" id="emp-tabla-resumen"></table></div>
+        <p class="nota">* Fuerza de trabajo = Ocupados / (1 - Tasa/100)</p>
+      </div>
+    </div>
+
+    <!-- Evolución -->
+    <div class="section" id="emp-evolucion">
+      <div class="filtros">
+        <div class="fg"><label>Región</label><select id="emp-evo-region" onchange="renderEmpEvolucion()"></select></div>
+        <div class="fg"><label>Año desde</label><select id="emp-evo-desde" onchange="renderEmpEvolucion()"></select></div>
+        <div class="fg"><label>Año hasta</label><select id="emp-evo-hasta" onchange="renderEmpEvolucion()"></select></div>
+      </div>
+      <div class="kpi-grid" id="emp-kpi-evo"></div>
+      <div class="card"><h3 id="emp-evo-title-tasa">Tasa de desocupación (%)</h3>
+        <canvas id="emp-chart-evo-tasa" style="max-height:260px"></canvas></div>
+      <div class="grid2">
+        <div class="card"><h3 id="emp-evo-title-ocup">Ocupados (miles)</h3>
+          <canvas id="emp-chart-evo-ocup" style="max-height:220px"></canvas></div>
+        <div class="card"><h3 id="emp-evo-title-ft">Fuerza de trabajo* (miles)</h3>
+          <canvas id="emp-chart-evo-ft" style="max-height:220px"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Ranking -->
+    <div class="section" id="emp-ranking">
+      <div class="filtros">
+        <div class="fg"><label>Período</label><select id="emp-rank-periodo" onchange="renderEmpRanking()"></select></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Mayor desocupación</h3>
+          <canvas id="emp-chart-rank-alta" style="max-height:320px"></canvas></div>
+        <div class="card"><h3>Menor desocupación</h3>
+          <canvas id="emp-chart-rank-baja" style="max-height:320px"></canvas></div>
+      </div>
+      <div class="card"><h3 id="emp-rank-title">Ranking completo</h3>
+        <div class="tabla-wrap"><table class="dt" id="emp-tabla-ranking"></table></div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /mod-empleo -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     MÓDULO: CASEN 2024
+══════════════════════════════════════════════════════════════ -->
+<div class="modulo" id="mod-casen">
+  <div class="tabs">
+    <div class="tab-casen active" onclick="setTabCasen('pobreza',this)">Pobreza por ingresos</div>
+    <div class="tab-casen" onclick="setTabCasen('severa',this)">Pobreza severa</div>
+    <div class="tab-casen" onclick="setTabCasen('multi',this)">Pobreza multidimensional</div>
+    <div class="tab-casen" onclick="setTabCasen('ingreso',this)">Ingresos</div>
+    <div class="tab-casen" onclick="setTabCasen('salud',this)">Salud</div>
+  </div>
+  <div class="content">
+
+    <!-- ═══ POBREZA POR INGRESOS ═══ -->
+    <div class="section active" id="casen-pobreza">
+      <div class="filtros">
+        <div class="fg"><label>Región</label><select id="cp-r" onchange="syncCS('cp-r');renderCasenPob()"></select></div>
+      </div>
+      <div class="kpi-grid" id="cp-kpi"></div>
+      <div class="grid2">
+        <div class="card"><h3>Evolución pobreza (% personas)</h3><canvas id="cp-evo" style="max-height:280px"></canvas></div>
+        <div class="card"><h3>Índices FGT: Brecha y Severidad</h3><canvas id="cp-fgt" style="max-height:280px"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Comparación regional 2024</h3>
+        <div class="tabla-wrap"><table class="dt" id="cp-tabla"></table></div>
+        <p class="nota">FGT1 = brecha promedio; FGT2 = severidad (pondera más a los más pobres). Fuente: CASEN 2024, MIDESO.</p>
+      </div>
+    </div>
+
+    <!-- ═══ POBREZA SEVERA ═══ -->
+    <div class="section" id="casen-severa">
+      <div class="filtros">
+        <div class="fg"><label>Región</label><select id="csv-r" onchange="syncCS('csv-r');renderCasenSevera()"></select></div>
+      </div>
+      <div class="kpi-grid" id="csv-kpi"></div>
+      <div class="grid2">
+        <div class="card"><h3>Distribución 2024 (% personas)</h3><canvas id="csv-pie" style="max-height:300px"></canvas></div>
+        <div class="card"><h3>Comparación 2022 vs 2024 por región</h3><canvas id="csv-comp" style="max-height:300px"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Ranking regional — Pobreza Severa 2024</h3>
+        <div class="tabla-wrap"><table class="dt" id="csv-tabla"></table></div>
+        <p class="nota">Pobreza severa: personas en situación simultánea de pobreza por ingresos y pobreza multidimensional.</p>
+      </div>
+    </div>
+
+    <!-- ═══ POBREZA MULTIDIMENSIONAL ═══ -->
+    <div class="section" id="casen-multi">
+      <div class="filtros">
+        <div class="fg"><label>Región</label><select id="cm-r" onchange="syncCS('cm-r');renderCasenMulti()"></select></div>
+      </div>
+      <div class="kpi-grid" id="cm-kpi"></div>
+      <div class="grid2">
+        <div class="card"><h3>Carencias por indicador 2024 (% hogares)</h3><canvas id="cm-car" style="max-height:360px"></canvas></div>
+        <div class="card"><h3>Contribución por dimensión 2024 (%)</h3><canvas id="cm-dim" style="max-height:300px"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Comparación regional — Incidencia multidimensional 2024</h3>
+        <div class="tabla-wrap"><table class="dt" id="cm-tabla"></table></div>
+        <p class="nota">Met. 2024 incluye nuevos indicadores vs met. 2015 (aprendizaje, alimentos, cuidados, trato igualitario, seguridad, conectividad).</p>
+      </div>
+    </div>
+
+    <!-- ═══ INGRESOS ═══ -->
+    <div class="section" id="casen-ingreso">
+      <div class="filtros">
+        <div class="fg"><label>Región</label><select id="ci-r" onchange="syncCS('ci-r');renderCasenIngreso()"></select></div>
+        <div class="fg"><label>Tipo de ingreso</label>
+          <select id="ci-tipo" onchange="renderCasenIngreso()">
+            <option value="Ingreso monetario">Ingreso monetario (total)</option>
+            <option value="Ingreso autónomo">Ingreso autónomo</option>
+            <option value="Ingreso del trabajo">Ingreso del trabajo</option>
+            <option value="Subsidios monetarios">Subsidios monetarios</option>
+          </select></div>
+      </div>
+      <div class="kpi-grid" id="ci-kpi"></div>
+      <div class="grid2">
+        <div class="card"><h3 id="ci-title">Evolución ingreso promedio hogares</h3><canvas id="ci-evo" style="max-height:260px"></canvas></div>
+        <div class="card"><h3>Pobreza relativa — % personas bajo 50% de la mediana</h3><canvas id="ci-prel" style="max-height:260px"></canvas></div>
+      </div>
+      <div class="card"><h3>Composición ingreso monetario 2024 — todas las regiones</h3><canvas id="ci-comp" style="max-height:260px"></canvas></div>
+      <div class="card">
+        <h3>Comparación regional — Ingresos 2024</h3>
+        <div class="tabla-wrap"><table class="dt" id="ci-tabla"></table></div>
+        <p class="nota">Cifras en $ de noviembre de cada año. Ingresos corregidos por no respuesta. Fuente: CASEN 2024.</p>
+      </div>
+    </div>
+
+    <!-- ═══ SALUD ═══ -->
+    <div class="section" id="casen-salud">
+      <div class="filtros">
+        <div class="fg"><label>Región</label><select id="cs-r" onchange="syncCS('cs-r');renderCasenSalud()"></select></div>
+        <div class="fg"><label>Tipo de prestación</label>
+          <select id="cs-prest-tipo" onchange="renderCasenPrest()">
+            <option value="Consulta médica general">Consulta médica general</option>
+            <option value="Consulta de urgencia">Consulta de urgencia</option>
+            <option value="Atención de salud mental">Atención de salud mental</option>
+            <option value="Consulta de especialidad">Consulta de especialidad</option>
+            <option value="Atención dental">Atención dental</option>
+            <option value="Exámenes de laboratorio">Exámenes de laboratorio</option>
+            <option value="Controles médicos">Controles médicos</option>
+            <option value="Hospitalizaciones/cirugías">Hospitalizaciones/cirugías</option>
+          </select></div>
+      </div>
+      <div class="kpi-grid" id="cs-kpi"></div>
+      <div class="grid2">
+        <div class="card"><h3>Sistema previsional 2024</h3><canvas id="cs-prev" style="max-height:280px"></canvas></div>
+        <div class="card"><h3>Evolución FONASA vs Isapre (%)</h3><canvas id="cs-fon" style="max-height:280px"></canvas></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Problemas para obtener atención médica (% Tuvo)</h3><canvas id="cs-prob" style="max-height:260px"></canvas></div>
+        <div class="card"><h3>Cobertura AUGE-GES (%)</h3><canvas id="cs-ges" style="max-height:260px"></canvas></div>
+      </div>
+      <div class="card"><h3 id="cs-prest-title">Prestaciones recibidas — comparación regional 2024</h3><canvas id="cs-prest" style="max-height:260px"></canvas></div>
+      <div class="card">
+        <h3>Comparación regional — Salud 2024</h3>
+        <div class="tabla-wrap"><table class="dt" id="cs-tabla"></table></div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /mod-casen -->
 </body>
 </html>"""
 
@@ -3236,6 +3232,3 @@ with open('dashboard.html', 'w', encoding='utf-8') as f:
     f.write(html)
 
 print('=== dashboard.html generado ===')
-print(f'Seguridad  → semanas: {len(semanas_clean)}, regiones: {len(regiones_seg)}')
-print(f'PIB        → trimestres: {trimestres[0]} → {trimestres[-1]}')
-print(f'Empleo     → periodos: {periodos_emp[0]} → {periodos_emp[-1]}, regiones: {len(regiones_emp)}')
