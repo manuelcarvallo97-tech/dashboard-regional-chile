@@ -96,11 +96,11 @@ table.dt tr.nacional-row td{background:#f0fdf4!important;font-weight:700;color:#
 .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
 .badge-baja{background:#dcfce7;color:#166534}.badge-alta{background:#fef2f2;color:#991b1b}.badge-media{background:#fef9c3;color:#713f12}
 
-/* ── Descarga ── */
+/* ── Descarga gráficos y tablas ── */
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .card-header h3{font-size:14px;font-weight:600;color:#333;margin:0}
 .btn-dl{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-size:11px;font-weight:600;border:1.5px solid #d0d0d0;border-radius:6px;background:white;cursor:pointer;color:#555;transition:all .15s;white-space:nowrap}
-.btn-dl:hover{background:#f0f7ff;border-color:#2563eb;color:#2563eb}
+.btn-dl:hover{background:#f0f7ff;border-color:#7c3aed;color:#7c3aed}
 .btn-dl-group{display:flex;gap:6px;align-items:center}
 
 /* ── Fila nacional censo ── */
@@ -451,18 +451,14 @@ table.dt tr.censo-nacional-row td:first-child{font-weight:700}
         <div class="card">
           <div class="card-header">
             <h3>Distribución etaria</h3>
-            <div class="btn-dl-group">
-              <button class="btn-dl" onclick="dlChart('censo-chart-edad','dist_etaria')">⬇ PNG</button>
-            </div>
+            <button class="btn-dl" onclick="dlChart('censo-chart-edad','dist_etaria')">⬇ PNG</button>
           </div>
           <canvas id="censo-chart-edad" style="max-height:300px"></canvas>
         </div>
         <div class="card">
           <div class="card-header">
             <h3>Composición población</h3>
-            <div class="btn-dl-group">
-              <button class="btn-dl" onclick="dlChart('censo-chart-comp','composicion_pob')">⬇ PNG</button>
-            </div>
+            <button class="btn-dl" onclick="dlChart('censo-chart-comp','composicion_pob')">⬇ PNG</button>
           </div>
           <canvas id="censo-chart-comp" style="max-height:300px"></canvas>
         </div>
@@ -1693,16 +1689,24 @@ function renderResumenPib() {
 // ══════════════════════════════════════════════════════════════
 const CENSO = CENSO_DATA;
 
-// Orden geográfico norte→sur
+// Orden geográfico norte→sur (códigos de región)
 const CENSO_ORDEN = [15,1,2,3,4,5,13,6,7,16,8,9,10,14,11,12];
 
-// Total nacional precalculado (suma de regiones)
+// Total nacional precalculado sumando todas las regiones
 const CENSO_NAC = (function() {
   const t = {};
-  const campos = Object.keys(CENSO.datos['1']).filter(k=>typeof CENSO.datos['1'][k]==='number' && !['cod','prom_edad','prom_escolaridad18','prom_per_hog'].includes(k));
-  campos.forEach(c => { t[c] = CENSO_ORDEN.reduce((s,cod)=>s+(CENSO.datos[String(cod)][c]||0),0); });
-  t.prom_edad = CENSO_ORDEN.reduce((s,cod)=>s+CENSO.datos[String(cod)].prom_edad*CENSO.datos[String(cod)].n_per,0) / t.n_per;
-  t.prom_escolaridad18 = CENSO_ORDEN.reduce((s,cod)=>s+CENSO.datos[String(cod)].prom_escolaridad18*CENSO.datos[String(cod)].n_per,0) / t.n_per;
+  const campos = Object.keys(CENSO.datos['1']).filter(k =>
+    typeof CENSO.datos['1'][k] === 'number' &&
+    !['cod','prom_edad','prom_escolaridad18','prom_per_hog'].includes(k)
+  );
+  campos.forEach(c => {
+    t[c] = CENSO_ORDEN.reduce((s, cod) => s + (CENSO.datos[String(cod)][c] || 0), 0);
+  });
+  // Promedios ponderados por población
+  t.prom_edad = CENSO_ORDEN.reduce((s,cod) =>
+    s + CENSO.datos[String(cod)].prom_edad * CENSO.datos[String(cod)].n_per, 0) / t.n_per;
+  t.prom_escolaridad18 = CENSO_ORDEN.reduce((s,cod) =>
+    s + CENSO.datos[String(cod)].prom_escolaridad18 * CENSO.datos[String(cod)].n_per, 0) / t.n_per;
   t.prom_per_hog = t.n_per / t.n_hog;
   t.nombre = 'Total nacional';
   t.cod = 0;
@@ -1710,7 +1714,6 @@ const CENSO_NAC = (function() {
 })();
 
 let censoTabActual = 'demografia';
-let censoSexoFiltro = 'total';
 
 function setTabCenso(tab, btn) {
   censoTabActual = tab;
@@ -1734,6 +1737,7 @@ function setTabCenso(tab, btn) {
   if(tab==='conectividad') renderCensoCon();
 }
 
+// Retorna región seleccionada; si es '0' o vacío → total nacional
 function getCensoReg(selId) {
   const val = document.getElementById(selId).value;
   if(!val || val === '0') return CENSO_NAC;
@@ -1798,7 +1802,7 @@ function makeHBar(id, labels, datasets) {
   });
 }
 
-// ── Descargas ────────────────────────────────────────────────
+// ── Descarga de gráficos y tablas ────────────────────────────
 function dlChart(canvasId, nombre) {
   const canvas = document.getElementById(canvasId);
   if(!canvas) return;
@@ -1807,13 +1811,13 @@ function dlChart(canvasId, nombre) {
   a.href = canvas.toDataURL('image/png');
   a.click();
 }
-
 function dlTable(tableId, nombre) {
   const tbl = document.getElementById(tableId);
   if(!tbl) return;
   let csv = '';
   tbl.querySelectorAll('tr').forEach(row => {
-    const cells = Array.from(row.querySelectorAll('th,td')).map(c => '"'+c.textContent.trim().replace(/"/g,'""')+'"');
+    const cells = Array.from(row.querySelectorAll('th,td'))
+      .map(c => '"' + c.textContent.trim().replace(/"/g,'""') + '"');
     csv += cells.join(',') + '
 ';
   });
@@ -1829,93 +1833,89 @@ function poblarSelectsCenso() {
   selIds.forEach(id => {
     const sel = document.getElementById(id);
     if(!sel) return;
-    // Opción nacional
-    const ph = document.createElement('option');
-    ph.value = '0'; ph.textContent = '🇨🇱 Nacional (total)'; sel.appendChild(ph);
-    // Opción separador
-    const sep = document.createElement('option'); sep.disabled=true; sep.textContent='──────────'; sel.appendChild(sep);
-    // Regiones en orden geográfico N→S
+    // Opción nacional primero
+    const oNac = document.createElement('option');
+    oNac.value = '0'; oNac.textContent = '🇨🇱 Nacional (total)'; sel.appendChild(oNac);
+    // Separador visual
+    const sep = document.createElement('option');
+    sep.disabled = true; sep.textContent = '──────────'; sel.appendChild(sep);
+    // Regiones en orden geográfico norte→sur
     CENSO_ORDEN.forEach(cod => {
       const r = CENSO.datos[String(cod)];
       const o = document.createElement('option');
       o.value = String(cod); o.textContent = r.nombre; sel.appendChild(o);
     });
-    sel.value = '0'; // Default Nacional
+    sel.value = '0'; // Default: Nacional
   });
 }
 
 // ── DEMOGRAFÍA ───────────────────────────────────────────────
 function renderCenso() {
-  const sexo = document.getElementById('censo-sexo').value;
-  censoSexoFiltro = sexo;
+  const sexo = (document.getElementById('censo-sexo')?.value) || 'total';
   const r = getCensoReg('censo-region');
   if(!r) return;
   const cod = document.getElementById('censo-region').value;
-  ['censo-region-viv','censo-region-edu','censo-region-con'].forEach(id => { document.getElementById(id).value = cod; });
+  ['censo-region-viv','censo-region-edu','censo-region-con'].forEach(id => {
+    document.getElementById(id).value = cod;
+  });
 
-  // Determinar si hay desagregación por sexo disponible
-  // Solo tenemos n_hombres y n_mujeres totales, sin desagregación por otros campos
+  // Aviso si no hay desagregación por sexo disponible
   const sinDatoEl = document.getElementById('censo-sinDato-demo');
-  const hayDesag = (sexo === 'total');
-  // Para hombres/mujeres solo podemos mostrar su total y % de la población
-  if(sinDatoEl) sinDatoEl.classList.toggle('visible', !hayDesag);
+  if(sinDatoEl) sinDatoEl.classList.toggle('visible', sexo !== 'total');
 
-  let pop, hog;
-  if(sexo === 'hombres') {
-    pop = r.n_hombres; hog = r.n_hog; // hogares no se puede desagregar
-  } else if(sexo === 'mujeres') {
-    pop = r.n_mujeres; hog = r.n_hog;
-  } else {
-    pop = r.n_per; hog = r.n_hog;
-  }
+  // Población según filtro sexo (solo n_hombres / n_mujeres están desagregados)
+  const pop = sexo === 'hombres' ? r.n_hombres : sexo === 'mujeres' ? r.n_mujeres : r.n_per;
+  const hog = r.n_hog;
 
-  // KPIs — algunos solo tienen valor total
-  const kpiH = [
-    kpiCenso('Población total', fmtN(pop), sexo==='total'?r.nombre:sexo==='hombres'?'Hombres':'Mujeres'),
+  // KPIs
+  let kpiH = [
+    kpiCenso('Población' + (sexo==='total'?'':' '+sexo), fmtN(pop),
+             sexo==='total' ? r.nombre : fmtP(pct(pop,r.n_per))+' del total'),
     kpiCenso('Hogares', fmtN(hog), `${fmtD(r.prom_per_hog)} pers/hogar`),
-    kpiCenso('Edad promedio', fmtD(r.prom_edad), 'años (total región)'),
+    kpiCenso('Edad promedio', fmtD(r.prom_edad), 'años' + (sexo!=='total'?' (total región)':'')),
   ];
   if(sexo === 'total') {
     kpiH.push(
-      kpiCenso('Inmigrantes', fmtP(pct(r.n_inmigrantes,pop)), fmtN(r.n_inmigrantes)+' personas', pct(r.n_inmigrantes,pop)>10?'amber':''),
+      kpiCenso('Inmigrantes', fmtP(pct(r.n_inmigrantes,pop)), fmtN(r.n_inmigrantes)+' personas',
+               pct(r.n_inmigrantes,pop)>10?'amber':''),
       kpiCenso('Pueblos originarios', fmtP(pct(r.n_pueblos_orig,pop)), fmtN(r.n_pueblos_orig)+' personas'),
       kpiCenso('Discapacidad', fmtP(pct(r.n_discapacidad,pop)), fmtN(r.n_discapacidad)+' personas'),
     );
   } else {
-    // Para sexo filtrado: mostramos los campos que sí existen (% del total)
     kpiH.push(
-      kpiCenso('% de la población', fmtP(pct(pop,r.n_per)), 'Del total regional'),
-      kpiCenso('Inmigrantes', fmtP(pct(r.n_inmigrantes,r.n_per)), fmtN(r.n_inmigrantes)+' (sin desagregar)', 'amber'),
-      kpiCenso('Discapacidad', fmtP(pct(r.n_discapacidad,r.n_per)), 'Sin dato desagregado por sexo', 'amber'),
+      kpiCenso('% del total', fmtP(pct(pop,r.n_per)), 'sobre población total'),
+      kpiCenso('Inmigrantes', fmtP(pct(r.n_inmigrantes,r.n_per)), 'Sin dato por sexo', 'amber'),
+      kpiCenso('Discapacidad', fmtP(pct(r.n_discapacidad,r.n_per)), 'Sin dato por sexo', 'amber'),
     );
   }
   document.getElementById('censo-kpi-demo').innerHTML = kpiH.join('');
 
-  // Gráfico etario
+  // Gráfico etario (siempre sobre total — sin desagregación por sexo)
   const edades = ['0–5','6–13','14–17','18–24','25–44','45–59','60+'];
   const vals_e = [r.n_edad_0_5,r.n_edad_6_13,r.n_edad_14_17,r.n_edad_18_24,r.n_edad_25_44,r.n_edad_45_59,r.n_edad_60_mas];
-  const pcts_e = vals_e.map(v => pct(v, r.n_per));
   makeBarSeg('censo-chart-edad', edades, [{
-    label:'% población', data:pcts_e,
+    label:'% población', data:vals_e.map(v => pct(v, r.n_per)),
     backgroundColor:['#7c3aed','#8b5cf6','#a78bfa','#c4b5fd','#6d28d9','#4c1d95','#3b0764'],
     borderRadius:4
   }]);
 
-  // Gráfico composición (pie) — resalta sexo seleccionado
-  const pctH = pct(r.n_hombres,r.n_per), pctM = pct(r.n_mujeres,r.n_per);
+  // Gráfico composición — resalta el sexo seleccionado
+  const pctH = pct(r.n_hombres, r.n_per), pctM = pct(r.n_mujeres, r.n_per);
   makePie('censo-chart-comp',
     ['Hombres','Mujeres'],
     [pctH, pctM],
     [sexo==='mujeres'?'#93c5fd':'#3b82f6', sexo==='hombres'?'#f9a8d4':'#ec4899']
   );
 
-  // Tabla comparativa — con fila nacional al final
+  // Tabla comparativa en orden geográfico + fila nacional al final
   const cols = ['Región','Población','% Mujeres','Prom. edad','% Inmigrantes','% Pueblos orig.','% Discapacidad'];
-  let thead = '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${c}</th>`:`<th onclick="sortDT('censo-tabla-demo',${i})">${c}</th>`).join('')+'</tr></thead>';
+  let thead = '<thead><tr>'+cols.map((c,i)=>
+    i===0?`<th>${c}</th>`:`<th onclick="sortDT('censo-tabla-demo',${i})">${c}</th>`
+  ).join('')+'</tr></thead>';
   let tbody = '<tbody>';
-  const regOrdenadas = CENSO_ORDEN.map(c=>CENSO.datos[String(c)]);
-  regOrdenadas.forEach(reg => {
-    const p=reg.n_per;
+  CENSO_ORDEN.forEach(cdReg => {
+    const reg = CENSO.datos[String(cdReg)];
+    const p = reg.n_per;
     const isAct = reg.cod === r.cod;
     tbody += `<tr style="${isAct?'background:#f5f3ff;font-weight:600':''}">
       <td>${reg.nombre}</td>
@@ -1930,7 +1930,7 @@ function renderCenso() {
   // Fila nacional
   const isActNac = cod === '0';
   const np = CENSO_NAC.n_per;
-  tbody += `<tr class="censo-nacional-row" style="${isActNac?'outline:2px solid #16a34a':''}">
+  tbody += `<tr class="censo-nacional-row" style="${isActNac?'outline:2px solid #16a34a;outline-offset:-2px':''}">
     <td>🇨🇱 Total nacional</td>
     <td>${fmtN(np)}</td>
     <td>${fmtP(pct(CENSO_NAC.n_mujeres,np))}</td>
@@ -1948,44 +1948,55 @@ function renderCensoViv() {
   const r = getCensoReg('censo-region-viv');
   if(!r) return;
   const cod = document.getElementById('censo-region-viv').value;
-  ['censo-region','censo-region-edu','censo-region-con'].forEach(id => { document.getElementById(id).value = cod; });
+  ['censo-region','censo-region-edu','censo-region-con'].forEach(id => {
+    document.getElementById(id).value = cod;
+  });
   // Bug fix: usar n_vp (total viviendas) como denominador para tipos de vivienda
-  const vp_total = r.n_vp;        // denominador correcto para tipos
-  const vp = r.n_vp_ocupada;      // para hacinamiento/irrecuperables
+  // n_vp_ocupada excluye las desocupadas → da >100% en regiones con mucha viv. desocupada
+  const vp_total = r.n_vp;       // denominador correcto para tipo de vivienda
+  const vp = r.n_vp_ocupada;     // para hacinamiento, irrecuperables, déficit
   const hog = r.n_hog;
 
   document.getElementById('censo-kpi-viv').innerHTML =
     kpiCenso('Viviendas ocupadas', fmtN(vp), '') +
     kpiCenso('Hogares', fmtN(hog), `${fmtD(r.prom_per_hog)} pers/hogar`) +
-    kpiCenso('Jefatura mujer', fmtP(pct(r.n_jefatura_mujer,hog)), fmtN(r.n_jefatura_mujer)+' hogares', pct(r.n_jefatura_mujer,hog)>45?'verde':'') +
-    kpiCenso('Hacinamiento', fmtP(pct(r.n_viv_hacinadas,vp)), fmtN(r.n_viv_hacinadas)+' viviendas', pct(r.n_viv_hacinadas,vp)>8?'rojo':'amber') +
-    kpiCenso('Irrecuperables', fmtP(pct(r.n_viv_irrecuperables,vp)), fmtN(r.n_viv_irrecuperables)+' viviendas', pct(r.n_viv_irrecuperables,vp)>2?'rojo':'') +
-    kpiCenso('Déficit cuantitativo', fmtP(pct(r.n_deficit_cuantitativo,vp)), fmtN(r.n_deficit_cuantitativo)+' viviendas', pct(r.n_deficit_cuantitativo,vp)>8?'rojo':'amber');
+    kpiCenso('Jefatura mujer', fmtP(pct(r.n_jefatura_mujer,hog)), fmtN(r.n_jefatura_mujer)+' hogares',
+             pct(r.n_jefatura_mujer,hog)>45?'verde':'') +
+    kpiCenso('Hacinamiento', fmtP(pct(r.n_viv_hacinadas,vp)), fmtN(r.n_viv_hacinadas)+' viviendas',
+             pct(r.n_viv_hacinadas,vp)>8?'rojo':'amber') +
+    kpiCenso('Irrecuperables', fmtP(pct(r.n_viv_irrecuperables,vp)), fmtN(r.n_viv_irrecuperables)+' viviendas',
+             pct(r.n_viv_irrecuperables,vp)>2?'rojo':'') +
+    kpiCenso('Déficit cuantitativo', fmtP(pct(r.n_deficit_cuantitativo,vp)), fmtN(r.n_deficit_cuantitativo)+' viviendas',
+             pct(r.n_deficit_cuantitativo,vp)>8?'rojo':'amber');
 
-  // Tipo vivienda — denominador correcto = n_vp (total)
+  // Tipo vivienda — denominador = n_vp (total, no solo ocupadas)
   makePie('censo-chart-tipo-viv',
-    ['Casa','Departamento','Mediagua','Pieza','Vivienda trad.','Móvil','Otro'],
-    [pct(r.n_tipo_viv_casa,vp_total),pct(r.n_tipo_viv_depto,vp_total),pct(r.n_tipo_viv_mediagua,vp_total),
-     pct(r.n_tipo_viv_pieza,vp_total),pct(r.n_tipo_viv_indigena,vp_total),pct(r.n_tipo_viv_movil,vp_total),pct(r.n_tipo_viv_otro,vp_total)],
+    ['Casa','Departamento','Mediagua','Pieza','Vivienda trad. indígena','Móvil','Otro'],
+    [pct(r.n_tipo_viv_casa,vp_total), pct(r.n_tipo_viv_depto,vp_total),
+     pct(r.n_tipo_viv_mediagua,vp_total), pct(r.n_tipo_viv_pieza,vp_total),
+     pct(r.n_tipo_viv_indigena,vp_total), pct(r.n_tipo_viv_movil,vp_total),
+     pct(r.n_tipo_viv_otro,vp_total)],
     ['#2563eb','#7c3aed','#dc2626','#f59e0b','#10b981','#6366f1','#94a3b8']
   );
 
   // Tenencia
   makePie('censo-chart-tenencia',
     ['Propia pagada','Propia pagándose','Arrendada c/contrato','Arrendada s/contrato','Cedida','Otro'],
-    [pct(r.n_tenencia_propia_pagada,hog),pct(r.n_tenencia_propia_pagandose,hog),
-     pct(r.n_tenencia_arrendada_contrato,hog),pct(r.n_tenencia_arrendada_sin_contrato,hog),
-     pct(r.n_tenencia_cedida_trabajo+r.n_tenencia_cedida_familiar,hog),pct(r.n_tenencia_otro,hog)],
+    [pct(r.n_tenencia_propia_pagada,hog), pct(r.n_tenencia_propia_pagandose,hog),
+     pct(r.n_tenencia_arrendada_contrato,hog), pct(r.n_tenencia_arrendada_sin_contrato,hog),
+     pct(r.n_tenencia_cedida_trabajo+r.n_tenencia_cedida_familiar,hog), pct(r.n_tenencia_otro,hog)],
     ['#16a34a','#4ade80','#f59e0b','#dc2626','#6366f1','#94a3b8']
   );
 
-  // Tabla comparativa déficit — con promedio pers/hogar y fila nacional
+  // Tabla comparativa en orden geográfico + columna prom. pers/hogar + fila nacional
   const cols = ['Región','Viv. ocupadas','Prom. pers/hogar','% Hacinadas','% Irrecuperables','% Déficit cuant.','% Allegados','% Jef. mujer'];
-  let thead = '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${c}</th>`:`<th onclick="sortDT('censo-tabla-viv',${i})">${c}</th>`).join('')+'</tr></thead>';
+  let thead = '<thead><tr>'+cols.map((c,i)=>
+    i===0?`<th>${c}</th>`:`<th onclick="sortDT('censo-tabla-viv',${i})">${c}</th>`
+  ).join('')+'</tr></thead>';
   let tbody = '<tbody>';
-  const regsVivOrden = CENSO_ORDEN.map(c=>CENSO.datos[String(c)]);
-  regsVivOrden.forEach(reg => {
-    const v=reg.n_vp_ocupada, h=reg.n_hog;
+  CENSO_ORDEN.forEach(cdReg => {
+    const reg = CENSO.datos[String(cdReg)];
+    const v = reg.n_vp_ocupada, h = reg.n_hog;
     const isAct = reg.cod === r.cod;
     tbody += `<tr style="${isAct?'background:#f5f3ff;font-weight:600':''}">
       <td>${reg.nombre}</td>
@@ -1999,7 +2010,7 @@ function renderCensoViv() {
     </tr>`;
   });
   // Fila nacional
-  const nv=CENSO_NAC.n_vp_ocupada, nh=CENSO_NAC.n_hog;
+  const nv = CENSO_NAC.n_vp_ocupada, nh = CENSO_NAC.n_hog;
   tbody += `<tr class="censo-nacional-row">
     <td>🇨🇱 Total nacional</td>
     <td>${fmtN(nv)}</td>
@@ -2019,63 +2030,75 @@ function renderCensoEdu() {
   const r = getCensoReg('censo-region-edu');
   if(!r) return;
   const cod = document.getElementById('censo-region-edu').value;
-  ['censo-region','censo-region-viv','censo-region-con'].forEach(id => { document.getElementById(id).value = cod; });
+  ['censo-region','censo-region-viv','censo-region-con'].forEach(id => {
+    document.getElementById(id).value = cod;
+  });
   const pop = r.n_per;
 
-  // Siempre usar tot_cine como denominador para educación
-  const tot_cine = r.n_cine_nunca_curso_primera_infancia + r.n_cine_primaria + r.n_cine_secundaria +
-                   r.n_cine_terciaria_maestria_doctorado + r.n_cine_especial_diferencial;
-  // Asistencia (para parvularia %)
-  const tot_asist = r.n_asistencia_parv + r.n_asistencia_basica + r.n_asistencia_media + r.n_asistencia_superior;
+  // SIEMPRE usar tot_cine como denominador en educación
+  const tot_cine = r.n_cine_nunca_curso_primera_infancia + r.n_cine_primaria +
+                   r.n_cine_secundaria + r.n_cine_terciaria_maestria_doctorado +
+                   r.n_cine_especial_diferencial;
+  // Asistencia actual (para % parvularia)
+  const tot_asist = r.n_asistencia_parv + r.n_asistencia_basica +
+                    r.n_asistencia_media + r.n_asistencia_superior;
 
   document.getElementById('censo-kpi-edu').innerHTML =
     kpiCenso('Prom. escolaridad', fmtD(r.prom_escolaridad18)+' años', 'Población 18+') +
-    kpiCenso('Analfabetismo', fmtP(pct(r.n_analfabet,pop)), fmtN(r.n_analfabet)+' personas', pct(r.n_analfabet,pop)>3?'rojo':'verde') +
-    kpiCenso('Sin escolaridad (CINE)', fmtP(pct(r.n_cine_nunca_curso_primera_infancia,tot_cine)), 'Nunca cursó', pct(r.n_cine_nunca_curso_primera_infancia,tot_cine)>5?'rojo':'') +
-    kpiCenso('Ed. terciaria (CINE)', fmtP(pct(r.n_cine_terciaria_maestria_doctorado,tot_cine)), 'Maestría/Doctorado incl.');
+    kpiCenso('Analfabetismo', fmtP(pct(r.n_analfabet,pop)), fmtN(r.n_analfabet)+' personas',
+             pct(r.n_analfabet,pop)>3?'rojo':'verde') +
+    kpiCenso('Sin escolaridad (CINE)', fmtP(pct(r.n_cine_nunca_curso_primera_infancia,tot_cine)),
+             'Nunca cursó', pct(r.n_cine_nunca_curso_primera_infancia,tot_cine)>5?'rojo':'') +
+    kpiCenso('Ed. terciaria (CINE)', fmtP(pct(r.n_cine_terciaria_maestria_doctorado,tot_cine)),
+             'Maestría/Doctorado incl.');
 
-  // Gráfico CINE — con parvularia incluida en el segundo gráfico
+  // Gráfico CINE — denominador = tot_cine
   makeHBar('censo-chart-cine',
     ['Sin escolaridad','Primaria','Secundaria','Terciaria/Posgrado','Ed. especial'],
     [{label:'% (tot_cine)', borderRadius:3,
       data:[
-        pct(r.n_cine_nunca_curso_primera_infancia,tot_cine),
-        pct(r.n_cine_primaria,tot_cine),
-        pct(r.n_cine_secundaria,tot_cine),
-        pct(r.n_cine_terciaria_maestria_doctorado,tot_cine),
-        pct(r.n_cine_especial_diferencial,tot_cine),
+        pct(r.n_cine_nunca_curso_primera_infancia, tot_cine),
+        pct(r.n_cine_primaria, tot_cine),
+        pct(r.n_cine_secundaria, tot_cine),
+        pct(r.n_cine_terciaria_maestria_doctorado, tot_cine),
+        pct(r.n_cine_especial_diferencial, tot_cine),
       ],
       backgroundColor:['#dc2626','#f59e0b','#3b82f6','#7c3aed','#94a3b8'],
     }]
   );
 
-  // Nivel alcanzado — usando tot_cine como denominador + parvularia basada en tot_cine
-  const pctParv = pct(r.n_asistencia_parv, tot_asist); // parvularia como % de asistentes actuales
+  // Gráfico "Nivel alcanzado" — incluye parvularia + analfabetismo de referencia
+  // Parvularia = asistentes actuales en parvularia / tot_asist (asistentes actuales)
   makeHBar('censo-chart-asist',
-    ['Sin escolaridad','Primaria','Secundaria','Terciaria/Posgrado','Parvularia (asist.act.)','Analfabetismo (ref.)'],
+    ['Sin escolaridad','Primaria','Secundaria','Terciaria/Posgrado','Parvularia (asist. actual)','Analfabetismo (ref.)'],
     [{label:'% tot_cine / asist.', borderRadius:3,
       data:[
-        pct(r.n_cine_nunca_curso_primera_infancia,tot_cine),
-        pct(r.n_cine_primaria,tot_cine),
-        pct(r.n_cine_secundaria,tot_cine),
-        pct(r.n_cine_terciaria_maestria_doctorado,tot_cine),
-        pctParv,
-        pct(r.n_analfabet,pop),
+        pct(r.n_cine_nunca_curso_primera_infancia, tot_cine),
+        pct(r.n_cine_primaria, tot_cine),
+        pct(r.n_cine_secundaria, tot_cine),
+        pct(r.n_cine_terciaria_maestria_doctorado, tot_cine),
+        pct(r.n_asistencia_parv, tot_asist),
+        pct(r.n_analfabet, pop),
       ],
       backgroundColor:['#dc2626','#f59e0b','#3b82f6','#7c3aed','#10b981','#94a3b8'],
     }]
   );
 
-  // Tabla — usando tot_cine como denominador para todas las columnas de nivel
-  // "Sin escolaridad" = n_cine_nunca_curso_primera_infancia / tot_cine
-  const cols = ['Región','Prom. escolaridad','% Sin escolaridad','% Analfabetismo','% Parvularia (asist.)','% Primaria','% Secundaria','% Terciaria'];
-  let thead = '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${c}</th>`:`<th onclick="sortDT('censo-tabla-edu',${i})">${c}</th>`).join('')+'</tr></thead>';
+  // Tabla comparativa — todos los % sobre tot_cine; columna "Sin escolaridad" incluida
+  const cols = ['Región','Prom. escolaridad','% Sin escolaridad','% Analfabetismo',
+                '% Parvularia (asist.)','% Primaria','% Secundaria','% Terciaria'];
+  let thead = '<thead><tr>'+cols.map((c,i)=>
+    i===0?`<th>${c}</th>`:`<th onclick="sortDT('censo-tabla-edu',${i})">${c}</th>`
+  ).join('')+'</tr></thead>';
   let tbody = '<tbody>';
-  const regsEduOrden = CENSO_ORDEN.map(c=>CENSO.datos[String(c)]);
-  regsEduOrden.forEach(reg => {
-    const p=reg.n_per;
-    const tc=reg.n_cine_nunca_curso_primera_infancia+reg.n_cine_primaria+reg.n_cine_secundaria+reg.n_cine_terciaria_maestria_doctorado+reg.n_cine_especial_diferencial;
-    const ta=reg.n_asistencia_parv+reg.n_asistencia_basica+reg.n_asistencia_media+reg.n_asistencia_superior;
+  CENSO_ORDEN.forEach(cdReg => {
+    const reg = CENSO.datos[String(cdReg)];
+    const p = reg.n_per;
+    const tc = reg.n_cine_nunca_curso_primera_infancia + reg.n_cine_primaria +
+               reg.n_cine_secundaria + reg.n_cine_terciaria_maestria_doctorado +
+               reg.n_cine_especial_diferencial;
+    const ta = reg.n_asistencia_parv + reg.n_asistencia_basica +
+               reg.n_asistencia_media + reg.n_asistencia_superior;
     const isAct = reg.cod === r.cod;
     tbody += `<tr style="${isAct?'background:#f5f3ff;font-weight:600':''}">
       <td>${reg.nombre}</td>
@@ -2089,8 +2112,11 @@ function renderCensoEdu() {
     </tr>`;
   });
   // Fila nacional
-  const ntc=CENSO_NAC.n_cine_nunca_curso_primera_infancia+CENSO_NAC.n_cine_primaria+CENSO_NAC.n_cine_secundaria+CENSO_NAC.n_cine_terciaria_maestria_doctorado+CENSO_NAC.n_cine_especial_diferencial;
-  const nta=CENSO_NAC.n_asistencia_parv+CENSO_NAC.n_asistencia_basica+CENSO_NAC.n_asistencia_media+CENSO_NAC.n_asistencia_superior;
+  const ntc = CENSO_NAC.n_cine_nunca_curso_primera_infancia + CENSO_NAC.n_cine_primaria +
+              CENSO_NAC.n_cine_secundaria + CENSO_NAC.n_cine_terciaria_maestria_doctorado +
+              CENSO_NAC.n_cine_especial_diferencial;
+  const nta = CENSO_NAC.n_asistencia_parv + CENSO_NAC.n_asistencia_basica +
+              CENSO_NAC.n_asistencia_media + CENSO_NAC.n_asistencia_superior;
   tbody += `<tr class="censo-nacional-row">
     <td>🇨🇱 Total nacional</td>
     <td>${fmtD(CENSO_NAC.prom_escolaridad18)}</td>
@@ -2110,32 +2136,35 @@ function renderCensoCon() {
   const r = getCensoReg('censo-region-con');
   if(!r) return;
   const cod = document.getElementById('censo-region-con').value;
-  ['censo-region','censo-region-viv','censo-region-edu'].forEach(id => { document.getElementById(id).value = cod; });
+  ['censo-region','censo-region-viv','censo-region-edu'].forEach(id => {
+    document.getElementById(id).value = cod;
+  });
   const vp = r.n_vp_ocupada, hog = r.n_hog;
 
   document.getElementById('censo-kpi-con').innerHTML =
-    kpiCenso('Acceso a internet', fmtP(pct(r.n_internet,hog)), fmtN(r.n_internet)+' hogares', pct(r.n_internet,hog)<70?'rojo':pct(r.n_internet,hog)<85?'amber':'verde') +
+    kpiCenso('Acceso a internet', fmtP(pct(r.n_internet,hog)), fmtN(r.n_internet)+' hogares',
+             pct(r.n_internet,hog)<70?'rojo':pct(r.n_internet,hog)<85?'amber':'verde') +
     kpiCenso('Teléfono móvil', fmtP(pct(r.n_serv_tel_movil,hog)), fmtN(r.n_serv_tel_movil)+' hogares') +
-    kpiCenso('Agua red pública', fmtP(pct(r.n_fuente_agua_publica,vp)), fmtN(r.n_fuente_agua_publica)+' viviendas', pct(r.n_fuente_agua_publica,vp)<80?'rojo':'verde') +
-    kpiCenso('Alcantarillado', fmtP(pct(r.n_serv_hig_alc_dentro,vp)), 'Dentro de la vivienda', pct(r.n_serv_hig_alc_dentro,vp)<70?'rojo':'verde') +
+    kpiCenso('Agua red pública', fmtP(pct(r.n_fuente_agua_publica,vp)), fmtN(r.n_fuente_agua_publica)+' viviendas',
+             pct(r.n_fuente_agua_publica,vp)<80?'rojo':'verde') +
+    kpiCenso('Alcantarillado', fmtP(pct(r.n_serv_hig_alc_dentro,vp)), 'Dentro de la vivienda',
+             pct(r.n_serv_hig_alc_dentro,vp)<70?'rojo':'verde') +
     kpiCenso('Electricidad red', fmtP(pct(r.n_fuente_elect_publica,vp)), fmtN(r.n_fuente_elect_publica)+' viviendas') +
-    kpiCenso('Retiro basura', fmtP(pct(r.n_basura_servicios,vp)), 'Servicio municipal/empresa', pct(r.n_basura_servicios,vp)<80?'amber':'');
+    kpiCenso('Retiro basura', fmtP(pct(r.n_basura_servicios,vp)), 'Servicio municipal/empresa',
+             pct(r.n_basura_servicios,vp)<80?'amber':'');
 
   makeHBar('censo-chart-serv',
     ['Agua red pública','Alcantarillado dentro','Electricidad red','Retiro de basura'],
     [{label:'% viviendas', borderRadius:3,
-      data:[
-        pct(r.n_fuente_agua_publica,vp),
-        pct(r.n_serv_hig_alc_dentro,vp),
-        pct(r.n_fuente_elect_publica,vp),
-        pct(r.n_basura_servicios,vp),
-      ],
+      data:[pct(r.n_fuente_agua_publica,vp), pct(r.n_serv_hig_alc_dentro,vp),
+            pct(r.n_fuente_elect_publica,vp), pct(r.n_basura_servicios,vp)],
       backgroundColor:['#2563eb','#16a34a','#f59e0b','#6366f1'],
     }]
   );
 
   const digitalVar = document.getElementById('censo-digital-var')?.value || 'n_internet';
-  const regsSorted = Object.values(CENSO.datos).sort((a,b) => pct(b[digitalVar],b.n_hog) - pct(a[digitalVar],a.n_hog));
+  const regsSorted = Object.values(CENSO.datos)
+    .sort((a,b) => pct(b[digitalVar],b.n_hog) - pct(a[digitalVar],a.n_hog));
   makeBarSeg('censo-chart-digital',
     regsSorted.map(reg => reg.nombre.replace('Metropolitana','RM').replace('Arica y Parinacota','Arica')),
     [
@@ -2150,8 +2179,8 @@ function renderCensoCon() {
   makeHBar('censo-chart-cocina',
     ['Gas','Leña','Electricidad','No utiliza'],
     [{label:'% viviendas', borderRadius:3,
-      data:[pct(r.n_comb_cocina_gas,vp),pct(r.n_comb_cocina_lena,vp),
-            pct(r.n_comb_cocina_electricidad,vp),pct(r.n_comb_cocina_no_utiliza,vp)],
+      data:[pct(r.n_comb_cocina_gas,vp), pct(r.n_comb_cocina_lena,vp),
+            pct(r.n_comb_cocina_electricidad,vp), pct(r.n_comb_cocina_no_utiliza,vp)],
       backgroundColor:['#f59e0b','#92400e','#2563eb','#94a3b8'],
     }]
   );
@@ -2159,19 +2188,21 @@ function renderCensoCon() {
   makeHBar('censo-chart-calef',
     ['Gas','Leña','Electricidad','No utiliza'],
     [{label:'% viviendas', borderRadius:3,
-      data:[pct(r.n_comb_calefaccion_gas,vp),pct(r.n_comb_calefaccion_lena,vp),
-            pct(r.n_comb_calefaccion_electricidad,vp),pct(r.n_comb_calefaccion_no_utiliza,vp)],
+      data:[pct(r.n_comb_calefaccion_gas,vp), pct(r.n_comb_calefaccion_lena,vp),
+            pct(r.n_comb_calefaccion_electricidad,vp), pct(r.n_comb_calefaccion_no_utiliza,vp)],
       backgroundColor:['#f59e0b','#92400e','#2563eb','#94a3b8'],
     }]
   );
 
-  // Tabla comparativa con fila nacional
+  // Tabla comparativa en orden geográfico + fila nacional
   const cols = ['Región','% Internet','% Agua pública','% Alcantarillado','% Electricidad','% Retiro basura','% Sin saneamiento'];
-  let thead = '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${c}</th>`:`<th onclick="sortDT('censo-tabla-con',${i})">${c}</th>`).join('')+'</tr></thead>';
+  let thead = '<thead><tr>'+cols.map((c,i)=>
+    i===0?`<th>${c}</th>`:`<th onclick="sortDT('censo-tabla-con',${i})">${c}</th>`
+  ).join('')+'</tr></thead>';
   let tbody = '<tbody>';
-  const regsConOrden = CENSO_ORDEN.map(c=>CENSO.datos[String(c)]);
-  regsConOrden.forEach(reg => {
-    const v=reg.n_vp_ocupada, h=reg.n_hog;
+  CENSO_ORDEN.forEach(cdReg => {
+    const reg = CENSO.datos[String(cdReg)];
+    const v = reg.n_vp_ocupada, h = reg.n_hog;
     const isAct = reg.cod === r.cod;
     tbody += `<tr style="${isAct?'background:#f5f3ff;font-weight:600':''}">
       <td>${reg.nombre}</td>
@@ -2184,7 +2215,7 @@ function renderCensoCon() {
     </tr>`;
   });
   // Fila nacional
-  const nv2=CENSO_NAC.n_vp_ocupada, nh2=CENSO_NAC.n_hog;
+  const nv2 = CENSO_NAC.n_vp_ocupada, nh2 = CENSO_NAC.n_hog;
   tbody += `<tr class="censo-nacional-row">
     <td>🇨🇱 Total nacional</td>
     <td>${fmtP(pct(CENSO_NAC.n_internet,nh2))}</td>
