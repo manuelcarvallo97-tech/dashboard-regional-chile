@@ -1705,7 +1705,6 @@ const ORDEN_GEO_NS = ['Arica y Parinacota','Tarapacá','Antofagasta','Atacama','
   'Valparaíso','Metropolitana','O'Higgins','Maule','Ñuble','Biobío',
   'La Araucanía','Los Ríos','Los Lagos','Aysén','Magallanes'];
 function sortGeoNS(arr, nameKey) {
-  // nameKey: función o string. Si string, accede arr[i][nameKey]. Si null, arr[i] es el nombre.
   return [...arr].sort((a,b) => {
     const na = nameKey ? (typeof nameKey==='function' ? nameKey(a) : a[nameKey]) : a;
     const nb = nameKey ? (typeof nameKey==='function' ? nameKey(b) : b[nameKey]) : b;
