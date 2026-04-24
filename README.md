@@ -183,6 +183,7 @@ python generar_dashboard.py          # Generar HTML
 | 1.2 | Apr 2026 | ajustes en pestaña Censo |
 | 1.2 | Apr 2026 | Actualizacion dashboard |
 | 1.2 | Apr 2026 | Actualizacion dashboard |
+| 1.2 | Apr 2026 | Actualizacion dashboard |
 
 ---
 

@@ -2124,19 +2124,17 @@ function poblarSelectsCenso() {{
   selIds.forEach(id => {{
     const sel = document.getElementById(id);
     if(!sel) return;
-    const ph = document.createElement('option');
-    ph.value = ''; ph.textContent = '-- Selecciona una región --'; sel.appendChild(ph);
-    // Total nacional al tope
+    // Total nacional como primera y única opción especial
     const oNac = document.createElement('option');
-    oNac.value = '__nacional__'; oNac.textContent = '[ Total nacional ]'; sel.appendChild(oNac);
+    oNac.value = '__nacional__'; oNac.textContent = 'Total nacional'; sel.appendChild(oNac);
     // Separador
     const sep = document.createElement('option');
-    sep.disabled = true; sep.textContent = '------------------'; sel.appendChild(sep);
+    sep.disabled = true; sep.textContent = '\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015'; sel.appendChild(sep);
     ordenadas.forEach(([cod, r]) => {{
       const o = document.createElement('option');
       o.value = cod; o.textContent = r.nombre; sel.appendChild(o);
     }});
-    sel.value = '13';
+    sel.value = '__nacional__'; // Default: Total nacional
   }});
 }}
 
