@@ -1100,7 +1100,7 @@ function poblarSemana(selId, handler) {{
 }}
 function poblarRegionSeg(selId, handler) {{
   const sel = document.getElementById(selId);
-  SEG.regiones.forEach(r => {{
+  sortGeoNS(SEG.regiones).forEach(r => {{
     const o = document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o);
   }});
   sel.onchange = handler;
@@ -2021,6 +2021,22 @@ function renderResumenPib() {{
 const CENSO = CENSO_DATA;
 const CENSO_NAC = CENSO.total_nacional; // total nacional precalculado
 
+// ── Orden geográfico norte-sur (compartido por todos los módulos) ──
+const ORDEN_GEO_NS = ['Arica y Parinacota','Tarapacá','Antofagasta','Atacama','Coquimbo',
+  'Valparaíso','Metropolitana','O\'Higgins','Maule','Ñuble','Biobío',
+  'La Araucanía','Los Ríos','Los Lagos','Aysén','Magallanes'];
+function sortGeoNS(arr, nameKey) {{
+  // nameKey: función o string. Si string, accede arr[i][nameKey]. Si null, arr[i] es el nombre.
+  return [...arr].sort((a,b) => {{
+    const na = nameKey ? (typeof nameKey==='function' ? nameKey(a) : a[nameKey]) : a;
+    const nb = nameKey ? (typeof nameKey==='function' ? nameKey(b) : b[nameKey]) : b;
+    const ia = ORDEN_GEO_NS.findIndex(n => na.includes(n) || n.includes(na));
+    const ib = ORDEN_GEO_NS.findIndex(n => nb.includes(n) || n.includes(nb));
+    return (ia===-1?99:ia) - (ib===-1?99:ib);
+  }});
+}}
+
+
 let censoTabActual = 'demografia';
 let censoSexoFiltro = null; // null | 'hombres' | 'mujeres'
 
@@ -2120,7 +2136,7 @@ function makeHBar(id, labels, datasets) {{
 // ── Poblar selects censo ─────────────────────────────────────
 function poblarSelectsCenso() {{
   const selIds = ['censo-region','censo-region-viv','censo-region-edu','censo-region-con'];
-  const ordenadas = Object.entries(CENSO.datos).sort((a,b) => parseInt(a[0])-parseInt(b[0]));
+  const ordenadas = sortGeoNS(Object.entries(CENSO.datos), e => e[1].nombre);
   selIds.forEach(id => {{
     const sel = document.getElementById(id);
     if(!sel) return;
@@ -2674,7 +2690,7 @@ window.onload = function() {{
   ['res-region', 'dmcs-region'].forEach(selId => {{
     const sel = document.getElementById(selId);
     if(!sel) return;
-    SEG.regiones.forEach(r => {{
+    sortGeoNS(SEG.regiones).forEach(r => {{
       const o = document.createElement('option');
       o.value = r; o.textContent = r; sel.appendChild(o);
     }});
@@ -2694,7 +2710,7 @@ window.onload = function() {{
 
   // PIB — selects de región
   const selReg = document.getElementById('pib-region-sel');
-  PIB.regiones.forEach(r=>{{const o=document.createElement('option');o.value=r;o.textContent=r;selReg.appendChild(o);}});
+  sortGeoNS(PIB.regiones).forEach(r=>{{const o=document.createElement('option');o.value=r;o.textContent=r;selReg.appendChild(o);}});
 
   // PIB — indicadores y años
   ['pib-evo','pib-sec','pib-res'].forEach(p=>{{
@@ -2714,7 +2730,7 @@ window.onload = function() {{
   }});
   // Empleo — regiones
   const empSelR=document.getElementById('emp-evo-region');
-  EMP.regiones.forEach(r=>{{const o=document.createElement('option');o.value=r;o.textContent=r;empSelR.appendChild(o);}});
+  sortGeoNS(EMP.regiones).forEach(r=>{{const o=document.createElement('option');o.value=r;o.textContent=r;empSelR.appendChild(o);}});
   // Empleo — años
   const empAños=EMP.años;
   ['emp-evo-desde','emp-evo-hasta'].forEach((id,i)=>{{
@@ -2948,7 +2964,7 @@ function syncCS(id){{
 function poblarSelectsCasen(){{
   ['cp-r','csv-r','cm-r','ci-r','cs-r'].forEach(id=>{{
     const sel=document.getElementById(id);if(!sel)return;
-    CASEN.regiones.forEach(r=>{{const o=document.createElement('option');o.value=r;o.textContent=r;sel.appendChild(o);}});
+    sortGeoNS(CASEN.regiones).forEach(r=>{{const o=document.createElement('option');o.value=r;o.textContent=r;sel.appendChild(o);}});
     sel.value='Metropolitana de Santiago';
   }});
 }}
