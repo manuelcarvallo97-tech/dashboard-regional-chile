@@ -303,6 +303,28 @@ if not censo_path.exists():
 with open(censo_path, encoding='utf-8') as f:
     censo_raw = json.load(f)
 
+# ── Calcular total nacional Censo ────────────────────────────
+def _sum_field(datos, campo):
+    return sum(r.get(campo, 0) or 0 for r in datos.values())
+
+def _wavg_field(datos, campo, peso_campo):
+    """Promedio ponderado por peso_campo."""
+    num = sum((r.get(campo, 0) or 0) * (r.get(peso_campo, 0) or 0) for r in datos.values())
+    den = sum(r.get(peso_campo, 0) or 0 for r in datos.values())
+    return round(num / den, 1) if den else None
+
+_cd = censo_raw['datos']
+_campos_suma = [k for k in next(iter(_cd.values())).keys()
+                if k not in ('nombre', 'cod', 'prom_edad', 'prom_escolaridad18', 'prom_per_hog')]
+_total_nac = {'nombre': 'Total nacional', 'cod': 0}
+for campo in _campos_suma:
+    _total_nac[campo] = _sum_field(_cd, campo)
+# promedios ponderados por población
+_total_nac['prom_edad']          = _wavg_field(_cd, 'prom_edad',          'n_per')
+_total_nac['prom_escolaridad18'] = _wavg_field(_cd, 'prom_escolaridad18', 'n_per')
+_total_nac['prom_per_hog']       = round(_total_nac['n_per'] / _total_nac['n_hog'], 1) if _total_nac.get('n_hog') else None
+
+censo_raw['total_nacional'] = _total_nac
 data_censo_json = json.dumps(censo_raw, ensure_ascii=False)
 
 # CASEN 2024
@@ -444,6 +466,10 @@ table.dt tr.nacional-row td{{background:#f0fdf4!important;font-weight:700;color:
 /* Seguridad hover */
 #mod-seguridad table.dt tr:hover td{{background:#f0fff4}}
 #mod-seguridad table.dt tr:hover td:first-child{{background:#dcfce7}}
+
+/* ── Botones descarga ── */
+.btn-dl-chart,.btn-dl-table{{background:#e8f0fe;color:#2563eb;border:none;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}}
+.btn-dl-chart:hover,.btn-dl-table:hover{{background:#2563eb;color:white}}
 
 /* ── Misc ── */
 .neg{{color:#dc2626;font-weight:600}}.pos{{color:#16a34a;font-weight:600}}
@@ -723,6 +749,8 @@ table.dt tr.nacional-row td{{background:#f0fdf4!important;font-weight:700;color:
             <option value="total">Total regional</option>
           </select></div>
       </div>
+      <div id="censo-sexo-banner" style="display:none;margin-bottom:14px;padding:0 4px"></div>
+      <p class="nota" style="margin-bottom:14px">💡 Haz clic en <strong>Hombres</strong> o <strong>Mujeres</strong> en el gráfico para filtrar los indicadores por sexo.</p>
       <div class="kpi-grid" id="censo-kpi-demo"></div>
       <div class="grid2">
         <div class="card">
@@ -783,6 +811,7 @@ table.dt tr.nacional-row td{{background:#f0fdf4!important;font-weight:700;color:
       <div class="card">
         <h3>Comparación regional — Educación</h3>
         <div class="tabla-wrap"><table class="dt" id="censo-tabla-edu"></table></div>
+        <p class="nota" id="censo-edu-nota"></p>
       </div>
     </div>
 
@@ -982,6 +1011,73 @@ function sortDT(tableId, col) {{
     return dir==='asc'?cmp:-cmp;
   }});
   [...normales,...especiales].forEach(r => tbody.appendChild(r));
+}}
+
+// ══════════════════════════════════════════════════════════════
+// DESCARGA — gráficos y tablas
+// ══════════════════════════════════════════════════════════════
+function downloadChart(canvasId, filename) {{
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  // Fondo blanco
+  const offscreen = document.createElement('canvas');
+  offscreen.width = canvas.width; offscreen.height = canvas.height;
+  const ctx2 = offscreen.getContext('2d');
+  ctx2.fillStyle = '#ffffff';
+  ctx2.fillRect(0, 0, offscreen.width, offscreen.height);
+  ctx2.drawImage(canvas, 0, 0);
+  const a = document.createElement('a');
+  a.download = (filename||canvasId)+'.png';
+  a.href = offscreen.toDataURL('image/png');
+  a.click();
+}}
+
+function downloadTable(tableId, filename) {{
+  const tbl = document.getElementById(tableId);
+  if(!tbl) return;
+  const rows = Array.from(tbl.querySelectorAll('tr'));
+  const csv = rows.map(row =>
+    Array.from(row.querySelectorAll('th,td'))
+      .map(cell => '"'+cell.textContent.trim().replace(/"/g,'""')+'"')
+      .join(',')
+  ).join('\\n');
+  const bom = '\\uFEFF';
+  const blob = new Blob([bom+csv], {{type:'text/csv;charset=utf-8;'}});
+  const a = document.createElement('a');
+  a.download = (filename||tableId)+'.csv';
+  a.href = URL.createObjectURL(blob);
+  a.click();
+}}
+
+// Inyecta botones de descarga en cards con canvas o tabla
+function addDownloadButtons() {{
+  // Gráficos
+  document.querySelectorAll('.card canvas[id]').forEach(canvas => {{
+    const card = canvas.closest('.card');
+    if(!card || card.querySelector('.btn-dl-chart')) return;
+    const btn = document.createElement('button');
+    btn.className = 'btn-dl-chart';
+    btn.title = 'Descargar imagen';
+    btn.innerHTML = '⬇ PNG';
+    btn.onclick = () => downloadChart(canvas.id, canvas.id);
+    // Insertar en h3 si existe
+    const h3 = card.querySelector('h3');
+    if(h3) {{ h3.style.display='flex'; h3.style.justifyContent='space-between'; h3.style.alignItems='center'; h3.appendChild(btn); }}
+    else card.insertBefore(btn, card.firstChild);
+  }});
+  // Tablas
+  document.querySelectorAll('.tabla-wrap table.dt[id]').forEach(tbl => {{
+    const wrap = tbl.closest('.card') || tbl.closest('.tabla-wrap');
+    if(!wrap || wrap.querySelector('.btn-dl-table')) return;
+    const btn = document.createElement('button');
+    btn.className = 'btn-dl-table';
+    btn.title = 'Descargar CSV';
+    btn.innerHTML = '⬇ CSV';
+    btn.onclick = () => downloadTable(tbl.id, tbl.id);
+    const h3 = wrap.querySelector('h3');
+    if(h3) {{ h3.style.display='flex'; h3.style.justifyContent='space-between'; h3.style.alignItems='center'; h3.appendChild(btn); }}
+    else wrap.insertBefore(btn, wrap.firstChild);
+  }});
 }}
 
 // ══════════════════════════════════════════════════════════════
@@ -1923,16 +2019,18 @@ function renderResumenPib() {{
 // CENSO 2024
 // ══════════════════════════════════════════════════════════════
 const CENSO = CENSO_DATA;
+const CENSO_NAC = CENSO.total_nacional; // total nacional precalculado
 
 let censoTabActual = 'demografia';
+let censoSexoFiltro = null; // null | 'hombres' | 'mujeres'
 
 function setTabCenso(tab, btn) {{
   censoTabActual = tab;
+  censoSexoFiltro = null; // reset filtro sexo al cambiar pestaña
   document.querySelectorAll('.tab-censo').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('#mod-censo .section').forEach(s => s.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('censo-'+tab).classList.add('active');
-  // Sincronizar región seleccionada entre pestañas
   const codActual = document.getElementById('censo-region').value ||
                     document.getElementById('censo-region-viv').value ||
                     document.getElementById('censo-region-edu').value ||
@@ -1961,7 +2059,7 @@ function kpiCenso(label, value, sub='', cls='') {{
   return `<div class="kpi ${{cls}}"><div class="kpi-label">${{label}}</div><div class="kpi-value">${{value}}</div><div class="kpi-sub">${{sub}}</div></div>`;
 }}
 
-function makePie(id, labels, data, colors) {{
+function makePie(id, labels, data, colors, onClickCb) {{
   destroyChart(id);
   const ctx = document.getElementById(id); if(!ctx) return;
   charts[id] = new Chart(ctx, {{
@@ -1970,8 +2068,15 @@ function makePie(id, labels, data, colors) {{
     plugins: [ChartDataLabels],
     options: {{
       responsive:true, maintainAspectRatio:true,
+      onClick: onClickCb || null,
       plugins:{{
-        legend:{{position:'right',labels:{{font:{{size:11}},padding:12}}}},
+        legend:{{
+          position:'right',
+          labels:{{font:{{size:11}},padding:12}},
+          onClick: (evt, item, legend) => {{
+            if(onClickCb) onClickCb(evt, [item]);
+          }}
+        }},
         tooltip:{{callbacks:{{label:ctx=>` ${{ctx.label}}: ${{ctx.parsed.toFixed(1)}}%`}}}},
         datalabels:{{
           display: ctx => ctx.dataset.data[ctx.dataIndex] > 3,
@@ -2013,76 +2118,144 @@ function makeHBar(id, labels, datasets) {{
 // ── Poblar selects censo ─────────────────────────────────────
 function poblarSelectsCenso() {{
   const selIds = ['censo-region','censo-region-viv','censo-region-edu','censo-region-con'];
-  // Ordenar regiones por código numérico
   const ordenadas = Object.entries(CENSO.datos).sort((a,b) => parseInt(a[0])-parseInt(b[0]));
   selIds.forEach(id => {{
     const sel = document.getElementById(id);
     if(!sel) return;
-    // Opción placeholder
     const ph = document.createElement('option');
     ph.value = ''; ph.textContent = '-- Selecciona una región --'; sel.appendChild(ph);
     ordenadas.forEach(([cod, r]) => {{
       const o = document.createElement('option');
       o.value = cod; o.textContent = r.nombre; sel.appendChild(o);
     }});
-    sel.value = '13'; // Default Metropolitana
+    sel.value = '13';
   }});
+}}
+
+// ── Helper fila tabla con highlight ─────────────────────────
+function cTRow(cells, isActive, clases=[]) {{
+  const rowStyle = isActive ? 'background:#f5f3ff;font-weight:600' : '';
+  return `<tr style="${{rowStyle}}">`
+    + cells.map((c,i) => `<td class="${{clases[i]||''}}">${{c}}</td>`).join('')
+    + '</tr>';
+}}
+function cTHead(tableId, cols) {{
+  return '<thead><tr>' + cols.map((c,i) =>
+    i===0 ? `<th>${{c}}</th>`
+           : `<th onclick="sortDT('${{tableId}}',${{i}})">${{c}}</th>`
+  ).join('') + '</tr></thead>';
+}}
+function trNac(cells, clases=[]) {{
+  return `<tr class="nacional-row">`
+    + cells.map((c,i) => `<td class="${{clases[i]||''}}">${{c}}</td>`).join('')
+    + '</tr>';
 }}
 
 // ── DEMOGRAFÍA ───────────────────────────────────────────────
 function renderCenso() {{
   const r = getCensoReg('censo-region');
   if(!r) return;
-  // Sincronizar todos los selects del censo
   const cod = document.getElementById('censo-region').value;
   ['censo-region-viv','censo-region-edu','censo-region-con'].forEach(id => {{ document.getElementById(id).value = cod; }});
-  const pop = r.n_per, hog = r.n_hog;
 
-  // KPIs
+  const filtro = censoSexoFiltro;
+  const pop = filtro==='hombres' ? r.n_hombres : filtro==='mujeres' ? r.n_mujeres : r.n_per;
+  const hog = r.n_hog;
+
+  // Banner de filtro activo
+  const bannerEl = document.getElementById('censo-sexo-banner');
+  if(bannerEl) {{
+    if(filtro) {{
+      bannerEl.style.display='block';
+      bannerEl.innerHTML = `<span style="background:${{filtro==='hombres'?'#dbeafe':'#fce7f3'}};color:${{filtro==='hombres'?'#1d4ed8':'#9d174d'}};padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600">
+        Mostrando: ${{filtro==='hombres'?'👨 Hombres':'👩 Mujeres'}} &nbsp;
+        <button onclick="censoSexoFiltro=null;renderCenso()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#666">✕ Quitar filtro</button>
+      </span>`;
+    }} else {{
+      bannerEl.style.display='none';
+    }}
+  }}
+
+  // KPIs — nota "sin desagregado" para campos no disponibles por sexo
+  const noDesag = filtro ? `<span style="font-size:9px;color:#aaa"> (sin desag.)</span>` : '';
   document.getElementById('censo-kpi-demo').innerHTML =
-    kpiCenso('Población total', fmtN(pop), r.nombre) +
+    kpiCenso(filtro?`Población ${{filtro}}`:'Población total', fmtN(pop), r.nombre) +
     kpiCenso('Hogares', fmtN(hog), `${{fmtD(r.prom_per_hog)}} pers/hogar`) +
-    kpiCenso('Edad promedio', fmtD(r.prom_edad), 'años') +
-    kpiCenso('Inmigrantes', fmtP(pct(r.n_inmigrantes,pop)), fmtN(r.n_inmigrantes)+' personas', pct(r.n_inmigrantes,pop)>10?'amber':'') +
-    kpiCenso('Pueblos originarios', fmtP(pct(r.n_pueblos_orig,pop)), fmtN(r.n_pueblos_orig)+' personas') +
-    kpiCenso('Discapacidad', fmtP(pct(r.n_discapacidad,pop)), fmtN(r.n_discapacidad)+' personas');
+    (filtro
+      ? kpiCenso('Edad promedio', '—', 'Sin desagregado por sexo')
+      : kpiCenso('Edad promedio', fmtD(r.prom_edad), 'años')) +
+    (filtro
+      ? kpiCenso('Inmigrantes', '—', 'Sin desagregado por sexo')
+      : kpiCenso('Inmigrantes', fmtP(pct(r.n_inmigrantes,pop)), fmtN(r.n_inmigrantes)+' personas', pct(r.n_inmigrantes,pop)>10?'amber':'')) +
+    (filtro
+      ? kpiCenso('Pueblos originarios', '—', 'Sin desagregado por sexo')
+      : kpiCenso('Pueblos originarios', fmtP(pct(r.n_pueblos_orig,pop)), fmtN(r.n_pueblos_orig)+' personas')) +
+    (filtro
+      ? kpiCenso('Discapacidad', '—', 'Sin desagregado por sexo')
+      : kpiCenso('Discapacidad', fmtP(pct(r.n_discapacidad,pop)), fmtN(r.n_discapacidad)+' personas'));
 
-  // Gráfico etario
+  // Gráfico etario — si hay filtro sexo aplica proporción hombres/mujeres por tramo
+  // (sin datos desagregados por sexo×edad, se aplica la proporción global de sexo como aproximación)
   const edades = ['0–5','6–13','14–17','18–24','25–44','45–59','60+'];
-  const vals_e = [r.n_edad_0_5,r.n_edad_6_13,r.n_edad_14_17,r.n_edad_18_24,r.n_edad_25_44,r.n_edad_45_59,r.n_edad_60_mas];
-  const pcts_e = vals_e.map(v => pct(v,pop));
+  const vals_e_raw = [r.n_edad_0_5,r.n_edad_6_13,r.n_edad_14_17,r.n_edad_18_24,r.n_edad_25_44,r.n_edad_45_59,r.n_edad_60_mas];
+  let vals_e, nota_edad='';
+  if(filtro) {{
+    const ratio = filtro==='hombres' ? r.n_hombres/r.n_per : r.n_mujeres/r.n_per;
+    vals_e = vals_e_raw.map(v => v*ratio);
+    nota_edad = ' (estimado por proporción global — sin desagregado por sexo×edad)';
+  }} else {{
+    vals_e = vals_e_raw;
+  }}
+  const pcts_e = vals_e.map(v => pct(v, pop));
   makeBarSeg('censo-chart-edad', edades, [{{
-    label:'% población', data:pcts_e,
+    label:`% población${{nota_edad}}`, data:pcts_e,
     backgroundColor:['#7c3aed','#8b5cf6','#a78bfa','#c4b5fd','#6d28d9','#4c1d95','#3b0764'],
     borderRadius:4
   }}]);
 
-  // Gráfico composición (pie) — solo Hombres/Mujeres
+  // Gráfico composición (donut Hombres/Mujeres) — clickeable para filtrar
+  const hPct = pct(r.n_hombres, r.n_per);
+  const mPct = pct(r.n_mujeres, r.n_per);
+  const bgColors = [
+    filtro==='hombres' ? '#2563eb' : (filtro==='mujeres' ? 'rgba(59,130,246,.3)' : '#3b82f6'),
+    filtro==='mujeres' ? '#db2777' : (filtro==='hombres' ? 'rgba(236,72,153,.3)' : '#ec4899'),
+  ];
   makePie('censo-chart-comp',
     ['Hombres','Mujeres'],
-    [pct(r.n_hombres,pop), pct(r.n_mujeres,pop)],
-    ['#3b82f6','#ec4899']
+    [hPct, mPct],
+    bgColors,
+    (evt, items) => {{
+      if(!items || !items.length) return;
+      const idx = items[0].index;
+      const nuevo = idx===0 ? 'hombres' : 'mujeres';
+      censoSexoFiltro = censoSexoFiltro===nuevo ? null : nuevo;
+      renderCenso();
+    }}
   );
 
-  // Tabla comparativa
+  // Tabla comparativa — incluyendo Total nacional al final
   const cols = ['Región','Población','% Mujeres','Prom. edad','% Inmigrantes','% Pueblos orig.','% Discapacidad'];
-  let thead = '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${{c}}</th>`:`<th onclick="sortDT('censo-tabla-demo',${{i}})">${{c}}</th>`).join('')+'</tr></thead>';
+  let thead = cTHead('censo-tabla-demo', cols);
   let tbody = '<tbody>';
   Object.values(CENSO.datos).sort((a,b)=>b.n_per-a.n_per).forEach(reg => {{
     const p=reg.n_per;
     const isAct = reg.cod === r.cod;
-    tbody += `<tr style="${{isAct?'background:#f5f3ff;font-weight:600':''}}">
-      <td>${{reg.nombre}}</td>
-      <td>${{fmtN(p)}}</td>
-      <td>${{fmtP(pct(reg.n_mujeres,p))}}</td>
-      <td>${{fmtD(reg.prom_edad)}}</td>
-      <td>${{fmtP(pct(reg.n_inmigrantes,p))}}</td>
-      <td>${{fmtP(pct(reg.n_pueblos_orig,p))}}</td>
-      <td>${{fmtP(pct(reg.n_discapacidad,p))}}</td>
-    </tr>`;
+    tbody += cTRow([
+      reg.nombre, fmtN(p), fmtP(pct(reg.n_mujeres,p)),
+      fmtD(reg.prom_edad), fmtP(pct(reg.n_inmigrantes,p)),
+      fmtP(pct(reg.n_pueblos_orig,p)), fmtP(pct(reg.n_discapacidad,p))
+    ], isAct);
   }});
+  // Fila Total nacional
+  const n=CENSO_NAC;
+  tbody += trNac([
+    'Total nacional', fmtN(n.n_per), fmtP(pct(n.n_mujeres,n.n_per)),
+    fmtD(n.prom_edad), fmtP(pct(n.n_inmigrantes,n.n_per)),
+    fmtP(pct(n.n_pueblos_orig,n.n_per)), fmtP(pct(n.n_discapacidad,n.n_per))
+  ]);
   tbody += '</tbody>';
   document.getElementById('censo-tabla-demo').innerHTML = thead+tbody;
+  addDownloadButtons();
 }}
 
 // ── VIVIENDA ─────────────────────────────────────────────────
@@ -2091,17 +2264,20 @@ function renderCensoViv() {{
   if(!r) return;
   const cod = document.getElementById('censo-region-viv').value;
   ['censo-region','censo-region-edu','censo-region-con'].forEach(id => {{ document.getElementById(id).value = cod; }});
-  const vp = r.n_vp_ocupada, hog = r.n_hog;
+  // FIX: denominador correcto es n_vp (total viviendas), no n_vp_ocupada
+  const vp  = r.n_vp;           // total viviendas (denominator tipo)
+  const vpo = r.n_vp_ocupada;   // viviendas ocupadas (denominator deficit/hacinamiento)
+  const hog = r.n_hog;
 
   document.getElementById('censo-kpi-viv').innerHTML =
-    kpiCenso('Viviendas ocupadas', fmtN(vp), '') +
+    kpiCenso('Viviendas ocupadas', fmtN(vpo), `${{fmtN(r.n_vp_desocupada)}} desocupadas`) +
     kpiCenso('Hogares', fmtN(hog), `${{fmtD(r.prom_per_hog)}} pers/hogar`) +
     kpiCenso('Jefatura mujer', fmtP(pct(r.n_jefatura_mujer,hog)), fmtN(r.n_jefatura_mujer)+' hogares', pct(r.n_jefatura_mujer,hog)>45?'verde':'') +
-    kpiCenso('Hacinamiento', fmtP(pct(r.n_viv_hacinadas,vp)), fmtN(r.n_viv_hacinadas)+' viviendas', pct(r.n_viv_hacinadas,vp)>8?'rojo':'amber') +
-    kpiCenso('Irrecuperables', fmtP(pct(r.n_viv_irrecuperables,vp)), fmtN(r.n_viv_irrecuperables)+' viviendas', pct(r.n_viv_irrecuperables,vp)>2?'rojo':'') +
-    kpiCenso('Déficit cuantitativo', fmtP(pct(r.n_deficit_cuantitativo,vp)), fmtN(r.n_deficit_cuantitativo)+' viviendas', pct(r.n_deficit_cuantitativo,vp)>8?'rojo':'amber');
+    kpiCenso('Hacinamiento', fmtP(pct(r.n_viv_hacinadas,vpo)), fmtN(r.n_viv_hacinadas)+' viviendas', pct(r.n_viv_hacinadas,vpo)>8?'rojo':'amber') +
+    kpiCenso('Irrecuperables', fmtP(pct(r.n_viv_irrecuperables,vpo)), fmtN(r.n_viv_irrecuperables)+' viviendas', pct(r.n_viv_irrecuperables,vpo)>2?'rojo':'') +
+    kpiCenso('Déficit cuantitativo', fmtP(pct(r.n_deficit_cuantitativo,vpo)), fmtN(r.n_deficit_cuantitativo)+' viviendas', pct(r.n_deficit_cuantitativo,vpo)>8?'rojo':'amber');
 
-  // Tipo vivienda (incluye vivienda tradicional indígena = ruka, palafito, etc.)
+  // Tipo vivienda — FIX: usar n_vp (total) como denominador
   makePie('censo-chart-tipo-viv',
     ['Casa','Departamento','Mediagua','Pieza','Vivienda trad.','Móvil','Otro'],
     [pct(r.n_tipo_viv_casa,vp),pct(r.n_tipo_viv_depto,vp),pct(r.n_tipo_viv_mediagua,vp),
@@ -2118,25 +2294,41 @@ function renderCensoViv() {{
     ['#16a34a','#4ade80','#f59e0b','#dc2626','#6366f1','#94a3b8']
   );
 
-  // Tabla comparativa déficit
-  const cols = ['Región','Viv. ocupadas','% Hacinadas','% Irrecuperables','% Déficit cuant.','% Allegados','% Jef. mujer'];
-  let thead = '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${{c}}</th>`:`<th onclick="sortDT('censo-tabla-viv',${{i}})">${{c}}</th>`).join('')+'</tr></thead>';
+  // Tabla comparativa déficit — agrega prom_per_hog
+  const cols = ['Región','Viv. ocupadas','Pers/hogar','% Hacinadas','% Irrecuperables','% Déficit cuant.','% Allegados','% Jef. mujer'];
+  let thead = cTHead('censo-tabla-viv', cols);
   let tbody = '<tbody>';
   Object.values(CENSO.datos).sort((a,b)=>pct(b.n_deficit_cuantitativo,b.n_vp_ocupada)-pct(a.n_deficit_cuantitativo,a.n_vp_ocupada)).forEach(reg => {{
     const v=reg.n_vp_ocupada, h=reg.n_hog;
     const isAct = reg.cod === r.cod;
-    tbody += `<tr style="${{isAct?'background:#f5f3ff;font-weight:600':''}}">
-      <td>${{reg.nombre}}</td>
-      <td>${{fmtN(v)}}</td>
-      <td class="${{pct(reg.n_viv_hacinadas,v)>8?'neg':''}}">${{fmtP(pct(reg.n_viv_hacinadas,v))}}</td>
-      <td class="${{pct(reg.n_viv_irrecuperables,v)>2?'neg':''}}">${{fmtP(pct(reg.n_viv_irrecuperables,v))}}</td>
-      <td class="${{pct(reg.n_deficit_cuantitativo,v)>8?'neg':''}}">${{fmtP(pct(reg.n_deficit_cuantitativo,v))}}</td>
-      <td>${{fmtP(pct(reg.n_hog_allegados,h))}}</td>
-      <td>${{fmtP(pct(reg.n_jefatura_mujer,h))}}</td>
-    </tr>`;
+    tbody += cTRow([
+      reg.nombre, fmtN(v), fmtD(reg.prom_per_hog),
+      fmtP(pct(reg.n_viv_hacinadas,v)),
+      fmtP(pct(reg.n_viv_irrecuperables,v)),
+      fmtP(pct(reg.n_deficit_cuantitativo,v)),
+      fmtP(pct(reg.n_hog_allegados,h)),
+      fmtP(pct(reg.n_jefatura_mujer,h))
+    ], isAct, [
+      '', '',  '',
+      pct(reg.n_viv_hacinadas,v)>8?'neg':'',
+      pct(reg.n_viv_irrecuperables,v)>2?'neg':'',
+      pct(reg.n_deficit_cuantitativo,v)>8?'neg':'',
+      '', ''
+    ]);
   }});
+  // Total nacional
+  const n=CENSO_NAC;
+  tbody += trNac([
+    'Total nacional', fmtN(n.n_vp_ocupada), fmtD(n.prom_per_hog),
+    fmtP(pct(n.n_viv_hacinadas,n.n_vp_ocupada)),
+    fmtP(pct(n.n_viv_irrecuperables,n.n_vp_ocupada)),
+    fmtP(pct(n.n_deficit_cuantitativo,n.n_vp_ocupada)),
+    fmtP(pct(n.n_hog_allegados,n.n_hog)),
+    fmtP(pct(n.n_jefatura_mujer,n.n_hog))
+  ]);
   tbody += '</tbody>';
   document.getElementById('censo-tabla-viv').innerHTML = thead+tbody;
+  addDownloadButtons();
 }}
 
 // ── EDUCACIÓN ────────────────────────────────────────────────
@@ -2146,19 +2338,21 @@ function renderCensoEdu() {{
   const cod = document.getElementById('censo-region-edu').value;
   ['censo-region','censo-region-viv','censo-region-con'].forEach(id => {{ document.getElementById(id).value = cod; }});
   const pop = r.n_per;
+  const tot_cine = r.n_cine_nunca_curso_primera_infancia+r.n_cine_primaria+r.n_cine_secundaria
+                 + r.n_cine_terciaria_maestria_doctorado+r.n_cine_especial_diferencial;
+  // Asistencia — denominador: suma total de quienes asisten
   const tot_asist = r.n_asistencia_parv+r.n_asistencia_basica+r.n_asistencia_media+r.n_asistencia_superior;
-  const tot_cine  = r.n_cine_nunca_curso_primera_infancia+r.n_cine_primaria+r.n_cine_secundaria+r.n_cine_terciaria_maestria_doctorado+r.n_cine_especial_diferencial;
 
   document.getElementById('censo-kpi-edu').innerHTML =
     kpiCenso('Prom. escolaridad', fmtD(r.prom_escolaridad18)+' años', 'Población 18+') +
-    kpiCenso('Analfabetismo', fmtP(pct(r.n_analfabet,pop)), fmtN(r.n_analfabet)+' personas', pct(r.n_analfabet,pop)>3?'rojo':'verde') +
-    kpiCenso('Asistencia superior', fmtP(pct(r.n_asistencia_superior,tot_asist)), 'Del total en sistema') +
-    kpiCenso('Ed. terciaria (CINE)', fmtP(pct(r.n_cine_terciaria_maestria_doctorado,tot_cine)), 'Maestría/Doctorado incl.');
+    kpiCenso('Analfabetismo', fmtP(pct(r.n_analfabet,tot_cine)), fmtN(r.n_analfabet)+' personas', pct(r.n_analfabet,tot_cine)>3?'rojo':'verde') +
+    kpiCenso('Ed. terciaria (CINE)', fmtP(pct(r.n_cine_terciaria_maestria_doctorado,tot_cine)), 'Maestría/Doctorado incl.') +
+    kpiCenso('Ed. especial', fmtP(pct(r.n_cine_especial_diferencial,tot_cine)), fmtN(r.n_cine_especial_diferencial)+' personas');
 
-  // CINE
+  // Gráfico CINE — denominador tot_cine
   makeHBar('censo-chart-cine',
     ['Sin escolaridad','Primaria','Secundaria','Terciaria/Posgrado','Ed. especial'],
-    [{{label:'% población', borderRadius:3,
+    [{{label:'% sobre registros CINE', borderRadius:3,
       data:[
         pct(r.n_cine_nunca_curso_primera_infancia,tot_cine),
         pct(r.n_cine_primaria,tot_cine),
@@ -2170,40 +2364,64 @@ function renderCensoEdu() {{
     }}]
   );
 
-  // Gráfico analfabetismo y escolaridad por tramos CINE — más interpretable
-  const vAnalf = pct(r.n_analfabet, pop);
-  const vSinEsc = pct(r.n_cine_nunca_curso_primera_infancia, tot_cine);
-  const vPrim = pct(r.n_cine_primaria, tot_cine);
-  const vSec = pct(r.n_cine_secundaria, tot_cine);
-  const vTer = pct(r.n_cine_terciaria_maestria_doctorado, tot_cine);
+  // Gráfico "nivel educacional alcanzado" — incluye parvularia, todo sobre tot_cine
   makeHBar('censo-chart-asist',
-    ['Sin escolaridad','Primaria completa','Secundaria completa','Terciaria / Posgrado','Analfabetismo (ref.)'],
-    [{{label:'% población', borderRadius:3,
-      data:[vSinEsc, vPrim, vSec, vTer, vAnalf],
-      backgroundColor:['#dc2626','#f59e0b','#3b82f6','#7c3aed','#94a3b8'],
+    ['Sin escolaridad','Parvularia','Primaria','Secundaria','Terciaria/Posgrado'],
+    [{{label:'% sobre registros CINE', borderRadius:3,
+      data:[
+        pct(r.n_cine_nunca_curso_primera_infancia, tot_cine),
+        pct(r.n_asistencia_parv, tot_cine),
+        pct(r.n_cine_primaria, tot_cine),
+        pct(r.n_cine_secundaria, tot_cine),
+        pct(r.n_cine_terciaria_maestria_doctorado, tot_cine),
+      ],
+      backgroundColor:['#dc2626','#f59e0b','#60a5fa','#3b82f6','#7c3aed'],
     }}]
   );
 
-  // Tabla
-  const cols = ['Región','Prom. escolaridad','% Analfabetismo','% Parvularia','% Básica','% Media','% Superior'];
-  let thead = '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${{c}}</th>`:`<th onclick="sortDT('censo-tabla-edu',${{i}})">${{c}}</th>`).join('')+'</tr></thead>';
+  // Tabla comparativa — todo sobre tot_cine, agrega columna "Sin escolaridad"
+  const cols = ['Región','Prom. escolaridad','% Sin escolaridad','% Analfabetismo','% Parvularia','% Primaria','% Secundaria','% Superior'];
+  let thead = cTHead('censo-tabla-edu', cols);
   let tbody = '<tbody>';
   Object.values(CENSO.datos).sort((a,b)=>b.prom_escolaridad18-a.prom_escolaridad18).forEach(reg => {{
-    const p=reg.n_per;
-    const ta=reg.n_asistencia_parv+reg.n_asistencia_basica+reg.n_asistencia_media+reg.n_asistencia_superior;
+    const tc=reg.n_cine_nunca_curso_primera_infancia+reg.n_cine_primaria+reg.n_cine_secundaria
+            +reg.n_cine_terciaria_maestria_doctorado+reg.n_cine_especial_diferencial;
     const isAct = reg.cod === r.cod;
-    tbody += `<tr style="${{isAct?'background:#f5f3ff;font-weight:600':''}}">
-      <td>${{reg.nombre}}</td>
-      <td>${{fmtD(reg.prom_escolaridad18)}}</td>
-      <td class="${{pct(reg.n_analfabet,p)>3?'neg':'pos'}}">${{fmtP(pct(reg.n_analfabet,p))}}</td>
-      <td>${{fmtP(pct(reg.n_asistencia_parv,ta))}}</td>
-      <td>${{fmtP(pct(reg.n_asistencia_basica,ta))}}</td>
-      <td>${{fmtP(pct(reg.n_asistencia_media,ta))}}</td>
-      <td>${{fmtP(pct(reg.n_asistencia_superior,ta))}}</td>
-    </tr>`;
+    tbody += cTRow([
+      reg.nombre,
+      fmtD(reg.prom_escolaridad18),
+      fmtP(pct(reg.n_cine_nunca_curso_primera_infancia, tc)),
+      fmtP(pct(reg.n_analfabet, tc)),
+      fmtP(pct(reg.n_asistencia_parv, tc)),
+      fmtP(pct(reg.n_cine_primaria, tc)),
+      fmtP(pct(reg.n_cine_secundaria, tc)),
+      fmtP(pct(reg.n_cine_terciaria_maestria_doctorado, tc)),
+    ], isAct, [
+      '', '',
+      pct(reg.n_cine_nunca_curso_primera_infancia,tc)>5?'neg':'',
+      pct(reg.n_analfabet,tc)>3?'neg':'pos',
+      '', '', '', ''
+    ]);
   }});
+  // Total nacional
+  const n=CENSO_NAC;
+  const ntc=n.n_cine_nunca_curso_primera_infancia+n.n_cine_primaria+n.n_cine_secundaria
+           +n.n_cine_terciaria_maestria_doctorado+n.n_cine_especial_diferencial;
+  tbody += trNac([
+    'Total nacional',
+    fmtD(n.prom_escolaridad18),
+    fmtP(pct(n.n_cine_nunca_curso_primera_infancia,ntc)),
+    fmtP(pct(n.n_analfabet,ntc)),
+    fmtP(pct(n.n_asistencia_parv,ntc)),
+    fmtP(pct(n.n_cine_primaria,ntc)),
+    fmtP(pct(n.n_cine_secundaria,ntc)),
+    fmtP(pct(n.n_cine_terciaria_maestria_doctorado,ntc)),
+  ]);
   tbody += '</tbody>';
   document.getElementById('censo-tabla-edu').innerHTML = thead+tbody;
+  const notaEdu = document.getElementById('censo-edu-nota');
+  if(notaEdu) notaEdu.textContent = `Porcentajes calculados sobre total de registros CINE (${{fmtN(tot_cine)}} personas con nivel educacional registrado). Parvularia usa n_asistencia_parv como aproximación.`;
+  addDownloadButtons();
 }}
 
 // ── CONECTIVIDAD Y SERVICIOS ─────────────────────────────────
@@ -2222,7 +2440,6 @@ function renderCensoCon() {{
     kpiCenso('Electricidad red', fmtP(pct(r.n_fuente_elect_publica,vp)), fmtN(r.n_fuente_elect_publica)+' viviendas') +
     kpiCenso('Retiro basura', fmtP(pct(r.n_basura_servicios,vp)), 'Servicio municipal/empresa', pct(r.n_basura_servicios,vp)<80?'amber':'');
 
-  // Servicios básicos
   makeHBar('censo-chart-serv',
     ['Agua red pública','Alcantarillado dentro','Electricidad red','Retiro de basura'],
     [{{label:'% viviendas', borderRadius:3,
@@ -2236,13 +2453,7 @@ function renderCensoCon() {{
     }}]
   );
 
-  // Conectividad digital — comparación regional con variable seleccionada
   const digitalVar = document.getElementById('censo-digital-var')?.value || 'n_internet';
-  const digitalLabels = {{
-    n_internet:'Internet (cualquier)', n_serv_internet_fija:'Internet fija',
-    n_serv_internet_movil:'Internet móvil', n_serv_internet_satelital:'Internet satelital',
-    n_serv_tel_movil:'Teléfono móvil', n_serv_compu:'Computador', n_serv_tablet:'Tablet',
-  }};
   const regsSorted = Object.values(CENSO.datos).sort((a,b) => pct(b[digitalVar],b.n_hog) - pct(a[digitalVar],a.n_hog));
   makeBarSeg('censo-chart-digital',
     regsSorted.map(reg => reg.nombre.replace('Metropolitana','RM').replace('Arica y Parinacota','Arica')),
@@ -2255,7 +2466,6 @@ function renderCensoCon() {{
     {{horizontal:false}}
   );
 
-  // Combustible cocina
   makeHBar('censo-chart-cocina',
     ['Gas','Leña','Electricidad','No utiliza'],
     [{{label:'% viviendas', borderRadius:3,
@@ -2265,7 +2475,6 @@ function renderCensoCon() {{
     }}]
   );
 
-  // Combustible calefacción
   makeHBar('censo-chart-calef',
     ['Gas','Leña','Electricidad','No utiliza'],
     [{{label:'% viviendas', borderRadius:3,
@@ -2275,25 +2484,43 @@ function renderCensoCon() {{
     }}]
   );
 
-  // Tabla comparativa
+  // Tabla — con Total nacional al final
   const cols = ['Región','% Internet','% Agua pública','% Alcantarillado','% Electricidad','% Retiro basura','% Sin saneamiento'];
-  let thead = '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${{c}}</th>`:`<th onclick="sortDT('censo-tabla-con',${{i}})">${{c}}</th>`).join('')+'</tr></thead>';
+  let thead = cTHead('censo-tabla-con', cols);
   let tbody = '<tbody>';
   Object.values(CENSO.datos).sort((a,b)=>pct(b.n_internet,b.n_hog)-pct(a.n_internet,a.n_hog)).forEach(reg => {{
     const v=reg.n_vp_ocupada, h=reg.n_hog;
     const isAct = reg.cod === r.cod;
-    tbody += `<tr style="${{isAct?'background:#f5f3ff;font-weight:600':''}}">
-      <td>${{reg.nombre}}</td>
-      <td class="${{pct(reg.n_internet,h)<70?'neg':''}}">${{fmtP(pct(reg.n_internet,h))}}</td>
-      <td class="${{pct(reg.n_fuente_agua_publica,v)<80?'neg':''}}">${{fmtP(pct(reg.n_fuente_agua_publica,v))}}</td>
-      <td class="${{pct(reg.n_serv_hig_alc_dentro,v)<70?'neg':''}}">${{fmtP(pct(reg.n_serv_hig_alc_dentro,v))}}</td>
-      <td>${{fmtP(pct(reg.n_fuente_elect_publica,v))}}</td>
-      <td>${{fmtP(pct(reg.n_basura_servicios,v))}}</td>
-      <td class="${{pct(reg.n_serv_hig_no_tiene,v)>1?'neg':''}}">${{fmtP(pct(reg.n_serv_hig_no_tiene,v))}}</td>
-    </tr>`;
+    tbody += cTRow([
+      reg.nombre,
+      fmtP(pct(reg.n_internet,h)),
+      fmtP(pct(reg.n_fuente_agua_publica,v)),
+      fmtP(pct(reg.n_serv_hig_alc_dentro,v)),
+      fmtP(pct(reg.n_fuente_elect_publica,v)),
+      fmtP(pct(reg.n_basura_servicios,v)),
+      fmtP(pct(reg.n_serv_hig_no_tiene,v)),
+    ], isAct, [
+      '',
+      pct(reg.n_internet,h)<70?'neg':'',
+      pct(reg.n_fuente_agua_publica,v)<80?'neg':'',
+      pct(reg.n_serv_hig_alc_dentro,v)<70?'neg':'',
+      '', '',
+      pct(reg.n_serv_hig_no_tiene,v)>1?'neg':''
+    ]);
   }});
+  const n=CENSO_NAC;
+  tbody += trNac([
+    'Total nacional',
+    fmtP(pct(n.n_internet,n.n_hog)),
+    fmtP(pct(n.n_fuente_agua_publica,n.n_vp_ocupada)),
+    fmtP(pct(n.n_serv_hig_alc_dentro,n.n_vp_ocupada)),
+    fmtP(pct(n.n_fuente_elect_publica,n.n_vp_ocupada)),
+    fmtP(pct(n.n_basura_servicios,n.n_vp_ocupada)),
+    fmtP(pct(n.n_serv_hig_no_tiene,n.n_vp_ocupada)),
+  ]);
   tbody += '</tbody>';
   document.getElementById('censo-tabla-con').innerHTML = thead+tbody;
+  addDownloadButtons();
 }}
 
 
@@ -2487,6 +2714,9 @@ window.onload = function() {{
 
   // Censo — poblar selects
   poblarSelectsCenso();
+
+  // Botones descarga — primera pasada (gráficos estáticos ya en DOM)
+  setTimeout(addDownloadButtons, 800);
 
   // CASEN 2024
   initCasen();
