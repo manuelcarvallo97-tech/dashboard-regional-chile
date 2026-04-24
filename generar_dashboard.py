@@ -2047,7 +2047,9 @@ function setTabCenso(tab, btn) {{
 }}
 
 function getCensoReg(selId) {{
-  return CENSO.datos[document.getElementById(selId).value];
+  const val = document.getElementById(selId).value;
+  if(val === '__nacional__') return CENSO_NAC;
+  return CENSO.datos[val];
 }}
 
 function pct(n, d) {{ return d > 0 ? (n/d*100) : 0; }}
@@ -2124,6 +2126,12 @@ function poblarSelectsCenso() {{
     if(!sel) return;
     const ph = document.createElement('option');
     ph.value = ''; ph.textContent = '-- Selecciona una región --'; sel.appendChild(ph);
+    // Total nacional al tope
+    const oNac = document.createElement('option');
+    oNac.value = '__nacional__'; oNac.textContent = '[ Total nacional ]'; sel.appendChild(oNac);
+    // Separador
+    const sep = document.createElement('option');
+    sep.disabled = true; sep.textContent = '------------------'; sel.appendChild(sep);
     ordenadas.forEach(([cod, r]) => {{
       const o = document.createElement('option');
       o.value = cod; o.textContent = r.nombre; sel.appendChild(o);
@@ -2145,8 +2153,9 @@ function cTHead(tableId, cols) {{
            : `<th onclick="sortDT('${{tableId}}',${{i}})">${{c}}</th>`
   ).join('') + '</tr></thead>';
 }}
-function trNac(cells, clases=[]) {{
-  return `<tr class="nacional-row">`
+function trNac(cells, clases=[], isActive=false) {{
+  const extra = isActive ? 'outline:3px solid #16a34a;outline-offset:-2px;' : '';
+  return `<tr class="nacional-row" style="${{extra}}">`
     + cells.map((c,i) => `<td class="${{clases[i]||''}}">${{c}}</td>`).join('')
     + '</tr>';
 }}
@@ -2155,6 +2164,7 @@ function trNac(cells, clases=[]) {{
 function renderCenso() {{
   const r = getCensoReg('censo-region');
   if(!r) return;
+  const esNacional = (r.cod === 0);
   const cod = document.getElementById('censo-region').value;
   ['censo-region-viv','censo-region-edu','censo-region-con'].forEach(id => {{ document.getElementById(id).value = cod; }});
 
@@ -2239,7 +2249,7 @@ function renderCenso() {{
   let tbody = '<tbody>';
   Object.values(CENSO.datos).sort((a,b)=>b.n_per-a.n_per).forEach(reg => {{
     const p=reg.n_per;
-    const isAct = reg.cod === r.cod;
+    const isAct = !esNacional && reg.cod === r.cod;
     tbody += cTRow([
       reg.nombre, fmtN(p), fmtP(pct(reg.n_mujeres,p)),
       fmtD(reg.prom_edad), fmtP(pct(reg.n_inmigrantes,p)),
@@ -2252,7 +2262,7 @@ function renderCenso() {{
     'Total nacional', fmtN(n.n_per), fmtP(pct(n.n_mujeres,n.n_per)),
     fmtD(n.prom_edad), fmtP(pct(n.n_inmigrantes,n.n_per)),
     fmtP(pct(n.n_pueblos_orig,n.n_per)), fmtP(pct(n.n_discapacidad,n.n_per))
-  ]);
+  ], esNacional);
   tbody += '</tbody>';
   document.getElementById('censo-tabla-demo').innerHTML = thead+tbody;
   addDownloadButtons();
@@ -2262,6 +2272,7 @@ function renderCenso() {{
 function renderCensoViv() {{
   const r = getCensoReg('censo-region-viv');
   if(!r) return;
+  const esNacional = (r.cod === 0);
   const cod = document.getElementById('censo-region-viv').value;
   ['censo-region','censo-region-edu','censo-region-con'].forEach(id => {{ document.getElementById(id).value = cod; }});
   // FIX: denominador correcto es n_vp (total viviendas), no n_vp_ocupada
@@ -2300,7 +2311,7 @@ function renderCensoViv() {{
   let tbody = '<tbody>';
   Object.values(CENSO.datos).sort((a,b)=>pct(b.n_deficit_cuantitativo,b.n_vp_ocupada)-pct(a.n_deficit_cuantitativo,a.n_vp_ocupada)).forEach(reg => {{
     const v=reg.n_vp_ocupada, h=reg.n_hog;
-    const isAct = reg.cod === r.cod;
+    const isAct = !esNacional && reg.cod === r.cod;
     tbody += cTRow([
       reg.nombre, fmtN(v), fmtD(reg.prom_per_hog),
       fmtP(pct(reg.n_viv_hacinadas,v)),
@@ -2325,7 +2336,7 @@ function renderCensoViv() {{
     fmtP(pct(n.n_deficit_cuantitativo,n.n_vp_ocupada)),
     fmtP(pct(n.n_hog_allegados,n.n_hog)),
     fmtP(pct(n.n_jefatura_mujer,n.n_hog))
-  ]);
+  ], esNacional);
   tbody += '</tbody>';
   document.getElementById('censo-tabla-viv').innerHTML = thead+tbody;
   addDownloadButtons();
@@ -2335,6 +2346,7 @@ function renderCensoViv() {{
 function renderCensoEdu() {{
   const r = getCensoReg('censo-region-edu');
   if(!r) return;
+  const esNacional = (r.cod === 0);
   const cod = document.getElementById('censo-region-edu').value;
   ['censo-region','censo-region-viv','censo-region-con'].forEach(id => {{ document.getElementById(id).value = cod; }});
   const pop = r.n_per;
@@ -2386,7 +2398,7 @@ function renderCensoEdu() {{
   Object.values(CENSO.datos).sort((a,b)=>b.prom_escolaridad18-a.prom_escolaridad18).forEach(reg => {{
     const tc=reg.n_cine_nunca_curso_primera_infancia+reg.n_cine_primaria+reg.n_cine_secundaria
             +reg.n_cine_terciaria_maestria_doctorado+reg.n_cine_especial_diferencial;
-    const isAct = reg.cod === r.cod;
+    const isAct = !esNacional && reg.cod === r.cod;
     tbody += cTRow([
       reg.nombre,
       fmtD(reg.prom_escolaridad18),
@@ -2416,7 +2428,7 @@ function renderCensoEdu() {{
     fmtP(pct(n.n_cine_primaria,ntc)),
     fmtP(pct(n.n_cine_secundaria,ntc)),
     fmtP(pct(n.n_cine_terciaria_maestria_doctorado,ntc)),
-  ]);
+  ], esNacional);
   tbody += '</tbody>';
   document.getElementById('censo-tabla-edu').innerHTML = thead+tbody;
   const notaEdu = document.getElementById('censo-edu-nota');
@@ -2428,6 +2440,7 @@ function renderCensoEdu() {{
 function renderCensoCon() {{
   const r = getCensoReg('censo-region-con');
   if(!r) return;
+  const esNacional = (r.cod === 0);
   const cod = document.getElementById('censo-region-con').value;
   ['censo-region','censo-region-viv','censo-region-edu'].forEach(id => {{ document.getElementById(id).value = cod; }});
   const vp = r.n_vp_ocupada, hog = r.n_hog;
@@ -2490,7 +2503,7 @@ function renderCensoCon() {{
   let tbody = '<tbody>';
   Object.values(CENSO.datos).sort((a,b)=>pct(b.n_internet,b.n_hog)-pct(a.n_internet,a.n_hog)).forEach(reg => {{
     const v=reg.n_vp_ocupada, h=reg.n_hog;
-    const isAct = reg.cod === r.cod;
+    const isAct = !esNacional && reg.cod === r.cod;
     tbody += cTRow([
       reg.nombre,
       fmtP(pct(reg.n_internet,h)),
@@ -2517,7 +2530,7 @@ function renderCensoCon() {{
     fmtP(pct(n.n_fuente_elect_publica,n.n_vp_ocupada)),
     fmtP(pct(n.n_basura_servicios,n.n_vp_ocupada)),
     fmtP(pct(n.n_serv_hig_no_tiene,n.n_vp_ocupada)),
-  ]);
+  ], esNacional);
   tbody += '</tbody>';
   document.getElementById('censo-tabla-con').innerHTML = thead+tbody;
   addDownloadButtons();
