@@ -2358,14 +2358,16 @@ function renderEmpRanking() {
 function makeBarH(id,labels,datasets,horizontal=true) {
   if(charts[id]){charts[id].destroy();delete charts[id];}
   const ctx=document.getElementById(id); if(!ctx) return;
-  // Detectar si es gráfico de tasa (para mostrar % en eje)
   const isTasa = datasets[0]&&datasets[0].label&&(datasets[0].label.includes('Tasa')||datasets[0].label.includes('tasa')||datasets[0].label.includes('%'));
   charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{
     responsive:true,maintainAspectRatio:true,indexAxis:horizontal?'y':'x',
-    plugins:{legend:{display:datasets.length>1,position:'bottom',labels:{font:{size:11}}},tooltip:{mode:'index',intersect:false,callbacks:{label:function(ctx){const v=ctx.parsed[horizontal?'x':'y'];return ' '+ctx.dataset.label+': '+(isTasa&&ctx.dataset.type!=='line'?v.toFixed(1)+'%':v);}}}}},
+    plugins:{
+      legend:{display:datasets.length>1,position:'bottom',labels:{font:{size:11}}},
+      tooltip:{mode:'index',intersect:false,callbacks:{label:function(ctx2){const v=ctx2.parsed[horizontal?'x':'y'];return ' '+ctx2.dataset.label+': '+(isTasa&&ctx2.dataset.type!=='line'?v.toFixed(1)+'%':v);}}}
+    },
     scales:{
       x:{ticks:{font:{size:10},maxRotation:horizontal?0:55,callback:function(v){return isTasa&&horizontal?v.toFixed(1)+'%':v;}},grid:{display:horizontal}},
-      y:{ticks:{font:{size:10},callback:function(v,i,ticks){if(!horizontal)return isTasa?v.toFixed(1)+'%':v;return ticks[i]?ticks[i].label:v;}},grid:{color:'#f0f0f0'}}
+      y:{ticks:{font:{size:10},callback:function(v,i,tks){if(!horizontal)return isTasa?v.toFixed(1)+'%':v;return tks[i]?tks[i].label:v;}},grid:{color:'#f0f0f0'}}
     }
   }});
 }
@@ -2375,7 +2377,10 @@ function makeLine2(id,labels,datasets,tipo='line') {
   const isTasa = datasets[0]&&datasets[0].label&&(datasets[0].label.includes('desocup')||datasets[0].label.includes('%'));
   charts[id]=new Chart(ctx,{type:tipo,data:{labels,datasets},options:{
     responsive:true,maintainAspectRatio:true,
-    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:function(ctx){const v=ctx.parsed.y;return ' '+ctx.dataset.label+': '+(isTasa?v.toFixed(2)+'%':v);}}}}},
+    plugins:{
+      legend:{display:false},
+      tooltip:{mode:'index',intersect:false,callbacks:{label:function(ctx2){const v=ctx2.parsed.y;return ' '+ctx2.dataset.label+': '+(isTasa?v.toFixed(2)+'%':v);}}}
+    },
     scales:{
       x:{ticks:{font:{size:10},maxRotation:55,autoSkip:true,maxTicksLimit:24},grid:{display:false}},
       y:{ticks:{font:{size:10},callback:function(v){return isTasa?v.toFixed(1)+'%':v;}},grid:{color:'#f0f0f0'}}
@@ -2389,7 +2394,7 @@ function makeLineMulti(id,labels,datasets,showLegend=false,isTasa=false) {
     responsive:true,maintainAspectRatio:true,
     plugins:{
       legend:{display:showLegend,position:'bottom',labels:{font:{size:11},boxWidth:24}},
-      tooltip:{mode:'index',intersect:false,callbacks:{label:function(ctx){const v=ctx.parsed.y;if(v===null)return null;return ' '+ctx.dataset.label+': '+(isTasa?v.toFixed(2)+'%':Math.round(v).toLocaleString('es-CL'));}}}
+      tooltip:{mode:'index',intersect:false,callbacks:{label:function(ctx2){const v=ctx2.parsed.y;if(v===null)return null;return ' '+ctx2.dataset.label+': '+(isTasa?v.toFixed(2)+'%':Math.round(v).toLocaleString('es-CL'));}}}
     },
     scales:{
       x:{ticks:{font:{size:10},maxRotation:55,autoSkip:true,maxTicksLimit:24},grid:{display:false}},
