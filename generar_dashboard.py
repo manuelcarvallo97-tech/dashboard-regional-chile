@@ -271,7 +271,14 @@ def clean_emp(v):
     if isinstance(v, float) and math.isnan(v): return None
     return v
 
-regiones_emp = sorted(df_emp['nombre_region'].unique().tolist())
+ORDEN_GEOGRAFICO = [
+    'Arica y Parinacota','Tarapacá','Antofagasta','Atacama','Coquimbo',
+    'Valparaíso','Metropolitana de Santiago','Libertador General Bernardo O\'Higgins',
+    'Maule','Ñuble','Biobío','La Araucanía','Los Ríos','Los Lagos',
+    'Aysén del General Carlos Ibáñez del Campo','Magallanes y de la Antártica Chilena'
+]
+_regs_raw = df_emp['nombre_region'].unique().tolist()
+regiones_emp = sorted(_regs_raw, key=lambda r: next((i for i,x in enumerate(ORDEN_GEOGRAFICO) if x.lower() in r.lower() or r.lower() in x.lower()), 99))
 periodos_emp = sorted(df_emp['periodo'].unique().tolist())
 años_emp = sorted(set(p[:4] for p in periodos_emp))
 
@@ -2515,13 +2522,13 @@ function renderEmpResumen() {{
     <th onclick="sortDT('emp-tabla-resumen',4)">Fuerza de trabajo*</th>
   </tr></thead>`;
   let tbody='<tbody>';
-  // Fila nacional primero
-  tbody+=`<tr style="background:#1a3a5c;color:white;font-weight:700">
-    <td>🇨🇱 NACIONAL</td>
-    <td style="color:#fbbf24">${{fmtEmpNum(nacTasa)}}%</td>
-    <td>${{fmtEmpMiles(nacOcup)}}</td>
-    <td style="color:#f87171">${{fmtEmpMiles(nacDes)}}</td>
-    <td>${{fmtEmpMiles(nacFt)}}</td>
+  // Fila nacional integrada primero (mismo ancho de columnas, diferenciada con color de fondo y borde)
+  tbody+=`<tr style="background:#e8f0fe;font-weight:700;border-left:4px solid #1a3a5c;">
+    <td style="color:#1a3a5c">🇨🇱 Nacional (promedio ponderado)</td>
+    <td style="color:#1a3a5c">${{fmtEmpNum(nacTasa)}}%</td>
+    <td style="color:#1a3a5c">${{fmtEmpMiles(nacOcup)}}</td>
+    <td style="color:#dc2626;font-weight:700">${{fmtEmpMiles(nacDes)}}</td>
+    <td style="color:#1a3a5c">${{fmtEmpMiles(nacFt)}}</td>
   </tr>`;
   EMP.regiones.forEach((r,i)=>{{
     const t=tasas[i],o=ocups[i],f=fts[i],d=desocs[i];
@@ -2654,18 +2661,16 @@ function renderEmpRanking() {{
     <th onclick="sortDT('emp-tabla-ranking',6)">Fuerza trabajo*</th>
   </tr></thead>`;
   let tbody='<tbody>';
-  // Fila nacional destacada al inicio
-  tbody+=`<tr style="background:#1a3a5c;color:white;font-weight:700">
-    <td>—</td>
-    <td style="text-align:left">🇨🇱 NACIONAL</td>
-    <td style="color:#fbbf24">${{fmtEmpNum(nacTasa)}}%</td>
-    <td style="color:#fbbf24">Referencia</td>
-    <td style="color:#f87171">${{fmtEmpMiles(nacDes)}}</td>
-    <td>${{fmtEmpMiles(nacOcup)}}</td>
-    <td>${{fmtEmpMiles(nacFt)}}</td>
+  // Fila nacional integrada como primera fila, diferenciada con fondo azul claro y borde
+  tbody+=`<tr style="background:#e8f0fe;font-weight:700;border-left:4px solid #1a3a5c;">
+    <td style="color:#1a3a5c">—</td>
+    <td style="text-align:left;color:#1a3a5c">🇨🇱 Nacional (prom. ponderado)</td>
+    <td style="color:#1a3a5c">${{fmtEmpNum(nacTasa)}}%</td>
+    <td style="color:#64748b;font-style:italic">referencia</td>
+    <td style="color:#dc2626;font-weight:700">${{fmtEmpMiles(nacDes)}}</td>
+    <td style="color:#1a3a5c">${{fmtEmpMiles(nacOcup)}}</td>
+    <td style="color:#1a3a5c">${{fmtEmpMiles(nacFt)}}</td>
   </tr>`;
-  // Separador visual
-  tbody+=`<tr style="height:4px;background:#e5e7eb"><td colspan="7"></td></tr>`;
   pairs.forEach((x,i)=>{{
     const cls=x.t>8?'neg':x.t<5?'pos':'';
     const diff = nacTasa!==null ? (x.t-nacTasa) : null;
@@ -2696,7 +2701,7 @@ function makeBarH(id,labels,datasets,horizontal=true) {{
     }},
     scales:{{
       x:{{ticks:{{font:{{size:10}},maxRotation:horizontal?0:55,callback:function(v){{return isTasa&&horizontal?v.toFixed(1)+'%':v;}}}},grid:{{display:horizontal}}}},
-      y:{{ticks:{{font:{{size:10}},callback:function(v,i,tks){{if(!horizontal)return isTasa?v.toFixed(1)+'%':v;return tks[i]?tks[i].label:v;}}}},grid:{{color:'#f0f0f0'}}}}
+      y:{{ticks:{{font:{{size:10}}}},grid:{{color:'#f0f0f0'}}}}
     }}
   }}}});
 }}
@@ -2886,7 +2891,7 @@ window.onload = function() {{
       <div class="card"><h3>Mayor nº desocupados (miles) — Top 5</h3>
         <canvas id="emp-chart-rank-des" style="max-height:260px"></canvas></div>
       <div class="card"><h3 id="emp-rank-title">Ranking completo</h3>
-        <p style="font-size:12px;color:#555;margin-bottom:8px">🟥 Sobre promedio nacional &nbsp;|&nbsp; 🟩 Bajo promedio nacional &nbsp;|&nbsp; pp = puntos porcentuales de diferencia</p>
+        <p style="font-size:12px;color:#555;margin-bottom:8px">🟦 Promedio nacional ponderado &nbsp;|&nbsp; 🟥 Sobre promedio nacional &nbsp;|&nbsp; 🟩 Bajo promedio nacional &nbsp;|&nbsp; pp = puntos porcentuales de diferencia</p>
         <div class="tabla-wrap"><table class="dt" id="emp-tabla-ranking"></table></div>
       </div>
     </div>
