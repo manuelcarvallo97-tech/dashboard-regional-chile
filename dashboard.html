@@ -1649,15 +1649,17 @@ const CENSO_ORDEN_NS = [15,1,2,3,4,5,13,6,7,16,8,9,10,14,11,12];
 
 // Total nacional (suma de regiones)
 const CENSO_NAC = (function() {
-  const t = {};
-  const campos = Object.keys(CENSO.datos['1']).filter(k =>
-    typeof CENSO.datos['1'][k]==='number' && !['cod','prom_edad','prom_escolaridad18','prom_per_hog'].includes(k));
-  campos.forEach(c => { t[c] = CENSO_ORDEN_NS.reduce((s,cod)=>s+(CENSO.datos[String(cod)][c]||0),0); });
-  t.prom_edad = CENSO_ORDEN_NS.reduce((s,cod)=>s+CENSO.datos[String(cod)].prom_edad*CENSO.datos[String(cod)].n_per,0)/t.n_per;
-  t.prom_escolaridad18 = CENSO_ORDEN_NS.reduce((s,cod)=>s+CENSO.datos[String(cod)].prom_escolaridad18*CENSO.datos[String(cod)].n_per,0)/t.n_per;
-  t.prom_per_hog = t.n_per/t.n_hog;
-  t.nombre='Total nacional'; t.cod=0;
-  return t;
+  try {
+    const t = {};
+    const campos = Object.keys(CENSO.datos['1']).filter(k =>
+      typeof CENSO.datos['1'][k]==='number' && !['cod','prom_edad','prom_escolaridad18','prom_per_hog'].includes(k));
+    campos.forEach(c => { t[c] = CENSO_ORDEN_NS.reduce((s,cod)=>s+(CENSO.datos[String(cod)][c]||0),0); });
+    t.prom_edad = CENSO_ORDEN_NS.reduce((s,cod)=>s+CENSO.datos[String(cod)].prom_edad*CENSO.datos[String(cod)].n_per,0)/t.n_per;
+    t.prom_escolaridad18 = CENSO_ORDEN_NS.reduce((s,cod)=>s+CENSO.datos[String(cod)].prom_escolaridad18*CENSO.datos[String(cod)].n_per,0)/t.n_per;
+    t.prom_per_hog = t.n_per/t.n_hog;
+    t.nombre='Total nacional'; t.cod=0;
+    return t;
+  } catch(e) { return {}; }
 })();
 
 // cpct: helper de censo (n/d*100) — nombre distinto para no colisionar con pct() de seguridad
