@@ -283,12 +283,42 @@ for reg in regiones_emp:
     merged = sub_t[['periodo','valor']].rename(columns={'valor':'tasa'}).merge(
         sub_o[['periodo','valor']].rename(columns={'valor':'ocupados'}), on='periodo')
     merged['ft'] = merged.apply(lambda r: round(r['ocupados']/(1-r['tasa']/100),1) if r['tasa'] is not None and r['tasa']<100 else None, axis=1)
+    merged['desocupados'] = merged.apply(lambda r: round(r['ft']-r['ocupados'],1) if r['ft'] is not None and r['ocupados'] is not None else None, axis=1)
     datos_emp[reg] = {
-        'periodos': merged['periodo'].tolist(),
-        'tasa':     [clean_emp(v) for v in merged['tasa'].tolist()],
-        'ocupados': [clean_emp(v) for v in merged['ocupados'].tolist()],
-        'ft':       [clean_emp(v) for v in merged['ft'].tolist()],
+        'periodos':    merged['periodo'].tolist(),
+        'tasa':        [clean_emp(v) for v in merged['tasa'].tolist()],
+        'ocupados':    [clean_emp(v) for v in merged['ocupados'].tolist()],
+        'ft':          [clean_emp(v) for v in merged['ft'].tolist()],
+        'desocupados': [clean_emp(v) for v in merged['desocupados'].tolist()],
     }
+
+# ── Nacional agregado: suma de ocupados y FT de todas las regiones por período
+# La tasa nacional = desocupados_total / FT_total (ponderada, no promedio simple)
+_all_dfs = []
+for reg in regiones_emp:
+    d = datos_emp[reg]
+    _df = pd.DataFrame({
+        'periodo': d['periodos'],
+        'ocupados': d['ocupados'],
+        'ft': d['ft'],
+    })
+    _all_dfs.append(_df)
+
+_nac = pd.concat(_all_dfs).groupby('periodo').agg(
+    ocupados=('ocupados','sum'),
+    ft=('ft','sum')
+).reset_index().sort_values('periodo')
+
+_nac['desocupados'] = (_nac['ft'] - _nac['ocupados']).round(1)
+_nac['tasa'] = (_nac['desocupados'] / _nac['ft'] * 100).round(2)
+
+datos_emp['__NACIONAL__'] = {
+    'periodos':    _nac['periodo'].tolist(),
+    'tasa':        [clean_emp(v) for v in _nac['tasa'].tolist()],
+    'ocupados':    [clean_emp(v) for v in _nac['ocupados'].tolist()],
+    'ft':          [clean_emp(v) for v in _nac['ft'].tolist()],
+    'desocupados': [clean_emp(v) for v in _nac['desocupados'].tolist()],
+}
 
 # ══════════════════════════════════════════════════════════════════════════════
 # JSON embebido
@@ -2425,80 +2455,231 @@ function fmtEmpMiles(v){{return v===null||v===undefined?'—':Math.round(v).toLo
 function renderEmpResumen() {{
   const per = document.getElementById('emp-res-periodo').value;
   const ind = document.getElementById('emp-res-ind').value;
-  const indL = {{tasa:'Tasa de desocupación (%)',ocupados:'Ocupados (miles)',ft:'Fuerza de trabajo* (miles)'}};
+  const indL = {{tasa:'Tasa de desocupación (%)',ocupados:'Ocupados (miles)',ft:'Fuerza de trabajo* (miles)',desocupados:'Desocupados (miles)'}};
   document.getElementById('emp-res-chart-title').textContent = indL[ind]+' — '+fmtEmpPer(per);
+
+  // Valores nacionales (ponderados correctamente)
+  const nacTasa = empGetVal('__NACIONAL__',per,'tasa');
+  const nacOcup = empGetVal('__NACIONAL__',per,'ocupados');
+  const nacFt   = empGetVal('__NACIONAL__',per,'ft');
+  const nacDes  = empGetVal('__NACIONAL__',per,'desocupados');
 
   const vals   = EMP.regiones.map(r=>empGetVal(r,per,ind));
   const tasas  = EMP.regiones.map(r=>empGetVal(r,per,'tasa'));
   const ocups  = EMP.regiones.map(r=>empGetVal(r,per,'ocupados'));
   const fts    = EMP.regiones.map(r=>empGetVal(r,per,'ft'));
-  const noNull = vals.filter(v=>v!==null);
-  const prom   = noNull.length?noNull.reduce((a,b)=>a+b,0)/noNull.length:null;
-  const maxV   = noNull.length?Math.max(...noNull):null;
-  const minV   = noNull.length?Math.min(...noNull):null;
+  const desocs = EMP.regiones.map(r=>empGetVal(r,per,'desocupados'));
+  const maxV   = vals.filter(v=>v!==null).length?Math.max(...vals.filter(v=>v!==null)):null;
+  const minV   = vals.filter(v=>v!==null).length?Math.min(...vals.filter(v=>v!==null)):null;
   const rMax   = EMP.regiones[vals.indexOf(maxV)];
   const rMin   = EMP.regiones[vals.indexOf(minV)];
-  const totOc  = ocups.filter(v=>v!==null).reduce((a,b)=>a+b,0);
 
   document.getElementById('emp-kpi-resumen').innerHTML = `
-    <div class="kpi azul"><div class="kpi-label">Promedio nacional</div><div class="kpi-value">${{ind==='tasa'?fmtEmpNum(prom):fmtEmpMiles(prom)}}</div><div class="kpi-sub">${{fmtEmpPer(per)}}</div></div>
-    <div class="kpi rojo"><div class="kpi-label">Mayor ${{ind==='tasa'?'desocupación':'valor'}}</div><div class="kpi-value">${{ind==='tasa'?fmtEmpNum(maxV):fmtEmpMiles(maxV)}}</div><div class="kpi-sub">${{rMax||''}}</div></div>
-    <div class="kpi verde"><div class="kpi-label">Menor ${{ind==='tasa'?'desocupación':'valor'}}</div><div class="kpi-value">${{ind==='tasa'?fmtEmpNum(minV):fmtEmpMiles(minV)}}</div><div class="kpi-sub">${{rMin||''}}</div></div>
-    <div class="kpi amber"><div class="kpi-label">Total ocupados</div><div class="kpi-value">${{fmtEmpMiles(totOc)}}</div><div class="kpi-sub">Miles de personas</div></div>`;
+    <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #38bdf8"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Total ocupados</div><div class="kpi-value">${{fmtEmpMiles(nacOcup)}}</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Miles a nivel nacional</div></div>
+    <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #f87171"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Total desocupados</div><div class="kpi-value">${{fmtEmpMiles(nacDes)}}</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Miles a nivel nacional</div></div>
+    <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #34d399"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Fuerza de trabajo</div><div class="kpi-value">${{fmtEmpMiles(nacFt)}}</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Miles a nivel nacional</div></div>
+    <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #fbbf24"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Tasa desocup. nacional</div><div class="kpi-value">${{fmtEmpNum(nacTasa)}}%</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Ponderada por FT — ${{fmtEmpPer(per)}}</div></div>
+    <div class="kpi rojo"><div class="kpi-label">Mayor desocupación</div><div class="kpi-value">${{ind==='tasa'?fmtEmpNum(maxV):fmtEmpMiles(maxV)}}</div><div class="kpi-sub">${{rMax||''}}</div></div>
+    <div class="kpi verde"><div class="kpi-label">Menor desocupación</div><div class="kpi-value">${{ind==='tasa'?fmtEmpNum(minV):fmtEmpMiles(minV)}}</div><div class="kpi-sub">${{rMin||''}}</div></div>`;
 
-  const sorted = EMP.regiones.map((r,i)=>{{return{{r,v:vals[i]}}}}).filter(x=>x.v!==null).sort((a,b)=>b.v-a.v);
-  const bg = sorted.map(x=>ind==='tasa'?(x.v>8?'rgba(220,38,38,.8)':x.v>6?'rgba(217,119,6,.8)':'rgba(22,163,74,.8)'):'rgba(37,99,235,.75)');
-  makeBarH('emp-chart-resumen',sorted.map(x=>x.r.replace('Metropolitana de Santiago','RM')),[{{label:indL[ind],data:sorted.map(x=>x.v),backgroundColor:bg,borderRadius:3}}]);
+  const sorted = EMP.regiones.map((r,i)=>{{return{{r,v:vals[i],t:tasas[i],o:ocups[i],f:fts[i],d:desocs[i]}}}}).filter(x=>x.v!==null).sort((a,b)=>b.v-a.v);
+  const bg = sorted.map(x=>ind==='tasa'?(x.v>nacTasa?'rgba(220,38,38,.8)':x.v>6?'rgba(217,119,6,.8)':'rgba(22,163,74,.8)'):'rgba(37,99,235,.75)');
+  const nacVal = ind==='tasa'?nacTasa:ind==='ocupados'?nacOcup:ind==='ft'?nacFt:nacDes;
+  const chartLabels = sorted.map(x=>x.r.replace('Metropolitana de Santiago','RM'));
+  const datasets = [{{label:indL[ind],data:sorted.map(x=>x.v),backgroundColor:bg,borderRadius:3}}];
+  if(ind==='tasa' && nacTasa!==null) {{
+    datasets.push({{
+      label:'Promedio nacional ('+fmtEmpNum(nacTasa)+'%)',
+      data:sorted.map(()=>nacTasa),
+      type:'line',
+      borderColor:'rgba(251,191,36,1)',
+      borderWidth:2,
+      borderDash:[6,4],
+      pointRadius:0,
+      fill:false,
+      order:-1
+    }});
+  }}
+  makeBarH('emp-chart-resumen',chartLabels,datasets);
 
-  let thead=`<thead><tr><th>Región</th><th onclick="sortDT('emp-tabla-resumen',1)">Tasa desocup. %</th><th onclick="sortDT('emp-tabla-resumen',2)">Ocupados (miles)</th><th onclick="sortDT('emp-tabla-resumen',3)">Fuerza de trabajo*</th></tr></thead>`;
+  // Gráfico desocupados totales por región
+  const sortedDes = EMP.regiones.map((r,i)=>{{return{{r,d:desocs[i]}}}}).filter(x=>x.d!==null).sort((a,b)=>b.d-a.d);
+  makeBarH('emp-chart-resumen-des', sortedDes.map(x=>x.r.replace('Metropolitana de Santiago','RM')),
+    [{{label:'Desocupados (miles)',data:sortedDes.map(x=>x.d),backgroundColor:'rgba(239,68,68,.75)',borderRadius:3}}]);
+
+  let thead=`<thead><tr>
+    <th>Región</th>
+    <th onclick="sortDT('emp-tabla-resumen',1)">Tasa desocup. %</th>
+    <th onclick="sortDT('emp-tabla-resumen',2)">Ocupados (miles)</th>
+    <th onclick="sortDT('emp-tabla-resumen',3)">Desocupados (miles)</th>
+    <th onclick="sortDT('emp-tabla-resumen',4)">Fuerza de trabajo*</th>
+  </tr></thead>`;
   let tbody='<tbody>';
+  // Fila nacional primero
+  tbody+=`<tr style="background:#1a3a5c;color:white;font-weight:700">
+    <td>🇨🇱 NACIONAL</td>
+    <td style="color:#fbbf24">${{fmtEmpNum(nacTasa)}}%</td>
+    <td>${{fmtEmpMiles(nacOcup)}}</td>
+    <td style="color:#f87171">${{fmtEmpMiles(nacDes)}}</td>
+    <td>${{fmtEmpMiles(nacFt)}}</td>
+  </tr>`;
   EMP.regiones.forEach((r,i)=>{{
-    const t=tasas[i],o=ocups[i],f=fts[i];
+    const t=tasas[i],o=ocups[i],f=fts[i],d=desocs[i];
+    const sobreprom = nacTasa!==null&&t!==null&&t>nacTasa;
     const cls=t===null?'':t>8?'neg':t<5?'pos':'';
-    tbody+=`<tr><td>${{r}}</td><td class="${{cls}}">${{fmtEmpNum(t)}}%</td><td>${{fmtEmpMiles(o)}}</td><td>${{fmtEmpMiles(f)}}</td></tr>`;
+    const rowStyle = sobreprom?'background:#fff5f5':'';
+    tbody+=`<tr style="${{rowStyle}}"><td>${{r}}</td><td class="${{cls}}">${{fmtEmpNum(t)}}%${{sobreprom?' ▲':''}}</td><td>${{fmtEmpMiles(o)}}</td><td class="${{t!==null&&t>8?'neg':''}}">${{fmtEmpMiles(d)}}</td><td>${{fmtEmpMiles(f)}}</td></tr>`;
   }});
   document.getElementById('emp-tabla-resumen').innerHTML=thead+tbody+'</tbody>';
 }}
 
 function renderEmpEvolucion() {{
-  const reg   = document.getElementById('emp-evo-region').value;
   const desde = document.getElementById('emp-evo-desde').value;
   const hasta = document.getElementById('emp-evo-hasta').value;
-  const d = EMP.datos[reg]; if(!d) return;
-  const ps = d.periodos.filter(p=>p>=desde+'-01'&&p<=hasta+'-12');
-  const ii = ps.map(p=>d.periodos.indexOf(p));
-  const tasas=ii.map(i=>d.tasa[i]), ocup=ii.map(i=>d.ocupados[i]), ft=ii.map(i=>d.ft[i]);
-  const lbls=ps.map(p=>p.replace('-','/'));
-  const noNull=tasas.filter(v=>v!==null);
-  const ult=noNull[noNull.length-1], prom=noNull.length?noNull.reduce((a,b)=>a+b,0)/noNull.length:null;
-  const maxT=noNull.length?Math.max(...noNull):null, minT=noNull.length?Math.min(...noNull):null;
+  const selEls = document.querySelectorAll('#emp-evo-region-list input[type=checkbox]:checked');
+  const selRegs = Array.from(selEls).map(el=>el.value);
+  if(!selRegs.length) return;
+
+  // Colores para múltiples series
+  const COLORS = [
+    'rgba(37,99,235,.9)','rgba(220,38,38,.9)','rgba(22,163,74,.9)',
+    'rgba(217,119,6,.9)','rgba(124,58,237,.9)','rgba(6,182,212,.9)',
+    'rgba(239,68,68,.9)','rgba(16,185,129,.9)','rgba(245,158,11,.9)',
+    'rgba(139,92,246,.9)','rgba(59,130,246,.9)','rgba(236,72,153,.9)',
+  ];
+  const NAC_COLOR = 'rgba(251,191,36,1)';
+
+  // Construir labels comunes (unión de todos los períodos del rango)
+  let allPers = new Set();
+  selRegs.forEach(reg=>{{
+    const keyReg = reg==='__NACIONAL__'?'__NACIONAL__':reg;
+    const d=EMP.datos[keyReg]; if(!d) return;
+    d.periodos.filter(p=>p>=desde+'-01'&&p<=hasta+'-12').forEach(p=>allPers.add(p));
+  }});
+  const ps = [...allPers].sort();
+  const lbls = ps.map(p=>p.replace('-','/'));
+
+  // KPIs solo para primera región seleccionada
+  const firstReg = selRegs[0];
+  const dFirst = EMP.datos[firstReg==='__NACIONAL__'?'__NACIONAL__':firstReg];
+  const psFirst = dFirst ? dFirst.periodos.filter(p=>p>=desde+'-01'&&p<=hasta+'-12') : [];
+  const iiFirst = psFirst.map(p=>dFirst.periodos.indexOf(p));
+  const tasasFirst = iiFirst.map(i=>dFirst.tasa[i]);
+  const noNullFirst = tasasFirst.filter(v=>v!==null);
+  const ult=noNullFirst[noNullFirst.length-1];
+  const prom=noNullFirst.length?noNullFirst.reduce((a,b)=>a+b,0)/noNullFirst.length:null;
+  const maxT=noNullFirst.length?Math.max(...noNullFirst):null;
+  const minT=noNullFirst.length?Math.min(...noNullFirst):null;
+  const regLabel = firstReg==='__NACIONAL__'?'🇨🇱 Nacional':firstReg;
 
   document.getElementById('emp-kpi-evo').innerHTML=`
-    <div class="kpi ${{ult>8?'rojo':ult>6?'amber':'verde'}}"><div class="kpi-label">Tasa actual</div><div class="kpi-value">${{fmtEmpNum(ult)}}%</div><div class="kpi-sub">${{fmtEmpPer(ps[ps.length-1])}}</div></div>
+    <div class="kpi ${{ult>8?'rojo':ult>6?'amber':'verde'}}"><div class="kpi-label">Tasa actual — ${{regLabel}}</div><div class="kpi-value">${{fmtEmpNum(ult)}}%</div><div class="kpi-sub">${{fmtEmpPer(psFirst[psFirst.length-1])}}</div></div>
     <div class="kpi"><div class="kpi-label">Promedio período</div><div class="kpi-value">${{fmtEmpNum(prom)}}%</div><div class="kpi-sub">${{desde}}–${{hasta}}</div></div>
     <div class="kpi rojo"><div class="kpi-label">Máx. desocupación</div><div class="kpi-value">${{fmtEmpNum(maxT)}}%</div></div>
     <div class="kpi verde"><div class="kpi-label">Mín. desocupación</div><div class="kpi-value">${{fmtEmpNum(minT)}}%</div></div>`;
 
-  document.getElementById('emp-evo-title-tasa').textContent=reg+' — Tasa de desocupación (%)';
-  document.getElementById('emp-evo-title-ocup').textContent=reg+' — Ocupados (miles)';
-  document.getElementById('emp-evo-title-ft').textContent=reg+' — Fuerza de trabajo* (miles)';
-  makeLine2('emp-chart-evo-tasa',lbls,[{{label:'Tasa de desocupación (%)',data:tasas,borderColor:'rgba(37,99,235,.9)',backgroundColor:'rgba(37,99,235,.08)',tension:.3,fill:true,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:tasas.map(v=>v===null?'#ccc':v>8?'#dc2626':v>6?'#d97706':'#16a34a'),pointBorderColor:'white',pointBorderWidth:2}}]);
-  makeLine2('emp-chart-evo-ocup',lbls,[{{label:'Ocupados',data:ocup,borderColor:'rgba(37,99,235,.8)',backgroundColor:'rgba(37,99,235,.1)',tension:.3,fill:true,pointRadius:0}}]);
-  makeLine2('emp-chart-evo-ft',lbls,[{{label:'Fuerza de trabajo',data:ft,borderColor:'rgba(217,119,6,.8)',backgroundColor:'rgba(217,119,6,.1)',tension:.3,fill:true,pointRadius:0}}]);
+  const titleSuffix = selRegs.length>1 ? 'Comparativa seleccionada' : regLabel;
+  document.getElementById('emp-evo-title-tasa').textContent=titleSuffix+' — Tasa de desocupación (%)';
+  document.getElementById('emp-evo-title-ocup').textContent=titleSuffix+' — Ocupados (miles)';
+  document.getElementById('emp-evo-title-ft').textContent=titleSuffix+' — Fuerza de trabajo* (miles)';
+  document.getElementById('emp-evo-title-des').textContent=titleSuffix+' — Desocupados (miles)';
+
+  const dsTasa=[], dsOcup=[], dsFt=[], dsDes=[];
+  selRegs.forEach((reg,ci)=>{{
+    const isNac = reg==='__NACIONAL__';
+    const d = EMP.datos[isNac?'__NACIONAL__':reg]; if(!d) return;
+    const psR = d.periodos.filter(p=>p>=desde+'-01'&&p<=hasta+'-12');
+    const iiR = psR.map(p=>d.periodos.indexOf(p));
+    // Alinear con ps común
+    const tData = ps.map(p=>{{const i=d.periodos.indexOf(p);return i>=0?d.tasa[i]:null;}});
+    const oData = ps.map(p=>{{const i=d.periodos.indexOf(p);return i>=0?d.ocupados[i]:null;}});
+    const fData = ps.map(p=>{{const i=d.periodos.indexOf(p);return i>=0?d.ft[i]:null;}});
+    const dData = ps.map(p=>{{const i=d.periodos.indexOf(p);return i>=0?d.desocupados[i]:null;}});
+    const col = isNac ? NAC_COLOR : COLORS[ci % COLORS.length];
+    const lbl = isNac ? '🇨🇱 Nacional' : reg.replace('Metropolitana de Santiago','RM');
+    const bw  = isNac ? 3 : 2;
+    const bd  = isNac ? [5,3] : undefined;
+    const base = {{label:lbl,data:tData,borderColor:col,backgroundColor:isNac?'transparent':'transparent',tension:.3,fill:false,pointRadius:isNac?0:3,borderWidth:bw,borderDash:bd}};
+    dsTasa.push({{...base,
+      pointBackgroundColor:tData.map(v=>v===null?'#ccc':v>8?'#dc2626':v>6?'#d97706':'#16a34a'),
+      pointBorderColor:'white',pointBorderWidth:1
+    }});
+    dsOcup.push({{label:lbl,data:oData,borderColor:col,backgroundColor:'transparent',tension:.3,fill:false,pointRadius:0,borderWidth:bw,borderDash:bd}});
+    dsFt.push({{label:lbl,data:fData,borderColor:col,backgroundColor:'transparent',tension:.3,fill:false,pointRadius:0,borderWidth:bw,borderDash:bd}});
+    dsDes.push({{label:lbl,data:dData,borderColor:col,backgroundColor:'transparent',tension:.3,fill:false,pointRadius:0,borderWidth:bw,borderDash:bd}});
+  }});
+
+  const showLegend = selRegs.length > 1;
+  makeLineMulti('emp-chart-evo-tasa',lbls,dsTasa,showLegend,true);
+  makeLineMulti('emp-chart-evo-ocup',lbls,dsOcup,showLegend,false);
+  makeLineMulti('emp-chart-evo-ft',lbls,dsFt,showLegend,false);
+  makeLineMulti('emp-chart-evo-des',lbls,dsDes,showLegend,false);
 }}
 
 function renderEmpRanking() {{
   const per=document.getElementById('emp-rank-periodo').value;
-  const pairs=EMP.regiones.map(r=>{{return{{r,t:empGetVal(r,per,'tasa'),o:empGetVal(r,per,'ocupados'),f:empGetVal(r,per,'ft')}}}}).filter(x=>x.t!==null).sort((a,b)=>b.t-a.t);
+  const nacTasa=empGetVal('__NACIONAL__',per,'tasa');
+  const nacOcup=empGetVal('__NACIONAL__',per,'ocupados');
+  const nacFt=empGetVal('__NACIONAL__',per,'ft');
+  const nacDes=empGetVal('__NACIONAL__',per,'desocupados');
+  const pairs=EMP.regiones.map(r=>{{return{{r,t:empGetVal(r,per,'tasa'),o:empGetVal(r,per,'ocupados'),f:empGetVal(r,per,'ft'),d:empGetVal(r,per,'desocupados')}}}}).filter(x=>x.t!==null).sort((a,b)=>b.t-a.t);
   document.getElementById('emp-rank-title').textContent='Ranking completo — '+fmtEmpPer(per);
   const top5=pairs.slice(0,5), bot5=[...pairs].reverse().slice(0,5);
-  makeBarH('emp-chart-rank-alta',top5.map(x=>x.r.replace('Metropolitana de Santiago','RM')),[{{label:'Tasa %',data:top5.map(x=>x.t),backgroundColor:'rgba(220,38,38,.8)',borderRadius:3}}]);
-  makeBarH('emp-chart-rank-baja',bot5.map(x=>x.r.replace('Metropolitana de Santiago','RM')),[{{label:'Tasa %',data:bot5.map(x=>x.t),backgroundColor:'rgba(22,163,74,.8)',borderRadius:3}}]);
-  let thead=`<thead><tr><th>#</th><th>Región</th><th onclick="sortDT('emp-tabla-ranking',2)">Tasa %</th><th onclick="sortDT('emp-tabla-ranking',3)">Ocupados</th><th onclick="sortDT('emp-tabla-ranking',4)">Fuerza trabajo*</th></tr></thead>`;
+
+  // Gráfico mayor desocupación con línea promedio nacional
+  const dsAlta=[
+    {{label:'Tasa %',data:top5.map(x=>x.t),backgroundColor:top5.map(x=>x.t>nacTasa?'rgba(220,38,38,.85)':'rgba(220,38,38,.5)'),borderRadius:3}},
+  ];
+  if(nacTasa!==null) dsAlta.push({{label:'Nac. '+fmtEmpNum(nacTasa)+'%',data:top5.map(()=>nacTasa),type:'line',borderColor:'rgba(251,191,36,1)',borderWidth:2,borderDash:[5,3],pointRadius:0,fill:false,order:-1}});
+  makeBarH('emp-chart-rank-alta',top5.map(x=>x.r.replace('Metropolitana de Santiago','RM')),dsAlta);
+
+  // Gráfico menor desocupación con línea promedio nacional
+  const dsBaja=[
+    {{label:'Tasa %',data:bot5.map(x=>x.t),backgroundColor:'rgba(22,163,74,.8)',borderRadius:3}},
+  ];
+  if(nacTasa!==null) dsBaja.push({{label:'Nac. '+fmtEmpNum(nacTasa)+'%',data:bot5.map(()=>nacTasa),type:'line',borderColor:'rgba(251,191,36,1)',borderWidth:2,borderDash:[5,3],pointRadius:0,fill:false,order:-1}});
+  makeBarH('emp-chart-rank-baja',bot5.map(x=>x.r.replace('Metropolitana de Santiago','RM')),dsBaja);
+
+  // Gráfico desocupados absolutos (top 5 mayor)
+  const top5Des = [...pairs].sort((a,b)=>(b.d||0)-(a.d||0)).slice(0,5);
+  makeBarH('emp-chart-rank-des',top5Des.map(x=>x.r.replace('Metropolitana de Santiago','RM')),
+    [{{label:'Desocupados (miles)',data:top5Des.map(x=>x.d),backgroundColor:'rgba(239,68,68,.75)',borderRadius:3}}]);
+
+  let thead=`<thead><tr>
+    <th>#</th><th>Región</th>
+    <th onclick="sortDT('emp-tabla-ranking',2)">Tasa %</th>
+    <th onclick="sortDT('emp-tabla-ranking',3)">vs Prom. Nac.</th>
+    <th onclick="sortDT('emp-tabla-ranking',4)">Desocupados</th>
+    <th onclick="sortDT('emp-tabla-ranking',5)">Ocupados</th>
+    <th onclick="sortDT('emp-tabla-ranking',6)">Fuerza trabajo*</th>
+  </tr></thead>`;
   let tbody='<tbody>';
+  // Fila nacional destacada al inicio
+  tbody+=`<tr style="background:#1a3a5c;color:white;font-weight:700">
+    <td>—</td>
+    <td style="text-align:left">🇨🇱 NACIONAL</td>
+    <td style="color:#fbbf24">${{fmtEmpNum(nacTasa)}}%</td>
+    <td style="color:#fbbf24">Referencia</td>
+    <td style="color:#f87171">${{fmtEmpMiles(nacDes)}}</td>
+    <td>${{fmtEmpMiles(nacOcup)}}</td>
+    <td>${{fmtEmpMiles(nacFt)}}</td>
+  </tr>`;
+  // Separador visual
+  tbody+=`<tr style="height:4px;background:#e5e7eb"><td colspan="7"></td></tr>`;
   pairs.forEach((x,i)=>{{
     const cls=x.t>8?'neg':x.t<5?'pos':'';
-    tbody+=`<tr><td>${{i+1}}</td><td style="text-align:left;font-weight:500">${{x.r}}</td><td class="${{cls}}">${{fmtEmpNum(x.t)}}%</td><td>${{fmtEmpMiles(x.o)}}</td><td>${{fmtEmpMiles(x.f)}}</td></tr>`;
+    const diff = nacTasa!==null ? (x.t-nacTasa) : null;
+    const diffStr = diff===null?'—':(diff>0?'<span style="color:#dc2626;font-weight:600">▲ +'+fmtEmpNum(diff)+'pp</span>':'<span style="color:#16a34a;font-weight:600">▼ '+fmtEmpNum(diff)+'pp</span>');
+    const rowBg = diff!==null&&diff>0?'background:#fff5f5':diff!==null&&diff<-0.5?'background:#f0fff4':'';
+    tbody+=`<tr style="${{rowBg}}">
+      <td>${{i+1}}</td>
+      <td style="text-align:left;font-weight:500">${{x.r}}</td>
+      <td class="${{cls}}">${{fmtEmpNum(x.t)}}%</td>
+      <td>${{diffStr}}</td>
+      <td class="${{x.t>8?'neg':''}}">${{fmtEmpMiles(x.d)}}</td>
+      <td>${{fmtEmpMiles(x.o)}}</td>
+      <td>${{fmtEmpMiles(x.f)}}</td>
+    </tr>`;
   }});
   document.getElementById('emp-tabla-ranking').innerHTML=thead+tbody+'</tbody>';
 }}
@@ -2506,19 +2687,43 @@ function renderEmpRanking() {{
 function makeBarH(id,labels,datasets,horizontal=true) {{
   if(charts[id]){{charts[id].destroy();delete charts[id];}}
   const ctx=document.getElementById(id); if(!ctx) return;
+  // Detectar si es gráfico de tasa (para mostrar % en eje)
+  const isTasa = datasets[0]&&datasets[0].label&&(datasets[0].label.includes('Tasa')||datasets[0].label.includes('tasa')||datasets[0].label.includes('%'));
   charts[id]=new Chart(ctx,{{type:'bar',data:{{labels,datasets}},options:{{
     responsive:true,maintainAspectRatio:true,indexAxis:horizontal?'y':'x',
-    plugins:{{legend:{{display:datasets.length>1,position:'bottom',labels:{{font:{{size:11}}}}}},tooltip:{{mode:'index',intersect:false}}}},
-    scales:{{x:{{ticks:{{font:{{size:10}},maxRotation:horizontal?0:55}},grid:{{display:horizontal}}}},y:{{ticks:{{font:{{size:10}}}},grid:{{color:'#f0f0f0'}}}}}}
+    plugins:{{legend:{{display:datasets.length>1,position:'bottom',labels:{{font:{{size:11}}}}}},tooltip:{{mode:'index',intersect:false,callbacks:{{label:function(ctx){{const v=ctx.parsed[horizontal?'x':'y'];return ' '+ctx.dataset.label+': '+(isTasa&&ctx.dataset.type!=='line'?v.toFixed(1)+'%':v);}}}}}}}}}},
+    scales:{{
+      x:{{ticks:{{font:{{size:10}},maxRotation:horizontal?0:55,callback:function(v){{return isTasa&&horizontal?v.toFixed(1)+'%':v;}}}},grid:{{display:horizontal}}}},
+      y:{{ticks:{{font:{{size:10}},callback:function(v,i,ticks){{if(!horizontal)return isTasa?v.toFixed(1)+'%':v;return ticks[i]?ticks[i].label:v;}}}},grid:{{color:'#f0f0f0'}}}}
+    }}
   }}}});
 }}
 function makeLine2(id,labels,datasets,tipo='line') {{
   if(charts[id]){{charts[id].destroy();delete charts[id];}}
   const ctx=document.getElementById(id); if(!ctx) return;
+  const isTasa = datasets[0]&&datasets[0].label&&(datasets[0].label.includes('desocup')||datasets[0].label.includes('%'));
   charts[id]=new Chart(ctx,{{type:tipo,data:{{labels,datasets}},options:{{
     responsive:true,maintainAspectRatio:true,
-    plugins:{{legend:{{display:false}},tooltip:{{mode:'index',intersect:false}}}},
-    scales:{{x:{{ticks:{{font:{{size:10}},maxRotation:55,autoSkip:true,maxTicksLimit:24}},grid:{{display:false}}}},y:{{ticks:{{font:{{size:10}}}},grid:{{color:'#f0f0f0'}}}}}}
+    plugins:{{legend:{{display:false}},tooltip:{{mode:'index',intersect:false,callbacks:{{label:function(ctx){{const v=ctx.parsed.y;return ' '+ctx.dataset.label+': '+(isTasa?v.toFixed(2)+'%':v);}}}}}}}}}},
+    scales:{{
+      x:{{ticks:{{font:{{size:10}},maxRotation:55,autoSkip:true,maxTicksLimit:24}},grid:{{display:false}}}},
+      y:{{ticks:{{font:{{size:10}},callback:function(v){{return isTasa?v.toFixed(1)+'%':v;}}}},grid:{{color:'#f0f0f0'}}}}
+    }}
+  }}}});
+}}
+function makeLineMulti(id,labels,datasets,showLegend=false,isTasa=false) {{
+  if(charts[id]){{charts[id].destroy();delete charts[id];}}
+  const ctx=document.getElementById(id); if(!ctx) return;
+  charts[id]=new Chart(ctx,{{type:'line',data:{{labels,datasets}},options:{{
+    responsive:true,maintainAspectRatio:true,
+    plugins:{{
+      legend:{{display:showLegend,position:'bottom',labels:{{font:{{size:11}},boxWidth:24}}}},
+      tooltip:{{mode:'index',intersect:false,callbacks:{{label:function(ctx){{const v=ctx.parsed.y;if(v===null)return null;return ' '+ctx.dataset.label+': '+(isTasa?v.toFixed(2)+'%':Math.round(v).toLocaleString('es-CL'));}}}}}}
+    }},
+    scales:{{
+      x:{{ticks:{{font:{{size:10}},maxRotation:55,autoSkip:true,maxTicksLimit:24}},grid:{{display:false}}}},
+      y:{{ticks:{{font:{{size:10}},callback:function(v){{return isTasa?v.toFixed(1)+'%':v;}}}},grid:{{color:'#f0f0f0'}}}}
+    }}
   }}}});
 }}
 
@@ -2574,9 +2779,20 @@ window.onload = function() {{
       o.value=p; o.textContent=fmtEmpPer(p); sel.appendChild(o);
     }});
   }});
-  // Empleo — regiones
-  const empSelR=document.getElementById('emp-evo-region');
-  EMP.regiones.forEach(r=>{{const o=document.createElement('option');o.value=r;o.textContent=r;empSelR.appendChild(o);}});
+  // Empleo — checkboxes de región (con Nacional primero)
+  const empRegList=document.getElementById('emp-evo-region-list');
+  const allEmpRegs = [{{val:'__NACIONAL__',lbl:'🇨🇱 Total Nacional'}}, ...EMP.regiones.map(r=>(({{val:r,lbl:r}})))];
+  allEmpRegs.forEach((rd,i)=>{{
+    const wrap=document.createElement('label');
+    wrap.style.cssText='display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;'+(rd.val==='__NACIONAL__'?'font-weight:700;color:#1a3a5c;':'');
+    const cb=document.createElement('input');
+    cb.type='checkbox'; cb.value=rd.val; cb.id='emp-cb-'+i;
+    if(i===0) cb.checked=true; // Nacional seleccionado por defecto
+    cb.onchange=renderEmpEvolucion;
+    wrap.appendChild(cb);
+    wrap.appendChild(document.createTextNode(rd.lbl));
+    empRegList.appendChild(wrap);
+  }});
   // Empleo — años
   const empAños=EMP.años;
   ['emp-evo-desde','emp-evo-hasta'].forEach((id,i)=>{{
@@ -2612,35 +2828,43 @@ window.onload = function() {{
         <div class="fg"><label>Indicador</label>
           <select id="emp-res-ind" onchange="renderEmpResumen()">
             <option value="tasa">Tasa de desocupación (%)</option>
+            <option value="desocupados">Desocupados (miles)</option>
             <option value="ocupados">Ocupados (miles de personas)</option>
             <option value="ft">Fuerza de trabajo* (miles)</option>
           </select></div>
       </div>
       <div class="kpi-grid" id="emp-kpi-resumen"></div>
       <div class="card"><h3 id="emp-res-chart-title">Tasa de desocupación por región</h3>
-        <canvas id="emp-chart-resumen" style="max-height:320px"></canvas></div>
+        <canvas id="emp-chart-resumen" style="max-height:360px"></canvas></div>
+      <div class="card"><h3>Desocupados por región (miles)</h3>
+        <canvas id="emp-chart-resumen-des" style="max-height:360px"></canvas></div>
       <div class="card"><h3>Comparativa regional</h3>
         <div class="tabla-wrap"><table class="dt" id="emp-tabla-resumen"></table></div>
-        <p class="nota">* Fuerza de trabajo = Ocupados / (1 - Tasa/100)</p>
+        <p class="nota">* Fuerza de trabajo = Ocupados / (1 - Tasa/100) &nbsp;|&nbsp; ▲ Sobre promedio nacional</p>
       </div>
     </div>
 
     <!-- Evolución -->
     <div class="section" id="emp-evolucion">
-      <div class="filtros">
-        <div class="fg"><label>Región</label><select id="emp-evo-region" onchange="renderEmpEvolucion()"></select></div>
+      <div class="filtros" style="align-items:flex-start">
         <div class="fg"><label>Año desde</label><select id="emp-evo-desde" onchange="renderEmpEvolucion()"></select></div>
         <div class="fg"><label>Año hasta</label><select id="emp-evo-hasta" onchange="renderEmpEvolucion()"></select></div>
+        <div class="fg" style="flex:2;min-width:260px">
+          <label>Regiones (selecciona una o más)</label>
+          <div id="emp-evo-region-list" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px;max-height:120px;overflow-y:auto;padding:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:12px"></div>
+        </div>
       </div>
       <div class="kpi-grid" id="emp-kpi-evo"></div>
       <div class="card"><h3 id="emp-evo-title-tasa">Tasa de desocupación (%)</h3>
-        <canvas id="emp-chart-evo-tasa" style="max-height:260px"></canvas></div>
+        <canvas id="emp-chart-evo-tasa" style="max-height:280px"></canvas></div>
       <div class="grid2">
         <div class="card"><h3 id="emp-evo-title-ocup">Ocupados (miles)</h3>
           <canvas id="emp-chart-evo-ocup" style="max-height:220px"></canvas></div>
         <div class="card"><h3 id="emp-evo-title-ft">Fuerza de trabajo* (miles)</h3>
           <canvas id="emp-chart-evo-ft" style="max-height:220px"></canvas></div>
       </div>
+      <div class="card"><h3 id="emp-evo-title-des">Desocupados (miles)</h3>
+        <canvas id="emp-chart-evo-des" style="max-height:220px"></canvas></div>
     </div>
 
     <!-- Ranking -->
@@ -2649,12 +2873,15 @@ window.onload = function() {{
         <div class="fg"><label>Período</label><select id="emp-rank-periodo" onchange="renderEmpRanking()"></select></div>
       </div>
       <div class="grid2">
-        <div class="card"><h3>Mayor desocupación</h3>
-          <canvas id="emp-chart-rank-alta" style="max-height:320px"></canvas></div>
-        <div class="card"><h3>Menor desocupación</h3>
-          <canvas id="emp-chart-rank-baja" style="max-height:320px"></canvas></div>
+        <div class="card"><h3>Mayor desocupación — Top 5</h3>
+          <canvas id="emp-chart-rank-alta" style="max-height:300px"></canvas></div>
+        <div class="card"><h3>Menor desocupación — Top 5</h3>
+          <canvas id="emp-chart-rank-baja" style="max-height:300px"></canvas></div>
       </div>
+      <div class="card"><h3>Mayor nº desocupados (miles) — Top 5</h3>
+        <canvas id="emp-chart-rank-des" style="max-height:260px"></canvas></div>
       <div class="card"><h3 id="emp-rank-title">Ranking completo</h3>
+        <p style="font-size:12px;color:#555;margin-bottom:8px">🟥 Sobre promedio nacional &nbsp;|&nbsp; 🟩 Bajo promedio nacional &nbsp;|&nbsp; pp = puntos porcentuales de diferencia</p>
         <div class="tabla-wrap"><table class="dt" id="emp-tabla-ranking"></table></div>
       </div>
     </div>
