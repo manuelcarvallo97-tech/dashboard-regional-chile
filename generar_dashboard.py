@@ -400,11 +400,16 @@ emp_js_block = r"""
 // ══════════════════════════════════════════════════════════════
 const EMP = {data_emp_json};
 
-function setTabEmp(tab, el) {
-  document.querySelectorAll('.tab-emp').forEach(t=>t.classList.remove('active'));
-  if(el) el.classList.add('active');
-  document.querySelectorAll('#mod-empleo .section').forEach(s=>s.classList.remove('active'));
-  document.getElementById('emp-'+tab).classList.add('active');
+function setTabEmp(tab) {
+  document.querySelectorAll('.tab-emp').forEach(function(t) {
+    t.classList.remove('active');
+    if(t.getAttribute('data-tab') === tab) t.classList.add('active');
+  });
+  document.querySelectorAll('#mod-empleo .section').forEach(function(s) {
+    s.classList.remove('active');
+  });
+  var sec = document.getElementById('emp-'+tab);
+  if(sec) sec.classList.add('active');
   if(tab==='resumen') renderEmpResumen();
   if(tab==='evolucion') renderEmpEvolucion();
   if(tab==='ranking') renderEmpRanking();
@@ -2907,9 +2912,9 @@ window.onload = function() {{
 ══════════════════════════════════════════════════════════════ -->
 <div class="modulo" id="mod-empleo">
   <div class="tabs">
-    <div class="tab-emp active" onclick="setTabEmp('resumen',this)">Resumen comparativo</div>
-    <div class="tab-emp" onclick="setTabEmp('evolucion',this)">Evolución por región</div>
-    <div class="tab-emp" onclick="setTabEmp('ranking',this)">Ranking regional</div>
+    <div class="tab-emp active" data-tab="resumen" onclick="setTabEmp('resumen')">Resumen comparativo</div>
+    <div class="tab-emp" data-tab="evolucion" onclick="setTabEmp('evolucion')">Evolución por región</div>
+    <div class="tab-emp" data-tab="ranking" onclick="setTabEmp('ranking')">Ranking regional</div>
   </div>
   <div class="content">
 
