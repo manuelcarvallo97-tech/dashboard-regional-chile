@@ -205,6 +205,7 @@ python generar_dashboard.py          # Generar HTML
 | 1.2 | Apr 2026 | fix empleo |
 | 1.2 | Apr 2026 | fix empleo |
 | 1.2 | Apr 2026 | fix empleo |
+| 1.2 | Apr 2026 | fix empleo |
 
 ---
 

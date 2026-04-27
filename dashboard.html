@@ -2102,6 +2102,7 @@ function renderCensoCon() {
 }
 
 
+
 // ══════════════════════════════════════════════════════════════
 // MÓDULO EMPLEO
 // ══════════════════════════════════════════════════════════════
@@ -2409,12 +2410,10 @@ function downloadTable(tableId, filename) {
   const rows = Array.from(tbl.querySelectorAll('tr'));
   const csv = rows.map(r=>
     Array.from(r.querySelectorAll('th,td')).map(c=>
-      '"'+c.innerText.replace(/"/g,'""').replace(/
-/g,' ')+'"'
+      '"'+c.innerText.replace(/"/g,'""').replace(/\n/g,' ')+'"'
     ).join(';')
-  ).join('
-');
-  const bom = '﻿';
+  ).join('\n');
+  const bom = '\uFEFF';
   const blob = new Blob([bom+csv], {type:'text/csv;charset=utf-8;'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -2468,6 +2467,7 @@ function makeLineMulti(id,labels,datasets,showLegend=false,isTasa=false) {
     }
   }});
 }
+
 
 // ══════════════════════════════════════════════════════════════
 // INIT

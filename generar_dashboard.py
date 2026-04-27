@@ -392,6 +392,376 @@ data_pib_json = json.dumps({
 # ══════════════════════════════════════════════════════════════════════════════
 # HTML
 # ══════════════════════════════════════════════════════════════════════════════
+
+# ── JS módulo empleo (fuera del f-string para evitar escapes) ──────────────
+emp_js_block = r"""
+// ══════════════════════════════════════════════════════════════
+// MÓDULO EMPLEO
+// ══════════════════════════════════════════════════════════════
+const EMP = {data_emp_json};
+
+function setTabEmp(tab, el) {
+  document.querySelectorAll('.tab-emp').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.querySelectorAll('#mod-empleo .section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('emp-'+tab).classList.add('active');
+  if(tab==='resumen') renderEmpResumen();
+  if(tab==='evolucion') renderEmpEvolucion();
+  if(tab==='ranking') renderEmpRanking();
+}
+
+function empGetVal(reg, periodo, ind) {
+  const d=EMP.datos[reg]; if(!d) return null;
+  const i=d.periodos.indexOf(periodo);
+  return i>=0?d[ind][i]:null;
+}
+
+function fmtEmpPer(p){return p?p.replace('-','/'):'';}
+function fmtEmpNum(v,dec=1){return v===null||v===undefined?'—':v.toFixed(dec).replace('.',',');}
+function fmtEmpMiles(v){return v===null||v===undefined?'—':Math.round(v).toLocaleString('es-CL');}
+
+function renderEmpResumen() {
+  const per = document.getElementById('emp-res-periodo').value;
+  const ind = document.getElementById('emp-res-ind').value;
+  const indL = {tasa:'Tasa de desocupación (%)',ocupados:'Ocupados (miles)',ft:'Fuerza de trabajo* (miles)',desocupados:'Desocupados (miles)'};
+  document.getElementById('emp-res-chart-title').textContent = indL[ind]+' — '+fmtEmpPer(per);
+
+  // Valores nacionales (ponderados correctamente)
+  const nacTasa = empGetVal('__NACIONAL__',per,'tasa');
+  const nacOcup = empGetVal('__NACIONAL__',per,'ocupados');
+  const nacFt   = empGetVal('__NACIONAL__',per,'ft');
+  const nacDes  = empGetVal('__NACIONAL__',per,'desocupados');
+
+  const vals   = EMP.regiones.map(r=>empGetVal(r,per,ind));
+  const tasas  = EMP.regiones.map(r=>empGetVal(r,per,'tasa'));
+  const ocups  = EMP.regiones.map(r=>empGetVal(r,per,'ocupados'));
+  const fts    = EMP.regiones.map(r=>empGetVal(r,per,'ft'));
+  const desocs = EMP.regiones.map(r=>empGetVal(r,per,'desocupados'));
+  const maxV   = vals.filter(v=>v!==null).length?Math.max(...vals.filter(v=>v!==null)):null;
+  const minV   = vals.filter(v=>v!==null).length?Math.min(...vals.filter(v=>v!==null)):null;
+  const rMax   = EMP.regiones[vals.indexOf(maxV)];
+  const rMin   = EMP.regiones[vals.indexOf(minV)];
+
+  document.getElementById('emp-kpi-resumen').innerHTML = `
+    <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #38bdf8"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Total ocupados</div><div class="kpi-value">${fmtEmpMiles(nacOcup)}</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Miles a nivel nacional</div></div>
+    <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #f87171"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Total desocupados</div><div class="kpi-value">${fmtEmpMiles(nacDes)}</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Miles a nivel nacional</div></div>
+    <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #34d399"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Fuerza de trabajo</div><div class="kpi-value">${fmtEmpMiles(nacFt)}</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Miles a nivel nacional</div></div>
+    <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #fbbf24"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Tasa desocup. nacional</div><div class="kpi-value">${fmtEmpNum(nacTasa)}%</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Ponderada por FT — ${fmtEmpPer(per)}</div></div>
+    <div class="kpi rojo"><div class="kpi-label">Mayor desocupación</div><div class="kpi-value">${ind==='tasa'?fmtEmpNum(maxV):fmtEmpMiles(maxV)}</div><div class="kpi-sub">${rMax||''}</div></div>
+    <div class="kpi verde"><div class="kpi-label">Menor desocupación</div><div class="kpi-value">${ind==='tasa'?fmtEmpNum(minV):fmtEmpMiles(minV)}</div><div class="kpi-sub">${rMin||''}</div></div>`;
+
+  const sorted = EMP.regiones.map((r,i)=>{return{r,v:vals[i],t:tasas[i],o:ocups[i],f:fts[i],d:desocs[i]}}).filter(x=>x.v!==null).sort((a,b)=>b.v-a.v);
+  const bg = sorted.map(x=>ind==='tasa'?(x.v>nacTasa?'rgba(220,38,38,.8)':x.v>6?'rgba(217,119,6,.8)':'rgba(22,163,74,.8)'):'rgba(37,99,235,.75)');
+  const nacVal = ind==='tasa'?nacTasa:ind==='ocupados'?nacOcup:ind==='ft'?nacFt:nacDes;
+  const chartLabels = sorted.map(x=>x.r.replace('Metropolitana de Santiago','RM'));
+  const datasets = [{label:indL[ind],data:sorted.map(x=>x.v),backgroundColor:bg,borderRadius:3}];
+  if(ind==='tasa' && nacTasa!==null) {
+    datasets.push({
+      label:'Promedio nacional ('+fmtEmpNum(nacTasa)+'%)',
+      data:sorted.map(()=>nacTasa),
+      type:'line',
+      borderColor:'rgba(251,191,36,1)',
+      borderWidth:2,
+      borderDash:[6,4],
+      pointRadius:0,
+      fill:false,
+      order:-1
+    });
+  }
+  makeBarH('emp-chart-resumen',chartLabels,datasets);
+
+  // Gráfico desocupados totales por región
+  const sortedDes = EMP.regiones.map((r,i)=>{return{r,d:desocs[i]}}).filter(x=>x.d!==null).sort((a,b)=>b.d-a.d);
+  makeBarH('emp-chart-resumen-des', sortedDes.map(x=>x.r.replace('Metropolitana de Santiago','RM')),
+    [{label:'Desocupados (miles)',data:sortedDes.map(x=>x.d),backgroundColor:'rgba(239,68,68,.75)',borderRadius:3}]);
+
+  let thead=`<thead><tr>
+    <th>Región</th>
+    <th onclick="sortDT('emp-tabla-resumen',1)">Tasa desocup. %</th>
+    <th onclick="sortDT('emp-tabla-resumen',2)">Ocupados (miles)</th>
+    <th onclick="sortDT('emp-tabla-resumen',3)">Desocupados (miles)</th>
+    <th onclick="sortDT('emp-tabla-resumen',4)">Fuerza de trabajo*</th>
+  </tr></thead>`;
+  let tbody='<tbody>';
+  // Fila nacional integrada primero (mismo ancho de columnas, diferenciada con color de fondo y borde)
+  tbody+=`<tr style="background:#e8f0fe;font-weight:700;border-left:4px solid #1a3a5c;">
+    <td style="color:#1a3a5c">🇨🇱 Nacional (promedio ponderado)</td>
+    <td style="color:#1a3a5c">${fmtEmpNum(nacTasa)}%</td>
+    <td style="color:#1a3a5c">${fmtEmpMiles(nacOcup)}</td>
+    <td style="color:#dc2626;font-weight:700">${fmtEmpMiles(nacDes)}</td>
+    <td style="color:#1a3a5c">${fmtEmpMiles(nacFt)}</td>
+  </tr>`;
+  EMP.regiones.forEach((r,i)=>{
+    const t=tasas[i],o=ocups[i],f=fts[i],d=desocs[i];
+    const sobreprom = nacTasa!==null&&t!==null&&t>nacTasa;
+    const muybajo  = nacTasa!==null&&t!==null&&t<(nacTasa-2);
+    const tasaColor = sobreprom?'color:#dc2626;font-weight:600':muybajo?'color:#16a34a;font-weight:600':'';
+    const rowBg = sobreprom?'background:#fff5f5':muybajo?'background:#f0fff4':'';
+    tbody+=`<tr style="${rowBg}"><td>${r}</td><td style="${tasaColor}">${fmtEmpNum(t)}%</td><td>${fmtEmpMiles(o)}</td><td style="${sobreprom?'color:#dc2626':''}">${fmtEmpMiles(d)}</td><td>${fmtEmpMiles(f)}</td></tr>`;
+  });
+  document.getElementById('emp-tabla-resumen').innerHTML=thead+tbody+'</tbody>';
+}
+
+function renderEmpEvolucion() {
+  const desde = document.getElementById('emp-evo-desde').value;
+  const hasta = document.getElementById('emp-evo-hasta').value;
+  const selEls = document.querySelectorAll('#emp-evo-region-list input[type=checkbox]:checked');
+  const selRegs = Array.from(selEls).map(el=>el.value);
+  if(!selRegs.length) return;
+
+  // Colores para múltiples series
+  const COLORS = [
+    'rgba(37,99,235,.9)','rgba(220,38,38,.9)','rgba(22,163,74,.9)',
+    'rgba(217,119,6,.9)','rgba(124,58,237,.9)','rgba(6,182,212,.9)',
+    'rgba(239,68,68,.9)','rgba(16,185,129,.9)','rgba(245,158,11,.9)',
+    'rgba(139,92,246,.9)','rgba(59,130,246,.9)','rgba(236,72,153,.9)',
+  ];
+  const NAC_COLOR = 'rgba(251,191,36,1)';
+
+  // Construir labels comunes (unión de todos los períodos del rango)
+  let allPers = new Set();
+  selRegs.forEach(reg=>{
+    const keyReg = reg==='__NACIONAL__'?'__NACIONAL__':reg;
+    const d=EMP.datos[keyReg]; if(!d) return;
+    d.periodos.filter(p=>p>=desde+'-01'&&p<=hasta+'-12').forEach(p=>allPers.add(p));
+  });
+  const ps = [...allPers].sort();
+  const lbls = ps.map(p=>p.replace('-','/'));
+
+  // KPIs solo para primera región seleccionada
+  const firstReg = selRegs[0];
+  const dFirst = EMP.datos[firstReg==='__NACIONAL__'?'__NACIONAL__':firstReg];
+  const psFirst = dFirst ? dFirst.periodos.filter(p=>p>=desde+'-01'&&p<=hasta+'-12') : [];
+  const iiFirst = psFirst.map(p=>dFirst.periodos.indexOf(p));
+  const tasasFirst = iiFirst.map(i=>dFirst.tasa[i]);
+  const noNullFirst = tasasFirst.filter(v=>v!==null);
+  const ult=noNullFirst[noNullFirst.length-1];
+  const prom=noNullFirst.length?noNullFirst.reduce((a,b)=>a+b,0)/noNullFirst.length:null;
+  const maxT=noNullFirst.length?Math.max(...noNullFirst):null;
+  const minT=noNullFirst.length?Math.min(...noNullFirst):null;
+  const regLabel = firstReg==='__NACIONAL__'?'🇨🇱 Nacional':firstReg;
+
+  document.getElementById('emp-kpi-evo').innerHTML=`
+    <div class="kpi ${ult>8?'rojo':ult>6?'amber':'verde'}"><div class="kpi-label">Tasa actual — ${regLabel}</div><div class="kpi-value">${fmtEmpNum(ult)}%</div><div class="kpi-sub">${fmtEmpPer(psFirst[psFirst.length-1])}</div></div>
+    <div class="kpi"><div class="kpi-label">Promedio período</div><div class="kpi-value">${fmtEmpNum(prom)}%</div><div class="kpi-sub">${desde}–${hasta}</div></div>
+    <div class="kpi rojo"><div class="kpi-label">Máx. desocupación</div><div class="kpi-value">${fmtEmpNum(maxT)}%</div></div>
+    <div class="kpi verde"><div class="kpi-label">Mín. desocupación</div><div class="kpi-value">${fmtEmpNum(minT)}%</div></div>`;
+
+  const titleSuffix = selRegs.length>1 ? 'Comparativa seleccionada' : regLabel;
+  document.getElementById('emp-evo-title-tasa').textContent=titleSuffix+' — Tasa de desocupación (%)';
+  document.getElementById('emp-evo-title-ocup').textContent=titleSuffix+' — Ocupados (miles)';
+  document.getElementById('emp-evo-title-ft').textContent=titleSuffix+' — Fuerza de trabajo* (miles)';
+  document.getElementById('emp-evo-title-des').textContent=titleSuffix+' — Desocupados (miles)';
+
+  const dsTasa=[], dsOcup=[], dsFt=[], dsDes=[];
+  selRegs.forEach((reg,ci)=>{
+    const isNac = reg==='__NACIONAL__';
+    const d = EMP.datos[isNac?'__NACIONAL__':reg]; if(!d) return;
+    const psR = d.periodos.filter(p=>p>=desde+'-01'&&p<=hasta+'-12');
+    const iiR = psR.map(p=>d.periodos.indexOf(p));
+    // Alinear con ps común
+    const tData = ps.map(p=>{const i=d.periodos.indexOf(p);return i>=0?d.tasa[i]:null;});
+    const oData = ps.map(p=>{const i=d.periodos.indexOf(p);return i>=0?d.ocupados[i]:null;});
+    const fData = ps.map(p=>{const i=d.periodos.indexOf(p);return i>=0?d.ft[i]:null;});
+    const dData = ps.map(p=>{const i=d.periodos.indexOf(p);return i>=0?d.desocupados[i]:null;});
+    const col = isNac ? NAC_COLOR : COLORS[ci % COLORS.length];
+    const lbl = isNac ? '🇨🇱 Nacional' : reg.replace('Metropolitana de Santiago','RM');
+    const bw  = isNac ? 3 : 2;
+    const bd  = isNac ? [5,3] : undefined;
+    const base = {label:lbl,data:tData,borderColor:col,backgroundColor:isNac?'transparent':'transparent',tension:.3,fill:false,pointRadius:isNac?0:3,borderWidth:bw,borderDash:bd};
+    dsTasa.push({...base,
+      pointBackgroundColor:tData.map(v=>v===null?'#ccc':v>8?'#dc2626':v>6?'#d97706':'#16a34a'),
+      pointBorderColor:'white',pointBorderWidth:1
+    });
+    dsOcup.push({label:lbl,data:oData,borderColor:col,backgroundColor:'transparent',tension:.3,fill:false,pointRadius:0,borderWidth:bw,borderDash:bd});
+    dsFt.push({label:lbl,data:fData,borderColor:col,backgroundColor:'transparent',tension:.3,fill:false,pointRadius:0,borderWidth:bw,borderDash:bd});
+    dsDes.push({label:lbl,data:dData,borderColor:col,backgroundColor:'transparent',tension:.3,fill:false,pointRadius:0,borderWidth:bw,borderDash:bd});
+  });
+
+  const showLegend = selRegs.length > 1;
+  makeLineMulti('emp-chart-evo-tasa',lbls,dsTasa,showLegend,true);
+  makeLineMulti('emp-chart-evo-ocup',lbls,dsOcup,showLegend,false);
+  makeLineMulti('emp-chart-evo-ft',lbls,dsFt,showLegend,false);
+  makeLineMulti('emp-chart-evo-des',lbls,dsDes,showLegend,false);
+}
+
+function empGetVarMes(reg,per){
+  const d=EMP.datos[reg]; if(!d) return null;
+  const i=d.periodos.indexOf(per); if(i<1) return null;
+  const tAct=d.tasa[i],tAnt=d.tasa[i-1];
+  if(tAct===null||tAnt===null) return null;
+  return parseFloat((tAct-tAnt).toFixed(2));
+}
+function empGetVarAnual(reg,per){
+  const d=EMP.datos[reg]; if(!d) return null;
+  const i=d.periodos.indexOf(per); if(i<12) return null;
+  const tAct=d.tasa[i],tAnt=d.tasa[i-12];
+  if(tAct===null||tAnt===null) return null;
+  return parseFloat((tAct-tAnt).toFixed(2));
+}
+function fmtEmpVar(v){
+  if(v===null||v===undefined) return '<span style="color:#94a3b8">—</span>';
+  const col=v>0?'#dc2626':v<0?'#16a34a':'#64748b';
+  const arr=v>0?'▲':v<0?'▼':'→';
+  const sign=v>0?'+':'';
+  return '<span style="color:'+col+';font-weight:600">'+arr+' '+sign+v.toFixed(1).replace('.',',')+'</span>';
+}
+
+function renderEmpRanking() {
+  const per=document.getElementById('emp-rank-periodo').value;
+  const nacTasa=empGetVal('__NACIONAL__',per,'tasa');
+  const nacOcup=empGetVal('__NACIONAL__',per,'ocupados');
+  const nacFt=empGetVal('__NACIONAL__',per,'ft');
+  const nacDes=empGetVal('__NACIONAL__',per,'desocupados');
+
+  const pairs=EMP.regiones.map(r=>{
+    return{r,t:empGetVal(r,per,'tasa'),o:empGetVal(r,per,'ocupados'),f:empGetVal(r,per,'ft'),d:empGetVal(r,per,'desocupados'),vm:empGetVarMes(r,per),va:empGetVarAnual(r,per)}
+  }).filter(x=>x.t!==null).sort((a,b)=>b.t-a.t);
+
+  document.getElementById('emp-rank-title').textContent='Ranking completo — '+fmtEmpPer(per);
+  const top5=pairs.slice(0,5), bot5=[...pairs].reverse().slice(0,5);
+
+  // Gráfico mayor desocupación con línea promedio nacional
+  const dsAlta=[{label:'Tasa %',data:top5.map(x=>x.t),backgroundColor:top5.map(x=>x.t>nacTasa?'rgba(220,38,38,.85)':'rgba(220,38,38,.5)'),borderRadius:3}];
+  if(nacTasa!==null) dsAlta.push({label:'Nac. '+fmtEmpNum(nacTasa)+'%',data:top5.map(()=>nacTasa),type:'line',borderColor:'rgba(251,191,36,1)',borderWidth:2,borderDash:[5,3],pointRadius:0,fill:false,order:-1});
+  makeBarH('emp-chart-rank-alta',top5.map(x=>x.r.replace('Metropolitana de Santiago','RM')),dsAlta);
+
+  // Gráfico menor desocupación con línea promedio nacional
+  const dsBaja=[{label:'Tasa %',data:bot5.map(x=>x.t),backgroundColor:'rgba(22,163,74,.8)',borderRadius:3}];
+  if(nacTasa!==null) dsBaja.push({label:'Nac. '+fmtEmpNum(nacTasa)+'%',data:bot5.map(()=>nacTasa),type:'line',borderColor:'rgba(251,191,36,1)',borderWidth:2,borderDash:[5,3],pointRadius:0,fill:false,order:-1});
+  makeBarH('emp-chart-rank-baja',bot5.map(x=>x.r.replace('Metropolitana de Santiago','RM')),dsBaja);
+
+  // Gráfico desocupados absolutos top 5
+  const top5Des=[...pairs].sort((a,b)=>(b.d||0)-(a.d||0)).slice(0,5);
+  makeBarH('emp-chart-rank-des',top5Des.map(x=>x.r.replace('Metropolitana de Santiago','RM')),
+    [{label:'Desocupados (miles)',data:top5Des.map(x=>x.d),backgroundColor:'rgba(239,68,68,.75)',borderRadius:3}]);
+
+  // Variaciones nacionales
+  const nacVm=empGetVarMes('__NACIONAL__',per);
+  const nacVa=empGetVarAnual('__NACIONAL__',per);
+
+  let thead=`<thead><tr>
+    <th>#</th><th>Región</th>
+    <th>Tasa %</th>
+    <th>Var. mensual</th>
+    <th>Var. anual</th>
+    <th>Desocupados</th>
+    <th>Ocupados</th>
+    <th>Fuerza trabajo*</th>
+  </tr></thead>`;
+  let tbody='<tbody>';
+  // Fila nacional primero
+  tbody+=`<tr style="background:#e8f0fe;font-weight:700;border-left:4px solid #1a3a5c;">
+    <td style="color:#1a3a5c">—</td>
+    <td style="text-align:left;color:#1a3a5c">🇨🇱 Nacional (prom. ponderado)</td>
+    <td style="color:#1a3a5c">${fmtEmpNum(nacTasa)}%</td>
+    <td>${fmtEmpVar(nacVm)}</td>
+    <td>${fmtEmpVar(nacVa)}</td>
+    <td style="color:#dc2626;font-weight:700">${fmtEmpMiles(nacDes)}</td>
+    <td style="color:#1a3a5c">${fmtEmpMiles(nacOcup)}</td>
+    <td style="color:#1a3a5c">${fmtEmpMiles(nacFt)}</td>
+  </tr>`;
+  pairs.forEach((x,i)=>{
+    const sobreprom=nacTasa!==null&&x.t>nacTasa;
+    const muybajo=nacTasa!==null&&x.t<(nacTasa-2);
+    const tasaColor=sobreprom?'color:#dc2626;font-weight:600':muybajo?'color:#16a34a;font-weight:600':'';
+    const rowBg=sobreprom?'background:#fff5f5':muybajo?'background:#f0fff4':'';
+    tbody+=`<tr style="${rowBg}">
+      <td>${i+1}</td>
+      <td style="text-align:left;font-weight:500">${x.r}</td>
+      <td style="${tasaColor}">${fmtEmpNum(x.t)}%</td>
+      <td>${fmtEmpVar(x.vm)}</td>
+      <td>${fmtEmpVar(x.va)}</td>
+      <td style="${sobreprom?'color:#dc2626':''}">${fmtEmpMiles(x.d)}</td>
+      <td>${fmtEmpMiles(x.o)}</td>
+      <td>${fmtEmpMiles(x.f)}</td>
+    </tr>`;
+  });
+  document.getElementById('emp-tabla-ranking').innerHTML=thead+tbody+'</tbody>';
+}
+
+// ── Descarga gráficos y tablas ─────────────────────────────────
+function downloadChart(canvasId, filename) {
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  // Crear canvas temporal con fondo blanco
+  const tmp = document.createElement('canvas');
+  tmp.width = canvas.width; tmp.height = canvas.height;
+  const tctx = tmp.getContext('2d');
+  tctx.fillStyle = '#ffffff';
+  tctx.fillRect(0, 0, tmp.width, tmp.height);
+  tctx.drawImage(canvas, 0, 0);
+  const a = document.createElement('a');
+  a.href = tmp.toDataURL('image/png');
+  a.download = (filename||canvasId) + '.png';
+  a.click();
+}
+function downloadTable(tableId, filename) {
+  const tbl = document.getElementById(tableId);
+  if(!tbl) return;
+  const rows = Array.from(tbl.querySelectorAll('tr'));
+  const csv = rows.map(r=>
+    Array.from(r.querySelectorAll('th,td')).map(c=>
+      '"'+c.innerText.replace(/"/g,'""').replace(/\n/g,' ')+'"'
+    ).join(';')
+  ).join('\n');
+  const bom = '\uFEFF';
+  const blob = new Blob([bom+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (filename||tableId) + '.csv';
+  a.click();
+}
+function makeBarH(id,labels,datasets,horizontal=true) {
+  if(charts[id]){charts[id].destroy();delete charts[id];}
+  const ctx=document.getElementById(id); if(!ctx) return;
+  const isTasa = datasets[0]&&datasets[0].label&&(datasets[0].label.includes('Tasa')||datasets[0].label.includes('tasa')||datasets[0].label.includes('%'));
+  charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{
+    responsive:true,maintainAspectRatio:true,indexAxis:horizontal?'y':'x',
+    plugins:{
+      legend:{display:datasets.length>1,position:'bottom',labels:{font:{size:11}}},
+      tooltip:{mode:'index',intersect:false,callbacks:{label:function(ctx2){const v=ctx2.parsed[horizontal?'x':'y'];return ' '+ctx2.dataset.label+': '+(isTasa&&ctx2.dataset.type!=='line'?v.toFixed(1)+'%':v);}}}
+    },
+    scales:{
+      x:{ticks:{font:{size:10},maxRotation:horizontal?0:55,callback:function(v){return isTasa&&horizontal?v.toFixed(1)+'%':v;}},grid:{display:horizontal}},
+      y:{ticks:{font:{size:10}},grid:{color:'#f0f0f0'}}
+    }
+  }});
+}
+function makeLine2(id,labels,datasets,tipo='line') {
+  if(charts[id]){charts[id].destroy();delete charts[id];}
+  const ctx=document.getElementById(id); if(!ctx) return;
+  const isTasa = datasets[0]&&datasets[0].label&&(datasets[0].label.includes('desocup')||datasets[0].label.includes('%'));
+  charts[id]=new Chart(ctx,{type:tipo,data:{labels,datasets},options:{
+    responsive:true,maintainAspectRatio:true,
+    plugins:{
+      legend:{display:false},
+      tooltip:{mode:'index',intersect:false,callbacks:{label:function(ctx2){const v=ctx2.parsed.y;return ' '+ctx2.dataset.label+': '+(isTasa?v.toFixed(2)+'%':v);}}}
+    },
+    scales:{
+      x:{ticks:{font:{size:10},maxRotation:55,autoSkip:true,maxTicksLimit:24},grid:{display:false}},
+      y:{ticks:{font:{size:10},callback:function(v){return isTasa?v.toFixed(1)+'%':v;}},grid:{color:'#f0f0f0'}}
+    }
+  }});
+}
+function makeLineMulti(id,labels,datasets,showLegend=false,isTasa=false) {
+  if(charts[id]){charts[id].destroy();delete charts[id];}
+  const ctx=document.getElementById(id); if(!ctx) return;
+  charts[id]=new Chart(ctx,{type:'line',data:{labels,datasets},options:{
+    responsive:true,maintainAspectRatio:true,
+    plugins:{
+      legend:{display:showLegend,position:'bottom',labels:{font:{size:11},boxWidth:24}},
+      tooltip:{mode:'index',intersect:false,callbacks:{label:function(ctx2){const v=ctx2.parsed.y;if(v===null)return null;return ' '+ctx2.dataset.label+': '+(isTasa?v.toFixed(2)+'%':Math.round(v).toLocaleString('es-CL'));}}}
+    },
+    scales:{
+      x:{ticks:{font:{size:10},maxRotation:55,autoSkip:true,maxTicksLimit:24},grid:{display:false}},
+      y:{ticks:{font:{size:10},callback:function(v){return isTasa?v.toFixed(1)+'%':v;}},grid:{color:'#f0f0f0'}}
+    }
+  }});
+}
+
+"""
+
 html = f"""<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -2438,371 +2808,7 @@ function renderCensoCon() {{
 }}
 
 
-// ══════════════════════════════════════════════════════════════
-// MÓDULO EMPLEO
-// ══════════════════════════════════════════════════════════════
-const EMP = {data_emp_json};
-
-function setTabEmp(tab, el) {{
-  document.querySelectorAll('.tab-emp').forEach(t=>t.classList.remove('active'));
-  if(el) el.classList.add('active');
-  document.querySelectorAll('#mod-empleo .section').forEach(s=>s.classList.remove('active'));
-  document.getElementById('emp-'+tab).classList.add('active');
-  if(tab==='resumen') renderEmpResumen();
-  if(tab==='evolucion') renderEmpEvolucion();
-  if(tab==='ranking') renderEmpRanking();
-}}
-
-function empGetVal(reg, periodo, ind) {{
-  const d=EMP.datos[reg]; if(!d) return null;
-  const i=d.periodos.indexOf(periodo);
-  return i>=0?d[ind][i]:null;
-}}
-
-function fmtEmpPer(p){{return p?p.replace('-','/'):'';}}
-function fmtEmpNum(v,dec=1){{return v===null||v===undefined?'—':v.toFixed(dec).replace('.',',');}}
-function fmtEmpMiles(v){{return v===null||v===undefined?'—':Math.round(v).toLocaleString('es-CL');}}
-
-function renderEmpResumen() {{
-  const per = document.getElementById('emp-res-periodo').value;
-  const ind = document.getElementById('emp-res-ind').value;
-  const indL = {{tasa:'Tasa de desocupación (%)',ocupados:'Ocupados (miles)',ft:'Fuerza de trabajo* (miles)',desocupados:'Desocupados (miles)'}};
-  document.getElementById('emp-res-chart-title').textContent = indL[ind]+' — '+fmtEmpPer(per);
-
-  // Valores nacionales (ponderados correctamente)
-  const nacTasa = empGetVal('__NACIONAL__',per,'tasa');
-  const nacOcup = empGetVal('__NACIONAL__',per,'ocupados');
-  const nacFt   = empGetVal('__NACIONAL__',per,'ft');
-  const nacDes  = empGetVal('__NACIONAL__',per,'desocupados');
-
-  const vals   = EMP.regiones.map(r=>empGetVal(r,per,ind));
-  const tasas  = EMP.regiones.map(r=>empGetVal(r,per,'tasa'));
-  const ocups  = EMP.regiones.map(r=>empGetVal(r,per,'ocupados'));
-  const fts    = EMP.regiones.map(r=>empGetVal(r,per,'ft'));
-  const desocs = EMP.regiones.map(r=>empGetVal(r,per,'desocupados'));
-  const maxV   = vals.filter(v=>v!==null).length?Math.max(...vals.filter(v=>v!==null)):null;
-  const minV   = vals.filter(v=>v!==null).length?Math.min(...vals.filter(v=>v!==null)):null;
-  const rMax   = EMP.regiones[vals.indexOf(maxV)];
-  const rMin   = EMP.regiones[vals.indexOf(minV)];
-
-  document.getElementById('emp-kpi-resumen').innerHTML = `
-    <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #38bdf8"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Total ocupados</div><div class="kpi-value">${{fmtEmpMiles(nacOcup)}}</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Miles a nivel nacional</div></div>
-    <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #f87171"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Total desocupados</div><div class="kpi-value">${{fmtEmpMiles(nacDes)}}</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Miles a nivel nacional</div></div>
-    <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #34d399"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Fuerza de trabajo</div><div class="kpi-value">${{fmtEmpMiles(nacFt)}}</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Miles a nivel nacional</div></div>
-    <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #fbbf24"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Tasa desocup. nacional</div><div class="kpi-value">${{fmtEmpNum(nacTasa)}}%</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Ponderada por FT — ${{fmtEmpPer(per)}}</div></div>
-    <div class="kpi rojo"><div class="kpi-label">Mayor desocupación</div><div class="kpi-value">${{ind==='tasa'?fmtEmpNum(maxV):fmtEmpMiles(maxV)}}</div><div class="kpi-sub">${{rMax||''}}</div></div>
-    <div class="kpi verde"><div class="kpi-label">Menor desocupación</div><div class="kpi-value">${{ind==='tasa'?fmtEmpNum(minV):fmtEmpMiles(minV)}}</div><div class="kpi-sub">${{rMin||''}}</div></div>`;
-
-  const sorted = EMP.regiones.map((r,i)=>{{return{{r,v:vals[i],t:tasas[i],o:ocups[i],f:fts[i],d:desocs[i]}}}}).filter(x=>x.v!==null).sort((a,b)=>b.v-a.v);
-  const bg = sorted.map(x=>ind==='tasa'?(x.v>nacTasa?'rgba(220,38,38,.8)':x.v>6?'rgba(217,119,6,.8)':'rgba(22,163,74,.8)'):'rgba(37,99,235,.75)');
-  const nacVal = ind==='tasa'?nacTasa:ind==='ocupados'?nacOcup:ind==='ft'?nacFt:nacDes;
-  const chartLabels = sorted.map(x=>x.r.replace('Metropolitana de Santiago','RM'));
-  const datasets = [{{label:indL[ind],data:sorted.map(x=>x.v),backgroundColor:bg,borderRadius:3}}];
-  if(ind==='tasa' && nacTasa!==null) {{
-    datasets.push({{
-      label:'Promedio nacional ('+fmtEmpNum(nacTasa)+'%)',
-      data:sorted.map(()=>nacTasa),
-      type:'line',
-      borderColor:'rgba(251,191,36,1)',
-      borderWidth:2,
-      borderDash:[6,4],
-      pointRadius:0,
-      fill:false,
-      order:-1
-    }});
-  }}
-  makeBarH('emp-chart-resumen',chartLabels,datasets);
-
-  // Gráfico desocupados totales por región
-  const sortedDes = EMP.regiones.map((r,i)=>{{return{{r,d:desocs[i]}}}}).filter(x=>x.d!==null).sort((a,b)=>b.d-a.d);
-  makeBarH('emp-chart-resumen-des', sortedDes.map(x=>x.r.replace('Metropolitana de Santiago','RM')),
-    [{{label:'Desocupados (miles)',data:sortedDes.map(x=>x.d),backgroundColor:'rgba(239,68,68,.75)',borderRadius:3}}]);
-
-  let thead=`<thead><tr>
-    <th>Región</th>
-    <th onclick="sortDT('emp-tabla-resumen',1)">Tasa desocup. %</th>
-    <th onclick="sortDT('emp-tabla-resumen',2)">Ocupados (miles)</th>
-    <th onclick="sortDT('emp-tabla-resumen',3)">Desocupados (miles)</th>
-    <th onclick="sortDT('emp-tabla-resumen',4)">Fuerza de trabajo*</th>
-  </tr></thead>`;
-  let tbody='<tbody>';
-  // Fila nacional integrada primero (mismo ancho de columnas, diferenciada con color de fondo y borde)
-  tbody+=`<tr style="background:#e8f0fe;font-weight:700;border-left:4px solid #1a3a5c;">
-    <td style="color:#1a3a5c">🇨🇱 Nacional (promedio ponderado)</td>
-    <td style="color:#1a3a5c">${{fmtEmpNum(nacTasa)}}%</td>
-    <td style="color:#1a3a5c">${{fmtEmpMiles(nacOcup)}}</td>
-    <td style="color:#dc2626;font-weight:700">${{fmtEmpMiles(nacDes)}}</td>
-    <td style="color:#1a3a5c">${{fmtEmpMiles(nacFt)}}</td>
-  </tr>`;
-  EMP.regiones.forEach((r,i)=>{{
-    const t=tasas[i],o=ocups[i],f=fts[i],d=desocs[i];
-    const sobreprom = nacTasa!==null&&t!==null&&t>nacTasa;
-    const muybajo  = nacTasa!==null&&t!==null&&t<(nacTasa-2);
-    const tasaColor = sobreprom?'color:#dc2626;font-weight:600':muybajo?'color:#16a34a;font-weight:600':'';
-    const rowBg = sobreprom?'background:#fff5f5':muybajo?'background:#f0fff4':'';
-    tbody+=`<tr style="${{rowBg}}"><td>${{r}}</td><td style="${{tasaColor}}">${{fmtEmpNum(t)}}%</td><td>${{fmtEmpMiles(o)}}</td><td style="${{sobreprom?'color:#dc2626':''}}">${{fmtEmpMiles(d)}}</td><td>${{fmtEmpMiles(f)}}</td></tr>`;
-  }});
-  document.getElementById('emp-tabla-resumen').innerHTML=thead+tbody+'</tbody>';
-}}
-
-function renderEmpEvolucion() {{
-  const desde = document.getElementById('emp-evo-desde').value;
-  const hasta = document.getElementById('emp-evo-hasta').value;
-  const selEls = document.querySelectorAll('#emp-evo-region-list input[type=checkbox]:checked');
-  const selRegs = Array.from(selEls).map(el=>el.value);
-  if(!selRegs.length) return;
-
-  // Colores para múltiples series
-  const COLORS = [
-    'rgba(37,99,235,.9)','rgba(220,38,38,.9)','rgba(22,163,74,.9)',
-    'rgba(217,119,6,.9)','rgba(124,58,237,.9)','rgba(6,182,212,.9)',
-    'rgba(239,68,68,.9)','rgba(16,185,129,.9)','rgba(245,158,11,.9)',
-    'rgba(139,92,246,.9)','rgba(59,130,246,.9)','rgba(236,72,153,.9)',
-  ];
-  const NAC_COLOR = 'rgba(251,191,36,1)';
-
-  // Construir labels comunes (unión de todos los períodos del rango)
-  let allPers = new Set();
-  selRegs.forEach(reg=>{{
-    const keyReg = reg==='__NACIONAL__'?'__NACIONAL__':reg;
-    const d=EMP.datos[keyReg]; if(!d) return;
-    d.periodos.filter(p=>p>=desde+'-01'&&p<=hasta+'-12').forEach(p=>allPers.add(p));
-  }});
-  const ps = [...allPers].sort();
-  const lbls = ps.map(p=>p.replace('-','/'));
-
-  // KPIs solo para primera región seleccionada
-  const firstReg = selRegs[0];
-  const dFirst = EMP.datos[firstReg==='__NACIONAL__'?'__NACIONAL__':firstReg];
-  const psFirst = dFirst ? dFirst.periodos.filter(p=>p>=desde+'-01'&&p<=hasta+'-12') : [];
-  const iiFirst = psFirst.map(p=>dFirst.periodos.indexOf(p));
-  const tasasFirst = iiFirst.map(i=>dFirst.tasa[i]);
-  const noNullFirst = tasasFirst.filter(v=>v!==null);
-  const ult=noNullFirst[noNullFirst.length-1];
-  const prom=noNullFirst.length?noNullFirst.reduce((a,b)=>a+b,0)/noNullFirst.length:null;
-  const maxT=noNullFirst.length?Math.max(...noNullFirst):null;
-  const minT=noNullFirst.length?Math.min(...noNullFirst):null;
-  const regLabel = firstReg==='__NACIONAL__'?'🇨🇱 Nacional':firstReg;
-
-  document.getElementById('emp-kpi-evo').innerHTML=`
-    <div class="kpi ${{ult>8?'rojo':ult>6?'amber':'verde'}}"><div class="kpi-label">Tasa actual — ${{regLabel}}</div><div class="kpi-value">${{fmtEmpNum(ult)}}%</div><div class="kpi-sub">${{fmtEmpPer(psFirst[psFirst.length-1])}}</div></div>
-    <div class="kpi"><div class="kpi-label">Promedio período</div><div class="kpi-value">${{fmtEmpNum(prom)}}%</div><div class="kpi-sub">${{desde}}–${{hasta}}</div></div>
-    <div class="kpi rojo"><div class="kpi-label">Máx. desocupación</div><div class="kpi-value">${{fmtEmpNum(maxT)}}%</div></div>
-    <div class="kpi verde"><div class="kpi-label">Mín. desocupación</div><div class="kpi-value">${{fmtEmpNum(minT)}}%</div></div>`;
-
-  const titleSuffix = selRegs.length>1 ? 'Comparativa seleccionada' : regLabel;
-  document.getElementById('emp-evo-title-tasa').textContent=titleSuffix+' — Tasa de desocupación (%)';
-  document.getElementById('emp-evo-title-ocup').textContent=titleSuffix+' — Ocupados (miles)';
-  document.getElementById('emp-evo-title-ft').textContent=titleSuffix+' — Fuerza de trabajo* (miles)';
-  document.getElementById('emp-evo-title-des').textContent=titleSuffix+' — Desocupados (miles)';
-
-  const dsTasa=[], dsOcup=[], dsFt=[], dsDes=[];
-  selRegs.forEach((reg,ci)=>{{
-    const isNac = reg==='__NACIONAL__';
-    const d = EMP.datos[isNac?'__NACIONAL__':reg]; if(!d) return;
-    const psR = d.periodos.filter(p=>p>=desde+'-01'&&p<=hasta+'-12');
-    const iiR = psR.map(p=>d.periodos.indexOf(p));
-    // Alinear con ps común
-    const tData = ps.map(p=>{{const i=d.periodos.indexOf(p);return i>=0?d.tasa[i]:null;}});
-    const oData = ps.map(p=>{{const i=d.periodos.indexOf(p);return i>=0?d.ocupados[i]:null;}});
-    const fData = ps.map(p=>{{const i=d.periodos.indexOf(p);return i>=0?d.ft[i]:null;}});
-    const dData = ps.map(p=>{{const i=d.periodos.indexOf(p);return i>=0?d.desocupados[i]:null;}});
-    const col = isNac ? NAC_COLOR : COLORS[ci % COLORS.length];
-    const lbl = isNac ? '🇨🇱 Nacional' : reg.replace('Metropolitana de Santiago','RM');
-    const bw  = isNac ? 3 : 2;
-    const bd  = isNac ? [5,3] : undefined;
-    const base = {{label:lbl,data:tData,borderColor:col,backgroundColor:isNac?'transparent':'transparent',tension:.3,fill:false,pointRadius:isNac?0:3,borderWidth:bw,borderDash:bd}};
-    dsTasa.push({{...base,
-      pointBackgroundColor:tData.map(v=>v===null?'#ccc':v>8?'#dc2626':v>6?'#d97706':'#16a34a'),
-      pointBorderColor:'white',pointBorderWidth:1
-    }});
-    dsOcup.push({{label:lbl,data:oData,borderColor:col,backgroundColor:'transparent',tension:.3,fill:false,pointRadius:0,borderWidth:bw,borderDash:bd}});
-    dsFt.push({{label:lbl,data:fData,borderColor:col,backgroundColor:'transparent',tension:.3,fill:false,pointRadius:0,borderWidth:bw,borderDash:bd}});
-    dsDes.push({{label:lbl,data:dData,borderColor:col,backgroundColor:'transparent',tension:.3,fill:false,pointRadius:0,borderWidth:bw,borderDash:bd}});
-  }});
-
-  const showLegend = selRegs.length > 1;
-  makeLineMulti('emp-chart-evo-tasa',lbls,dsTasa,showLegend,true);
-  makeLineMulti('emp-chart-evo-ocup',lbls,dsOcup,showLegend,false);
-  makeLineMulti('emp-chart-evo-ft',lbls,dsFt,showLegend,false);
-  makeLineMulti('emp-chart-evo-des',lbls,dsDes,showLegend,false);
-}}
-
-function empGetVarMes(reg,per){{
-  const d=EMP.datos[reg]; if(!d) return null;
-  const i=d.periodos.indexOf(per); if(i<1) return null;
-  const tAct=d.tasa[i],tAnt=d.tasa[i-1];
-  if(tAct===null||tAnt===null) return null;
-  return parseFloat((tAct-tAnt).toFixed(2));
-}}
-function empGetVarAnual(reg,per){{
-  const d=EMP.datos[reg]; if(!d) return null;
-  const i=d.periodos.indexOf(per); if(i<12) return null;
-  const tAct=d.tasa[i],tAnt=d.tasa[i-12];
-  if(tAct===null||tAnt===null) return null;
-  return parseFloat((tAct-tAnt).toFixed(2));
-}}
-function fmtEmpVar(v){{
-  if(v===null||v===undefined) return '<span style="color:#94a3b8">—</span>';
-  const col=v>0?'#dc2626':v<0?'#16a34a':'#64748b';
-  const arr=v>0?'▲':v<0?'▼':'→';
-  const sign=v>0?'+':'';
-  return '<span style="color:'+col+';font-weight:600">'+arr+' '+sign+v.toFixed(1).replace('.',',')+'</span>';
-}}
-
-function renderEmpRanking() {{
-  const per=document.getElementById('emp-rank-periodo').value;
-  const nacTasa=empGetVal('__NACIONAL__',per,'tasa');
-  const nacOcup=empGetVal('__NACIONAL__',per,'ocupados');
-  const nacFt=empGetVal('__NACIONAL__',per,'ft');
-  const nacDes=empGetVal('__NACIONAL__',per,'desocupados');
-
-  const pairs=EMP.regiones.map(r=>{{
-    return{{r,t:empGetVal(r,per,'tasa'),o:empGetVal(r,per,'ocupados'),f:empGetVal(r,per,'ft'),d:empGetVal(r,per,'desocupados'),vm:empGetVarMes(r,per),va:empGetVarAnual(r,per)}}
-  }}).filter(x=>x.t!==null).sort((a,b)=>b.t-a.t);
-
-  document.getElementById('emp-rank-title').textContent='Ranking completo — '+fmtEmpPer(per);
-  const top5=pairs.slice(0,5), bot5=[...pairs].reverse().slice(0,5);
-
-  // Gráfico mayor desocupación con línea promedio nacional
-  const dsAlta=[{{label:'Tasa %',data:top5.map(x=>x.t),backgroundColor:top5.map(x=>x.t>nacTasa?'rgba(220,38,38,.85)':'rgba(220,38,38,.5)'),borderRadius:3}}];
-  if(nacTasa!==null) dsAlta.push({{label:'Nac. '+fmtEmpNum(nacTasa)+'%',data:top5.map(()=>nacTasa),type:'line',borderColor:'rgba(251,191,36,1)',borderWidth:2,borderDash:[5,3],pointRadius:0,fill:false,order:-1}});
-  makeBarH('emp-chart-rank-alta',top5.map(x=>x.r.replace('Metropolitana de Santiago','RM')),dsAlta);
-
-  // Gráfico menor desocupación con línea promedio nacional
-  const dsBaja=[{{label:'Tasa %',data:bot5.map(x=>x.t),backgroundColor:'rgba(22,163,74,.8)',borderRadius:3}}];
-  if(nacTasa!==null) dsBaja.push({{label:'Nac. '+fmtEmpNum(nacTasa)+'%',data:bot5.map(()=>nacTasa),type:'line',borderColor:'rgba(251,191,36,1)',borderWidth:2,borderDash:[5,3],pointRadius:0,fill:false,order:-1}});
-  makeBarH('emp-chart-rank-baja',bot5.map(x=>x.r.replace('Metropolitana de Santiago','RM')),dsBaja);
-
-  // Gráfico desocupados absolutos top 5
-  const top5Des=[...pairs].sort((a,b)=>(b.d||0)-(a.d||0)).slice(0,5);
-  makeBarH('emp-chart-rank-des',top5Des.map(x=>x.r.replace('Metropolitana de Santiago','RM')),
-    [{{label:'Desocupados (miles)',data:top5Des.map(x=>x.d),backgroundColor:'rgba(239,68,68,.75)',borderRadius:3}}]);
-
-  // Variaciones nacionales
-  const nacVm=empGetVarMes('__NACIONAL__',per);
-  const nacVa=empGetVarAnual('__NACIONAL__',per);
-
-  let thead=`<thead><tr>
-    <th>#</th><th>Región</th>
-    <th>Tasa %</th>
-    <th>Var. mensual</th>
-    <th>Var. anual</th>
-    <th>Desocupados</th>
-    <th>Ocupados</th>
-    <th>Fuerza trabajo*</th>
-  </tr></thead>`;
-  let tbody='<tbody>';
-  // Fila nacional primero
-  tbody+=`<tr style="background:#e8f0fe;font-weight:700;border-left:4px solid #1a3a5c;">
-    <td style="color:#1a3a5c">—</td>
-    <td style="text-align:left;color:#1a3a5c">🇨🇱 Nacional (prom. ponderado)</td>
-    <td style="color:#1a3a5c">${{fmtEmpNum(nacTasa)}}%</td>
-    <td>${{fmtEmpVar(nacVm)}}</td>
-    <td>${{fmtEmpVar(nacVa)}}</td>
-    <td style="color:#dc2626;font-weight:700">${{fmtEmpMiles(nacDes)}}</td>
-    <td style="color:#1a3a5c">${{fmtEmpMiles(nacOcup)}}</td>
-    <td style="color:#1a3a5c">${{fmtEmpMiles(nacFt)}}</td>
-  </tr>`;
-  pairs.forEach((x,i)=>{{
-    const sobreprom=nacTasa!==null&&x.t>nacTasa;
-    const muybajo=nacTasa!==null&&x.t<(nacTasa-2);
-    const tasaColor=sobreprom?'color:#dc2626;font-weight:600':muybajo?'color:#16a34a;font-weight:600':'';
-    const rowBg=sobreprom?'background:#fff5f5':muybajo?'background:#f0fff4':'';
-    tbody+=`<tr style="${{rowBg}}">
-      <td>${{i+1}}</td>
-      <td style="text-align:left;font-weight:500">${{x.r}}</td>
-      <td style="${{tasaColor}}">${{fmtEmpNum(x.t)}}%</td>
-      <td>${{fmtEmpVar(x.vm)}}</td>
-      <td>${{fmtEmpVar(x.va)}}</td>
-      <td style="${{sobreprom?'color:#dc2626':''}}">${{fmtEmpMiles(x.d)}}</td>
-      <td>${{fmtEmpMiles(x.o)}}</td>
-      <td>${{fmtEmpMiles(x.f)}}</td>
-    </tr>`;
-  }});
-  document.getElementById('emp-tabla-ranking').innerHTML=thead+tbody+'</tbody>';
-}}
-
-// ── Descarga gráficos y tablas ─────────────────────────────────
-function downloadChart(canvasId, filename) {{
-  const canvas = document.getElementById(canvasId);
-  if(!canvas) return;
-  // Crear canvas temporal con fondo blanco
-  const tmp = document.createElement('canvas');
-  tmp.width = canvas.width; tmp.height = canvas.height;
-  const tctx = tmp.getContext('2d');
-  tctx.fillStyle = '#ffffff';
-  tctx.fillRect(0, 0, tmp.width, tmp.height);
-  tctx.drawImage(canvas, 0, 0);
-  const a = document.createElement('a');
-  a.href = tmp.toDataURL('image/png');
-  a.download = (filename||canvasId) + '.png';
-  a.click();
-}}
-function downloadTable(tableId, filename) {{
-  const tbl = document.getElementById(tableId);
-  if(!tbl) return;
-  const rows = Array.from(tbl.querySelectorAll('tr'));
-  const csv = rows.map(r=>
-    Array.from(r.querySelectorAll('th,td')).map(c=>
-      '"'+c.innerText.replace(/"/g,'""').replace(/\n/g,' ')+'"'
-    ).join(';')
-  ).join('\n');
-  const bom = '\uFEFF';
-  const blob = new Blob([bom+csv], {{type:'text/csv;charset=utf-8;'}});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = (filename||tableId) + '.csv';
-  a.click();
-}}
-function makeBarH(id,labels,datasets,horizontal=true) {{
-  if(charts[id]){{charts[id].destroy();delete charts[id];}}
-  const ctx=document.getElementById(id); if(!ctx) return;
-  const isTasa = datasets[0]&&datasets[0].label&&(datasets[0].label.includes('Tasa')||datasets[0].label.includes('tasa')||datasets[0].label.includes('%'));
-  charts[id]=new Chart(ctx,{{type:'bar',data:{{labels,datasets}},options:{{
-    responsive:true,maintainAspectRatio:true,indexAxis:horizontal?'y':'x',
-    plugins:{{
-      legend:{{display:datasets.length>1,position:'bottom',labels:{{font:{{size:11}}}}}},
-      tooltip:{{mode:'index',intersect:false,callbacks:{{label:function(ctx2){{const v=ctx2.parsed[horizontal?'x':'y'];return ' '+ctx2.dataset.label+': '+(isTasa&&ctx2.dataset.type!=='line'?v.toFixed(1)+'%':v);}}}}}}
-    }},
-    scales:{{
-      x:{{ticks:{{font:{{size:10}},maxRotation:horizontal?0:55,callback:function(v){{return isTasa&&horizontal?v.toFixed(1)+'%':v;}}}},grid:{{display:horizontal}}}},
-      y:{{ticks:{{font:{{size:10}}}},grid:{{color:'#f0f0f0'}}}}
-    }}
-  }}}});
-}}
-function makeLine2(id,labels,datasets,tipo='line') {{
-  if(charts[id]){{charts[id].destroy();delete charts[id];}}
-  const ctx=document.getElementById(id); if(!ctx) return;
-  const isTasa = datasets[0]&&datasets[0].label&&(datasets[0].label.includes('desocup')||datasets[0].label.includes('%'));
-  charts[id]=new Chart(ctx,{{type:tipo,data:{{labels,datasets}},options:{{
-    responsive:true,maintainAspectRatio:true,
-    plugins:{{
-      legend:{{display:false}},
-      tooltip:{{mode:'index',intersect:false,callbacks:{{label:function(ctx2){{const v=ctx2.parsed.y;return ' '+ctx2.dataset.label+': '+(isTasa?v.toFixed(2)+'%':v);}}}}}}
-    }},
-    scales:{{
-      x:{{ticks:{{font:{{size:10}},maxRotation:55,autoSkip:true,maxTicksLimit:24}},grid:{{display:false}}}},
-      y:{{ticks:{{font:{{size:10}},callback:function(v){{return isTasa?v.toFixed(1)+'%':v;}}}},grid:{{color:'#f0f0f0'}}}}
-    }}
-  }}}});
-}}
-function makeLineMulti(id,labels,datasets,showLegend=false,isTasa=false) {{
-  if(charts[id]){{charts[id].destroy();delete charts[id];}}
-  const ctx=document.getElementById(id); if(!ctx) return;
-  charts[id]=new Chart(ctx,{{type:'line',data:{{labels,datasets}},options:{{
-    responsive:true,maintainAspectRatio:true,
-    plugins:{{
-      legend:{{display:showLegend,position:'bottom',labels:{{font:{{size:11}},boxWidth:24}}}},
-      tooltip:{{mode:'index',intersect:false,callbacks:{{label:function(ctx2){{const v=ctx2.parsed.y;if(v===null)return null;return ' '+ctx2.dataset.label+': '+(isTasa?v.toFixed(2)+'%':Math.round(v).toLocaleString('es-CL'));}}}}}}
-    }},
-    scales:{{
-      x:{{ticks:{{font:{{size:10}},maxRotation:55,autoSkip:true,maxTicksLimit:24}},grid:{{display:false}}}},
-      y:{{ticks:{{font:{{size:10}},callback:function(v){{return isTasa?v.toFixed(1)+'%':v;}}}},grid:{{color:'#f0f0f0'}}}}
-    }}
-  }}}});
-}}
-
+{emp_js_block}
 // ══════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════
@@ -3431,7 +3437,15 @@ function initCasen(){{
 </html>"""
 
 
-html = html.replace('{data_seg_json}', data_seg_json)           .replace('{data_delitos_json}', data_delitos_json)           .replace('{data_pib_json}', data_pib_json)           .replace('{data_censo_json}', data_censo_json)           .replace('{data_emp_json}', data_emp_json)           .replace('{data_casen_json}', data_casen_json)
+html = (html
+    .replace('{emp_js_block}', emp_js_block)
+    .replace('{data_seg_json}', data_seg_json)
+    .replace('{data_delitos_json}', data_delitos_json)
+    .replace('{data_pib_json}', data_pib_json)
+    .replace('{data_censo_json}', data_censo_json)
+    .replace('{data_emp_json}', data_emp_json)
+    .replace('{data_casen_json}', data_casen_json)
+)
 
 with open('dashboard.html', 'w', encoding='utf-8') as f:
     f.write(html)
