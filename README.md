@@ -1,143 +1,194 @@
 # Dashboard Regional Chile 🇨🇱
 
-Dashboard interactivo de indicadores regionales para las 16 regiones de Chile, desarrollado para la División de Coordinación Interministerial del Ministerio del Interior y Seguridad Pública.
+Dashboard interactivo de indicadores regionales para las 16 regiones de Chile, desarrollado para la **División de Coordinación Interministerial del Ministerio del Interior y Seguridad Pública**.
 
-## 🌐 Ver el dashboard
+## 🌐 Dashboard en producción
 
-**[👉 Abrir Dashboard](https://manuelcarvallo97-tech.github.io/dashboard-regional-chile/dashboard.html)**
+**[👉 https://dashboard-regional-chile.vercel.app](https://dashboard-regional-chile.vercel.app)**
 
-> `main` → producción (GitHub Pages) · `dev` → desarrollo activo
+> Publicado en Vercel. Se actualiza automáticamente con cada push a `main`.
 
 ---
 
 ## 📊 Módulos disponibles
 
-| Módulo | Fuente | Frecuencia | Cobertura | Estado |
-|--------|--------|------------|-----------|--------|
-| 🛡 Seguridad Pública | Carabineros · LeyStop | Semanal | 2026 | ✅ Activo |
-| 📈 PIB Regional | Banco Central de Chile | Trimestral / Anual | 2010–2025 | ✅ Activo |
-| 💼 Empleo | Banco Central de Chile / INE | Mensual | 2010–2026 | ✅ Activo |
-| 🏘 Censo 2024 | INE Chile | Puntual | 2024 | ✅ Activo |
-| 🏠 CASEN 2024 | MIDESO | Bienal | 2024 | ✅ Activo |
-
-### 🛡 Seguridad Pública — pestañas
-
-| Pestaña | Descripción |
-|---------|-------------|
-| Resumen por región | Casos año a la fecha, variación %, tasa por 100 mil hab. Filtro por semana y región. |
-| Evolución temporal | Serie histórica por región e indicador |
-| Actividad operativa | Controles, fiscalizaciones, incautaciones por región |
-| 🔴 DMCS | Delitos de Mayor Connotación Social — valores absolutos, comparación año anterior, evolución semanal con línea punteada año anterior |
+| Módulo | Fuente | Frecuencia | Cobertura |
+|--------|--------|------------|-----------|
+| 🛡 Seguridad Pública | Carabineros · LeyStop | Semanal | 2026 |
+| 📈 PIB Regional | Banco Central de Chile | Trimestral / Anual | 2010–2025 |
+| 💼 Empleo | Banco Central de Chile / INE | Mensual | 2010–2026 |
+| 🏘 Censo 2024 | INE Chile | Puntual | 2024 |
+| 📋 CASEN | Ministerio de Desarrollo Social | Puntual | Última encuesta |
 
 ---
 
-## 🗂 Archivos clave
+## 🗄 Base de datos — Supabase
 
-```
-📁 raíz del repositorio
-├── dashboard.html                  ← Dashboard publicado en GitHub Pages
-├── README.md                       ← Este archivo
-├── generar_dashboard.py            ← Genera dashboard.html desde SQLite ⭐
-├── actualizar_datos.py             ← Descarga incremental BCE + LeyStop
-├── cargar_historico_delitos.py     ← Carga inicial tabla DMCS (correr 1 vez)
-├── parche_pdf_dashboard.py         ← Agrega botón Minuta PDF al dashboard
-├── actualizar_datos.bat            ← ⭐ Script principal de actualización
-├── desarrollar.bat                 ← Regenera HTML y sube a rama dev
-├── bce_api.py                      ← Descarga PIB desde API BCE
-├── bce_empleo.py                   ← Descarga empleo regional desde API BCE
-├── bcn_scraper.py                  ← Scraping BCN SIIT
-├── limpiar_datos.py                ← Limpieza y normalización datos BCE
-├── leystop_scraper.py              ← Scraping LeyStop histórico
-├── censo_regiones.json             ← Datos Censo 2024 procesados
-└── casen_regiones.json             ← Datos CASEN 2024 procesados
-```
+Todos los datos históricos viven en **Supabase (PostgreSQL)**. El dashboard actualmente lee datos embebidos en el HTML (generado por `generar_dashboard.py`). La migración a lectura dinámica desde Supabase está en curso (Fase 2).
 
-> `bcn_indicadores.db`, `env.local`, `*.db` → en `.gitignore`, nunca se suben
+**Proyecto Supabase:** `spkfoavwjadyxjlcgkhq.supabase.co`
+**API pública (solo lectura):** `https://spkfoavwjadyxjlcgkhq.supabase.co/rest/v1/`
+**Anon key:** `sb_publishable_4oxMXd2rXRYtt4wMS_5Diw_gq1GDjCG`
 
----
-
-## 🗄 Estructura SQLite (`bcn_indicadores.db`)
+### Tablas disponibles para lectura pública
 
 | Tabla | Descripción | Filas aprox. |
 |-------|-------------|-------------|
-| `registros_leystop` | LeyStop — resumen semanal por región (top-5 delitos) | ~2.700 |
-| `registros_leystop_delitos` | LeyStop — 21 tipos de delito × semana × región | ~50.000 |
-| `leystop_semanas` | Catálogo de semanas LeyStop | ~175 |
-| `registros_bce` | BCE — PIB trimestral/anual por región | ~5.000 |
-| `registros_bce_empleo` | BCE — Empleo mensual por región | ~4.000 |
-| `registros_bcn` | BCN SIIT — indicadores varios | ~7.700 |
-| `bce_catalogo` | Catálogo de series BCE | — |
-| `registros_adis` | ADIS RSH — pendiente integración | vacía |
+| `regiones` | Catálogo 16 regiones (cod + nombre) | 16 |
+| `registros_bce` | PIB regional trimestral/anual BCE | 40.348 |
+| `registros_bce_empleo` | Empleo mensual por región BCE | 6.144 |
+| `bce_catalogo` | Catálogo de series BCE | 3.655 |
+| `registros_leystop` | Seguridad semanal por región (LeyStop) | 256+ |
+| `leystop_semanas` | Catálogo de semanas LeyStop | 175+ |
+| `registros_leystop_delitos` | Delitos desagregados por semana/región | 672+ |
+| `registros_bcn` | Indicadores BCN SIIT (demografía, salud, etc.) | 7.770 |
+| `casen_regiones` | Datos CASEN por región | 16 |
+| `adis_catalogo` | Catálogo ADIS RSH (pendiente) | — |
+| `registros_adis` | Datos ADIS RSH (pendiente) | — |
+
+### Ejemplo de consulta (fetch desde JS)
+
+```javascript
+const SUPABASE_URL = 'https://spkfoavwjadyxjlcgkhq.supabase.co'
+const ANON_KEY    = 'sb_publishable_4oxMXd2rXRYtt4wMS_5Diw_gq1GDjCG'
+
+// Últimos datos de seguridad por región
+const res = await fetch(
+  `${SUPABASE_URL}/rest/v1/registros_leystop?order=id_semana.desc&limit=16`,
+  { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } }
+)
+const data = await res.json()
+```
+
+### Schema de tablas relevantes
+
+**`registros_leystop`** — Seguridad semanal
+```
+id_semana       integer   — ID semana LeyStop (ej: 175)
+id_region       numeric   — 1=Tarapacá ... 13=RM ... 16=Ñuble
+nombre_region   text
+fecha_desde_iso text      — 'YYYY-MM-DD'
+fecha_hasta_iso text      — 'YYYY-MM-DD'
+anno            integer
+tasa_registro   numeric   — tasa por 100.000 hab
+casos_anno_fecha numeric  — casos acumulados año a la fecha
+var_anno_fecha  numeric   — variación % vs año anterior
+mayor_registro_1..5 text  — top 5 tipos de delito
+pct_1..5        numeric   — porcentaje de cada delito
+```
+
+**`registros_bce_empleo`** — Empleo mensual
+```
+serie_id        text      — código serie BCE
+nombre_region   text
+indicador       text      — 'Tasa de desocupación' | 'Ocupados'
+unidad          text
+periodo         text      — 'YYYY-MM'
+valor           numeric
+```
+
+**`registros_bce`** — PIB regional
+```
+series_id       text
+nombre_region   text
+indicador_limpio text
+unidad_limpia   text      — 'miles de millones de pesos corrientes (base 2018)'
+periodo         text      — 'DD-MM-YYYY'
+valor_corregido numeric
+```
+
+### Mapeo region_id → nombre
+
+```
+1=Tarapacá        2=Antofagasta      3=Atacama
+4=Coquimbo        5=Valparaíso       6=O'Higgins
+7=Maule           8=Biobío           9=La Araucanía
+10=Los Lagos      11=Aysén           12=Magallanes
+13=Metropolitana  14=Los Ríos        15=Arica y Parinacota
+16=Ñuble
+```
+
+> El campo `id_region` en `registros_leystop` coincide con este mapeo.
 
 ---
 
-## 🚀 Flujo de trabajo
-
-### Actualización semanal de datos (producción)
+## 🗂 Estructura del repositorio
 
 ```
-Doble clic en actualizar_datos.bat
+📁 raíz
+├── dashboard.html          ← Dashboard principal (servido por Vercel)
+├── vercel.json             ← Configuración Vercel
+├── requirements.txt        ← Dependencias Python
+├── README.md               ← Este archivo
+│
+├── generar_dashboard.py    ← Genera dashboard.html desde Supabase/SQLite
+├── actualizar_datos.py     ← Descarga BCE Empleo + LeyStop (solo lo nuevo)
+├── actualizar_datos.bat    ← Ejecuta actualizar_datos.py y hace push
+├── actualizar_dashboard.bat← Solo regenera HTML y hace push
+│
+├── bce_api.py              ← Descarga PIB desde API BCE
+├── bce_empleo.py           ← Descarga empleo regional desde API BCE
+├── bcn_scraper.py          ← Scraping BCN SIIT
+├── leystop_scraper.py      ← Scraping LeyStop (con --desde)
+├── limpiar_datos.py        ← Limpieza y normalización datos BCE
+├── migrate_to_supabase.py  ← Migración histórica SQLite → Supabase
+│
+└── censo_regiones.json     ← Datos Censo 2024 procesados
 ```
 
-Hace todo: descarga BCE + LeyStop → genera HTML → aplica parche PDF → sube a `main` → publica en GitHub Pages.
+---
 
-**Requisitos:**
-- Cable de red (el WiFi del Ministerio bloquea GitHub y LeyStop)
-- `git config http.sslVerify false` configurado al menos una vez
+## 🚀 Cómo actualizar los datos
 
-### Desarrollo de mejoras al dashboard
+### Actualización normal (recomendado)
 
-```
-Doble clic en desarrollar.bat
-```
-
-Regenera el HTML con los últimos cambios en `generar_dashboard.py` y sube a la rama `dev` (sin tocar producción).
-
-Cuando el cambio esté aprobado, pasar a producción:
+Con cable de red (WiFi del Ministerio bloquea GitHub y LeyStop):
 
 ```bash
-git checkout main
-git merge dev
+python actualizar_datos.py
+```
+
+O doble clic en `actualizar_datos.bat`. El script:
+1. Descarga BCE Empleo desde el último período en Supabase +1 mes
+2. Descarga LeyStop desde el último id_semana en Supabase +1
+3. Si hay datos nuevos → regenera `dashboard.html` y hace push a GitHub
+4. Vercel publica automáticamente en ~1 minuto
+
+### Solo regenerar el HTML (sin descargar datos)
+
+```bash
+python generar_dashboard.py
+git add -f dashboard.html
+git commit -m "Actualización dashboard"
 git push origin main
-git checkout dev
 ```
-
-### Carga histórica de delitos DMCS (solo una vez)
-
-```bash
-python cargar_historico_delitos.py
-```
-
-Descarga el array completo de 21 tipos de delito para todas las semanas disponibles en la DB. Tarda ~20 minutos. Es inteligente: si se interrumpe y se vuelve a correr, salta lo ya descargado.
 
 ---
 
-## ⚙️ Instalación desde cero
+## ⚙️ Instalación local
 
 ### Requisitos
+- Python 3.10+ (probado en 3.12; **evitar 3.14** por incompatibilidades de paquetes)
+- Git con `http.sslVerify false` (red Ministerio)
+
+### Dependencias
 
 ```bash
-pip install pandas requests python-dotenv
+pip install pandas requests python-dotenv tqdm --trusted-host pypi.org --trusted-host files.pythonhosted.org
 ```
 
-### Credenciales (`env.local`)
+### Variables de entorno (archivo `.env`)
+
+Crear `.env` en la carpeta del proyecto:
 
 ```
-BDE_USER=tu@email.cl
-BDE_PASS=tucontraseña
+BDE_USER=tu@email.cl              # Usuario API Banco Central
+BDE_PASS=tucontraseña             # Contraseña API Banco Central
+SUPABASE_URL=https://spkfoavwjadyxjlcgkhq.supabase.co
+SUPABASE_SERVICE_KEY=<service_role_key>   # Solo para scripts de escritura
 ```
 
-### Primera ejecución completa
-
-```bash
-python bce_api.py                    # PIB regional
-python bce_empleo.py                 # Empleo regional
-python bcn_scraper.py                # Indicadores BCN
-python limpiar_datos.py              # Normalización BCE
-python leystop_scraper.py            # Seguridad histórico
-python cargar_historico_delitos.py   # Delitos desagregados
-python generar_dashboard.py          # Generar HTML
-```
+> ⚠️ **Nunca subas `.env` ni `bcn_indicadores.db` a GitHub** — están en `.gitignore`
 
 ---
 
@@ -145,69 +196,21 @@ python generar_dashboard.py          # Generar HTML
 
 | Fuente | URL | Acceso |
 |--------|-----|--------|
-| Banco Central de Chile | [si3.bcentral.cl](https://si3.bcentral.cl) | Registro gratuito |
+| Banco Central de Chile | [si3.bcentral.cl](https://si3.bcentral.cl) | Requiere registro gratuito |
 | BCN SIIT | [siit.bcn.cl](https://siit.bcn.cl) | Público |
-| LeyStop Carabineros | [leystop.carabineros.cl](https://leystop.carabineros.cl) | Público |
+| LeyStop Carabineros | [leystop.carabineros.cl](https://leystop.carabineros.cl) | Público (requiere cable de red) |
+| ADIS RSH | [adis.gob.cl](https://adis.gob.cl) | Requiere cuenta institucional |
 | Censo 2024 INE | [ine.gob.cl](https://ine.gob.cl) | Público |
-| CASEN 2024 MIDESO | [observatorio.ministeriodesarrollosocial.gob.cl](https://observatorio.ministeriodesarrollosocial.gob.cl) | Público |
-| ADIS RSH | [adis.gob.cl](https://adis.gob.cl) | Cuenta institucional — pendiente |
 
 ---
 
 ## 📝 Notas técnicas
 
-- El dashboard es un **HTML autónomo** — todos los datos están embebidos al momento de generar. No requiere servidor ni conexión para visualizarse.
-- Compatible con Chrome, Firefox, Edge y Safari modernos.
-- Optimizado para pantallas ≥ 1280px.
-- SSL del Ministerio requiere `verify=False` en requests a LeyStop y `git config http.sslVerify false` para GitHub.
+- **Red Ministerio:** el WiFi bloquea GitHub y LeyStop — usar cable de red. SSL requiere `verify=False` en requests a LeyStop y `http.sslVerify false` en Git.
+- **LeyStop WAF:** pausas de 1.5s entre requests para evitar bloqueos. Si hay bloqueo, esperar y usar `actualizar_datos.py` que descarga solo lo nuevo.
+- **Supabase RLS:** lectura pública habilitada con anon key. Escritura solo con service_role key desde scripts locales o GitHub Actions.
+- **Dashboard HTML:** actualmente embebe todos los datos como JSON. La Fase 2 migrará a lectura dinámica desde Supabase.
 
 ---
 
-## 📋 Changelog
-
-| Versión | Fecha | Cambios |
-|---------|-------|---------|
-| 1.0 | Ene 2026 | Dashboard inicial: PIB, Empleo, Censo, Seguridad básica |
-| 1.1 | Feb 2026 | Módulo CASEN 2024 |
-| 1.2 | Abr 2026 | Pestaña DMCS con datos reales de LeyStop Registros |
-| 1.2 | Abr 2026 | Filtro de región en Resumen de Seguridad |
-| 1.2 | Abr 2026 | Comparación año anterior en evolución DMCS |
-| 1.2 | Abr 2026 | Rama `dev` / `main` para desarrollo vs producción |
-| 1.2 | Apr 2026 | Se refactorizó completamente el módulo PIB Regional del dashboard para trabajar exclusivamente en términos reales: se corrigió un bug que mezclaba series anuales y trimestrales causando valores inflados en el primer trimestre de cada año, se eliminaron los indicadores en pesos corrientes reemplazándolos por volumen encadenado a precios del año anterior en toda la cadena de cálculo (Python y JavaScript), y se agregaron dos nuevas métricas a las tablas de Sectores productivos y Resumen nacional: la variación interanual real por cada período del rango seleccionado (vs mismo trimestre del año anterior en frecuencia trimestral) y el CAGR calculado dinámicamente según los filtros de año definidos por el usuario. |
-| 1.2 | Apr 2026 | Toggle var% PIB + fix regiones vacias |
-| 1.2 | Apr 2026 | Toggle var% PIB + fix regiones vacias |
-| 1.2 | Apr 2026 | arreglo de los rios |
-| 1.2 | Apr 2026 | +checkbox |
-| 1.2 | Apr 2026 | Actualizacion dashboard |
-| 1.2 | Apr 2026 | fix PIB toggle var CAGR |
-| 1.2 | Apr 2026 | ajustes en pestaña Censo |
-| 1.2 | Apr 2026 | Actualizacion dashboard |
-| 1.2 | Apr 2026 | Actualizacion dashboard |
-| 1.2 | Apr 2026 | Actualizacion dashboard |
-| 1.2 | Apr 2026 | orden de regiones |
-| 1.2 | Apr 2026 | Actualizacion dashboard |
-| 1.2 | Apr 2026 | Actualizacion dashboard |
-| 1.2 | Apr 2026 | arreglo final regiones solo para censo, otras con error |
-| 1.2 | Apr 2026 | ultimo arreglo |
-| 1.2 | Apr 2026 | Actualizacion dashboard |
-| 1.2 | Apr 2026 | modificaciones CENSO |
-| 1.2 | Apr 2026 | arreglo dashboard |
-| 1.2 | Apr 2026 | arreglos finales censo |
-| 1.2 | Apr 2026 | Actualizacion dashboard |
-| 1.2 | Apr 2026 | Actualizacion dashboard |
-| 1.2 | Apr 2026 | Actualizacion dashboard |
-| 1.2 | Apr 2026 | fix censo |
-| 1.2 | Apr 2026 | fix censo |
-| 1.2 | Apr 2026 | arreglos empleo |
-| 1.2 | Apr 2026 | fix empleo |
-| 1.2 | Apr 2026 | fix empleo |
-| 1.2 | Apr 2026 | fix empleo |
-| 1.2 | Apr 2026 | fix empleo |
-| 1.2 | Apr 2026 | fix empleo |
-| 1.2 | Apr 2026 | fix empleo |
-| 1.2 | Apr 2026 | fix empleo |
-| 1.2 | Apr 2026 | fix empleo |
-
----
-
-*Ministerio del Interior y Seguridad Pública · División de Coordinación Interministerial*
+*Ministerio del Interior y Seguridad Pública · División de Coordinación Interministerial · 2026*
