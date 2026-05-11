@@ -1,0 +1,85 @@
+# .github/workflows/actualizar.yml
+# =====================================================
+# GitHub Action — Actualización de datos y deploy
+# =====================================================
+# Corre: lunes, miércoles y viernes a las 08:00 hora Chile (UTC-3 → 11:00 UTC)
+# También se puede disparar manualmente desde la pestaña Actions.
+#
+# Secrets necesarios en GitHub → Settings → Secrets → Actions:
+#   SUPABASE_URL          → URL del proyecto Supabase
+#   SUPABASE_SERVICE_KEY  → service_role key de Supabase
+#   BDE_USER              → Usuario API Banco Central
+#   BDE_PASS              → Contraseña API Banco Central
+# =====================================================
+
+name: Actualizar datos y dashboard
+
+on:
+  schedule:
+    # Lunes, miércoles, viernes 11:00 UTC (08:00 Chile)
+    - cron: '0 11 * * 1,3,5'
+  workflow_dispatch:
+    inputs:
+      forzar_dashboard:
+        description: 'Regenerar dashboard aunque no haya datos nuevos'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+
+      - name: Crear .env desde secrets
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> .env
+          echo "BDE_USER=${{ secrets.BDE_USER }}" >> .env
+          echo "BDE_PASS=${{ secrets.BDE_PASS }}" >> .env
+
+      - name: Actualizar datos (BCE Empleo + LeyStop)
+        id: actualizar
+        run: |
+          python actualizar_datos.py 2>&1 | tee actualizar.log
+          # Capturar si hubo datos nuevos
+          if grep -q "Total registros nuevos: 0" actualizar.log; then
+            echo "hay_datos_nuevos=false" >> $GITHUB_OUTPUT
+          else
+            echo "hay_datos_nuevos=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Regenerar dashboard.html
+        if: steps.actualizar.outputs.hay_datos_nuevos == 'true' || inputs.forzar_dashboard == 'true'
+        run: python generar_dashboard.py
+
+      - name: Commit y push del dashboard actualizado
+        if: steps.actualizar.outputs.hay_datos_nuevos == 'true' || inputs.forzar_dashboard == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard.html
+          git diff --cached --quiet || git commit -m "chore: actualización automática $(date +'%Y-%m-%d')"
+          git push origin ${{ github.ref_name }}
+
+      - name: Resumen del job
+        if: always()
+        run: |
+          echo "## Resultado" >> $GITHUB_STEP_SUMMARY
+          echo "- Datos nuevos: ${{ steps.actualizar.outputs.hay_datos_nuevos }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Rama: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Ejecutado: $(date +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY

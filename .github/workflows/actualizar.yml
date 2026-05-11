@@ -1,0 +1,74 @@
+# .github/workflows/actualizar.yml
+# =====================================================
+# GitHub Action — Actualización de datos
+# =====================================================
+# Corre: lunes y jueves a las 10:00 hora Chile (UTC-3 → 13:00 UTC)
+# También se puede disparar manualmente desde la pestaña Actions.
+#
+# Secrets necesarios en GitHub → Settings → Secrets → Actions:
+#   SUPABASE_URL          → URL del proyecto Supabase
+#   SUPABASE_SERVICE_KEY  → service_role key de Supabase
+#   BDE_USER              → Usuario API Banco Central
+#   BDE_PASS              → Contraseña API Banco Central
+# =====================================================
+name: Actualizar datos
+
+on:
+  schedule:
+    # Lunes y jueves 13:00 UTC (10:00 hora Chile)
+    - cron: '0 13 * * 1,4'
+  workflow_dispatch:
+    inputs:
+      forzar:
+        description: 'Forzar sincronización aunque no haya datos nuevos'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Crear .env desde secrets
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> .env
+          echo "BDE_USER=${{ secrets.BDE_USER }}" >> .env
+          echo "BDE_PASS=${{ secrets.BDE_PASS }}" >> .env
+
+      - name: Actualizar datos y sincronizar Supabase
+        run: |
+          python actualizar_datos.py 2>&1 | tee actualizar.log
+          if grep -q "Total registros nuevos: 0" actualizar.log; then
+            echo "hay_datos_nuevos=false" >> $GITHUB_OUTPUT
+          else
+            echo "hay_datos_nuevos=true" >> $GITHUB_OUTPUT
+          fi
+        id: actualizar
+
+      - name: Resumen del job
+        if: always()
+        run: |
+          echo "## Resultado actualización" >> $GITHUB_STEP_SUMMARY
+          echo "- Datos nuevos: ${{ steps.actualizar.outputs.hay_datos_nuevos }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Rama: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Ejecutado: $(date +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Log" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          tail -30 actualizar.log >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

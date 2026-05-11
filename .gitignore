@@ -1,2 +1,20 @@
 .env 
 env.local 
+ 
+# CSVs pesados 
+*.csv 
+# Respaldos 
+*.bak 
+*_ORIGINAL.py 
+*_respaldo* 
+# Temporales 
+casen_test.html 
+fix_ssl.py 
+diagnostico_*.py 
+adis_direct.json 
+adis_endpoints.json 
+adis_report.txt 
+cd 
+gitignore 
+generar_dashboard - respaldo.py 
+generar_dashboard_ORIGINAL.py 
