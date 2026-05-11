@@ -120,9 +120,31 @@ REGIONES_BCE = {
     "23":"Metropolitana de Santiago","24":"Los Ríos","25":"Arica y Parinacota","26":"Ñuble",
 }
 
-def ultimo_periodo_empleo(conn):
-    r = conn.execute("SELECT MAX(periodo) FROM registros_bce_empleo").fetchone()
-    return r[0] if r and r[0] else "2010-01"
+def ultimo_periodo_empleo(conn=None):
+    """Retorna el último período de empleo en la DB local o en Supabase."""
+    if conn is not None:
+        r = conn.execute("SELECT MAX(periodo) FROM registros_bce_empleo").fetchone()
+        return r[0] if r and r[0] else "2010-01"
+    # Sin DB local (GitHub Actions) → consultar Supabase
+    creds = leer_creds()
+    url = creds.get("SUPABASE_URL", "")
+    key = creds.get("SUPABASE_SERVICE_KEY", "")
+    if not url or not key:
+        return "2010-01"
+    try:
+        import urllib3; urllib3.disable_warnings()
+        r = requests.get(
+            f"{url}/rest/v1/registros_bce_empleo",
+            headers={"apikey": key, "Authorization": f"Bearer {key}"},
+            params={"select": "periodo", "order": "periodo.desc", "limit": "1"},
+            timeout=15, verify=False,
+        )
+        data = r.json()
+        if data and data[0].get("periodo"):
+            return data[0]["periodo"]
+    except Exception as e:
+        log.warning(f"Supabase ultimo_periodo_empleo: {e}")
+    return "2010-01"
 
 def get_serie_bce(user, pwd, serie_id, firstdate):
     try:
@@ -200,9 +222,31 @@ REGIONES_LS = {
     13:"Metropolitana de Santiago",14:"Los Ríos",15:"Arica y Parinacota",16:"Ñuble",
 }
 
-def ultimo_id_semana(conn):
-    r = conn.execute("SELECT MAX(id_semana) FROM registros_leystop").fetchone()
-    return r[0] if r and r[0] else 159
+def ultimo_id_semana(conn=None):
+    """Retorna el último id_semana en la DB local o en Supabase."""
+    if conn is not None:
+        r = conn.execute("SELECT MAX(id_semana) FROM registros_leystop").fetchone()
+        return r[0] if r and r[0] else 159
+    # Sin DB local (GitHub Actions) → consultar Supabase
+    creds = leer_creds()
+    url = creds.get("SUPABASE_URL", "")
+    key = creds.get("SUPABASE_SERVICE_KEY", "")
+    if not url or not key:
+        return 159
+    try:
+        import urllib3; urllib3.disable_warnings()
+        r = requests.get(
+            f"{url}/rest/v1/registros_leystop",
+            headers={"apikey": key, "Authorization": f"Bearer {key}"},
+            params={"select": "id_semana", "order": "id_semana.desc", "limit": "1"},
+            timeout=15, verify=False,
+        )
+        data = r.json()
+        if data and data[0].get("id_semana"):
+            return data[0]["id_semana"]
+    except Exception as e:
+        log.warning(f"Supabase ultimo_id_semana: {e}")
+    return 159
 
 def crear_sesion_ls():
     from urllib.parse import unquote
@@ -409,12 +453,57 @@ def main():
         log.error("Sin credenciales BCE en .env")
         return
 
-    conn = sqlite3.connect(DB_PATH)
+    # Detectar si hay DB local o si corremos en GitHub Actions (nube)
+    db_existe = Path(DB_PATH).exists()
+    if db_existe:
+        conn = sqlite3.connect(DB_PATH)
+        log.info("Modo local (SQLite disponible)")
+    else:
+        # GitHub Actions: crear DB temporal con las tablas mínimas necesarias
+        log.info("Modo nube (sin SQLite local) — creando DB temporal en memoria")
+        conn = sqlite3.connect(":memory:")
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS registros_bce_empleo (
+                serie_id TEXT, nombre_region TEXT, indicador TEXT,
+                unidad TEXT, periodo TEXT, valor REAL,
+                PRIMARY KEY (serie_id, periodo)
+            );
+            CREATE TABLE IF NOT EXISTS registros_leystop (
+                id_semana INTEGER, id_region INTEGER, nombre_region TEXT,
+                semana INTEGER, fecha_desde_iso TEXT, fecha_hasta_iso TEXT, anno INTEGER,
+                tasa_registro REAL, casos_total INTEGER, casos_anno_fecha INTEGER,
+                casos_anno_fecha_anterior INTEGER, var_anno_fecha REAL,
+                var_ultima_semana REAL, var_28dias REAL,
+                casos_ultima_semana INTEGER, casos_28dias INTEGER,
+                mayor_registro_1 TEXT, pct_1 REAL, mayor_registro_2 TEXT, pct_2 REAL,
+                mayor_registro_3 TEXT, pct_3 REAL, mayor_registro_4 TEXT, pct_4 REAL,
+                mayor_registro_5 TEXT, pct_5 REAL,
+                controles INTEGER, controles_identidad INTEGER, controles_vehicular INTEGER,
+                fiscalizaciones INTEGER, fiscal_alcohol INTEGER, fiscal_bancaria INTEGER,
+                incautaciones INTEGER, incaut_fuego INTEGER, incaut_blancas INTEGER,
+                decomisos_ultima_semana REAL, decomisos_anno REAL,
+                allanamientos_ultima_semana INTEGER, allanamientos_anno INTEGER,
+                vehiculos_recuperados_semana INTEGER, vehiculos_recuperados_anno INTEGER, raw TEXT,
+                PRIMARY KEY (id_semana, id_region)
+            );
+            CREATE TABLE IF NOT EXISTS leystop_semanas (
+                id INTEGER PRIMARY KEY, nombre TEXT, anno INTEGER, semana INTEGER,
+                fecha_desde TEXT, fecha_hasta TEXT, fecha_desde_iso TEXT, fecha_hasta_iso TEXT
+            );
+        """)
+
     total_nuevos = 0
 
-    # Capturar estado ANTES de actualizar (para sync incremental)
-    periodo_antes   = ultimo_periodo_empleo(conn)
-    id_semana_antes = ultimo_id_semana(conn)
+    # Capturar estado ANTES de actualizar
+    # Si es DB temporal (nube), consulta Supabase para saber desde dónde continuar
+    if db_existe:
+        periodo_antes   = ultimo_periodo_empleo(conn)
+        id_semana_antes = ultimo_id_semana(conn)
+    else:
+        periodo_antes   = ultimo_periodo_empleo()   # consulta Supabase
+        id_semana_antes = ultimo_id_semana()        # consulta Supabase
+        log.info(f"  Último período empleo en Supabase: {periodo_antes}")
+        log.info(f"  Último id_semana en Supabase: {id_semana_antes}")
 
     # ── BCE Empleo ────────────────────────────────────────────────────────────────────────
     log.info("\n── BCE Empleo Regional ──")
@@ -446,7 +535,8 @@ def main():
     elif total_nuevos > 0:
         log.warning("Sin credenciales Supabase en .env — datos NO sincronizados")
 
-    conn.close()
+    if conn is not None:
+        conn.close()
 
     # ── Resultado ───────────────────────────────────────────────────────────────────────
     log.info(f'\n{"="*50}')
