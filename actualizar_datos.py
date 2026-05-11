@@ -12,7 +12,7 @@ Lógica:
 Uso: python actualizar_datos.py
 """
 
-import sqlite3, requests, json, time, logging, subprocess, hashlib
+import sqlite3, requests, json, time, logging, subprocess, hashlib, math
 from pathlib import Path
 from datetime import datetime
 
@@ -34,6 +34,81 @@ def leer_creds():
                     k, v = line.split("=", 1)
                     creds[k.strip()] = v.strip()
     return creds
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SUPABASE — sincronización incremental
+# ══════════════════════════════════════════════════════════════════════════════
+class SupaREST:
+    def __init__(self, url, service_key):
+        self.base = url.rstrip("/") + "/rest/v1"
+        self.headers = {
+            "apikey": service_key,
+            "Authorization": f"Bearer {service_key}",
+            "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates,return=minimal",
+        }
+
+    def upsert(self, tabla, rows):
+        if not rows: return True
+        r = requests.post(
+            f"{self.base}/{tabla}",
+            headers=self.headers,
+            data=json.dumps(rows, ensure_ascii=False, default=str),
+            timeout=60, verify=False,
+        )
+        if r.status_code not in (200, 201):
+            log.error(f"  Supabase HTTP {r.status_code} en {tabla}: {r.text[:300]}")
+            return False
+        return True
+
+def clean_supa(row):
+    return {k: (None if isinstance(v, float) and math.isnan(v) else v) for k, v in row.items()}
+
+def sync_empleo_supabase(sb, conn, desde_periodo):
+    cursor = conn.execute("""
+        SELECT serie_id, nombre_region, indicador, unidad, periodo, valor
+        FROM registros_bce_empleo WHERE periodo >= ?
+        ORDER BY nombre_region, periodo
+    """, (desde_periodo,))
+    cols = [d[0] for d in cursor.description]
+    rows = [clean_supa(dict(zip(cols, r))) for r in cursor.fetchall()]
+    if not rows:
+        log.info("  Supabase empleo: sin filas nuevas"); return 0
+    if sb.upsert("registros_bce_empleo", rows):
+        log.info(f"  Supabase empleo: ✓ {len(rows)} filas"); return len(rows)
+    return 0
+
+def sync_leystop_supabase(sb, conn, desde_id_semana):
+    cursor = conn.execute("""
+        SELECT id, nombre, semana, anno, fecha_desde_iso, fecha_hasta_iso
+        FROM leystop_semanas WHERE id >= ?
+    """, (desde_id_semana,))
+    cols = [d[0] for d in cursor.description]
+    semanas = [clean_supa(dict(zip(cols, r))) for r in cursor.fetchall()]
+    if semanas:
+        sb.upsert("leystop_semanas", semanas)
+        log.info(f"  Supabase semanas: ✓ {len(semanas)} semanas")
+    cursor = conn.execute("""
+        SELECT id_semana, id_region, nombre_region, semana, fecha_desde_iso, fecha_hasta_iso, anno,
+               tasa_registro, casos_total, casos_anno_fecha, casos_anno_fecha_anterior, var_anno_fecha,
+               var_ultima_semana, var_28dias, casos_ultima_semana, casos_28dias,
+               mayor_registro_1, pct_1, mayor_registro_2, pct_2, mayor_registro_3, pct_3,
+               mayor_registro_4, pct_4, mayor_registro_5, pct_5,
+               controles, controles_identidad, controles_vehicular,
+               fiscalizaciones, fiscal_alcohol, fiscal_bancaria,
+               incautaciones, incaut_fuego, incaut_blancas,
+               allanamientos_anno, vehiculos_recuperados_anno, decomisos_anno
+        FROM registros_leystop WHERE id_semana >= ?
+        ORDER BY id_semana, id_region
+    """, (desde_id_semana,))
+    cols = [d[0] for d in cursor.description]
+    rows = [clean_supa(dict(zip(cols, r))) for r in cursor.fetchall()]
+    if not rows:
+        log.info("  Supabase leystop: sin filas nuevas"); return 0
+    if sb.upsert("registros_leystop", rows):
+        log.info(f"  Supabase leystop: ✓ {len(rows)} filas"); return len(rows)
+    return 0
 
 # ══════════════════════════════════════════════════════════════════════════════
 # BCE EMPLEO — solo períodos nuevos
@@ -129,36 +204,28 @@ def ultimo_id_semana(conn):
     r = conn.execute("SELECT MAX(id_semana) FROM registros_leystop").fetchone()
     return r[0] if r and r[0] else 159
 
-def _crear_sesion_base(referer_path):
-    """Crea sesion autenticada con el Referer especificado."""
+def crear_sesion_ls():
     from urllib.parse import unquote
     s = requests.Session()
     s.headers.update({
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "es-US,es-419;q=0.9,es;q=0.8",
-        "Referer": f"https://leystop.carabineros.cl/{referer_path}",
+        "Referer": "https://leystop.carabineros.cl/estadistica",
         "X-Requested-With": "XMLHttpRequest",
         "Sec-Fetch-Dest": "empty",
         "Sec-Fetch-Mode": "cors",
         "Sec-Fetch-Site": "same-origin",
-        "sec-ch-ua": '"Google Chrome";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
+        "sec-ch-ua": '"Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"',
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"Windows"',
     })
-    s.get(f"{BASE_URL_LS}/estadistica", timeout=30, verify=False)
+    r = s.get(f"{BASE_URL_LS}/estadistica", timeout=30, verify=False)
     xsrf = s.cookies.get("XSRF-TOKEN", "")
     if xsrf:
+        from urllib.parse import unquote
         s.headers["X-XSRF-TOKEN"] = unquote(xsrf)
     return s
-
-def crear_sesion_ls():
-    """Sesion para pestana Estadistica (top-5 delitos + operativo)."""
-    return _crear_sesion_base("estadistica")
-
-def crear_sesion_ls_registros():
-    """Sesion para pestana Registros (todos los delitos con valores absolutos)."""
-    return _crear_sesion_base("estadistica/registros")
 
 def get_semanas_ls(s):
     try:
@@ -268,78 +335,7 @@ def guardar_ls(conn, reg):
         log.warning(f"Insert LS: {e}")
         return False
 
-
-# ── Tabla de delitos desagregados (array "registros" del JSON) ────────────────
-DMCS_NOMBRES = {
-    "HOMICIDIOS Y FEMICIDIOS",
-    "VIOLACIONES Y DELITOS SEXUALES",
-    "LESIONES GRAVES",
-    "LESIONES MENOS GRAVES",
-    "LESIONES LEVES",
-    "ROBOS CON VIOLENCIA E INTIMIDACION",
-    "ROBOS POR SORPRESA",
-    "ROBOS EN LUGARES HABITADOS Y NO HABITADOS",
-    "ROBOS DE VEHICULOS Y SUS ACCESORIOS",
-    "OTROS ROBOS CON FUERZA EN LAS COSAS",
-    "HURTOS",
-}
-
-def guardar_delitos(conn, id_semana, anno, semana, fecha_desde_iso, fecha_hasta_iso,
-                    id_region, nombre_region, registros):
-    """Guarda el array registros[] en la tabla registros_leystop_delitos."""
-    n = 0
-    for rec in registros:
-        nombre = rec.get("nombre", "")
-        # Normalizar para comparacion (sin tildes, mayusculas)
-        import unicodedata
-        def norm(s): return unicodedata.normalize("NFD", s).encode("ascii","ignore").decode().upper()
-        es_dmcs = norm(nombre) in {norm(d) for d in DMCS_NOMBRES}
-        try:
-            conn.execute("""INSERT OR REPLACE INTO registros_leystop_delitos
-                (id_semana, anno, semana, fecha_desde_iso, fecha_hasta_iso,
-                 id_region, nombre_region, nombre_delito, es_dmcs,
-                 ultima_semana_ant, ultima_semana,
-                 dias28_ant, dias28,
-                 anno_fecha_ant, anno_fecha,
-                 umbral)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (id_semana, anno, semana, fecha_desde_iso, fecha_hasta_iso,
-                 id_region, nombre_region, nombre, 1 if es_dmcs else 0,
-                 rec.get("ultima_semana_anterior"), rec.get("ultima_semana"),
-                 rec.get("ultimos_28_dias_anterior"), rec.get("ultimos_28_dias"),
-                 rec.get("anno_a_la_fecha_anterior"), rec.get("anno_a_la_fecha"),
-                 rec.get("umbral")))
-            n += 1
-        except Exception as e:
-            log.warning(f"  Insert delito {nombre}: {e}")
-    conn.commit()
-    return n
-
-def crear_tabla_delitos(conn):
-    """Crea la tabla si no existe."""
-    conn.execute("""CREATE TABLE IF NOT EXISTS registros_leystop_delitos (
-        id_semana       INTEGER,
-        anno            INTEGER,
-        semana          TEXT,
-        fecha_desde_iso TEXT,
-        fecha_hasta_iso TEXT,
-        id_region       INTEGER,
-        nombre_region   TEXT,
-        nombre_delito   TEXT,
-        es_dmcs         INTEGER DEFAULT 0,
-        ultima_semana_ant INTEGER,
-        ultima_semana   INTEGER,
-        dias28_ant      INTEGER,
-        dias28          INTEGER,
-        anno_fecha_ant  INTEGER,
-        anno_fecha      INTEGER,
-        umbral          REAL,
-        PRIMARY KEY (id_semana, id_region, nombre_delito)
-    )""")
-    conn.commit()
-
 def actualizar_leystop(conn):
-    crear_tabla_delitos(conn)
     ultimo = ultimo_id_semana(conn)
     log.info(f"LeyStop: último id_semana en DB = {ultimo}")
 
@@ -371,44 +367,25 @@ def actualizar_leystop(conn):
     total = 0
     for i, sem in enumerate(nuevas):
         n_sem = 0
-        n_delitos = 0
-        # Sesion estadistica (top-5) y sesion registros (todos los delitos)
-        s_est = crear_sesion_ls()
-        s_reg = crear_sesion_ls_registros()
+        # Renovar sesión antes de cada semana
+        s2 = crear_sesion_ls()
         for id_reg in REGIONES_LS:
             url = f"{BASE_URL_LS}/api/estadistica/{sem['id']}/REGION/{id_reg}"
             try:
-                # -- Descarga con Referer estadistica (datos generales + top-5) --
-                r_est = s_est.get(url, timeout=30, verify=False)
-                if r_est.status_code == 200:
-                    ct = r_est.headers.get("Content-Type","")
-                    if "json" in ct or r_est.text.strip().startswith("{"):
-                        data = r_est.json()
+                r = s2.get(url, timeout=30, verify=False)
+                if r.status_code == 200:
+                    ct = r.headers.get("Content-Type","")
+                    if "json" in ct or r.text.strip().startswith("{"):
+                        data = r.json()
                         reg = parsear_ls(data, sem["id"], sem, id_reg)
                         if reg and guardar_ls(conn, reg):
                             n_sem += 1
-
-                time.sleep(0.8)
-
-                # -- Descarga con Referer estadistica/registros (array registros[]) --
-                r_reg = s_reg.get(url, timeout=30, verify=False)
-                if r_reg.status_code == 200:
-                    ct2 = r_reg.headers.get("Content-Type","")
-                    if "json" in ct2 or r_reg.text.strip().startswith("{"):
-                        data2 = r_reg.json()
-                        arr = data2.get("registros", [])
-                        if arr:
-                            nombre_reg = REGIONES_LS.get(id_reg, str(id_reg))
-                            n_delitos += guardar_delitos(
-                                conn, sem["id"], sem.get("anno"), sem.get("semana",""),
-                                sem.get("fecha_desde_iso",""), sem.get("fecha_hasta_iso",""),
-                                id_reg, nombre_reg, arr)
             except Exception as e:
                 log.warning(f"  Error {url}: {e}")
             time.sleep(1.5)  # Pausa conservadora para no ser baneado
 
         total += n_sem
-        log.info(f"  [{i+1}/{len(nuevas)}] {sem.get('nombre')} → {n_sem}/16 regiones, {n_delitos} registros delitos")
+        log.info(f"  [{i+1}/{len(nuevas)}] {sem.get('nombre')} → {n_sem}/16 regiones")
         time.sleep(2)  # Pausa entre semanas
 
     log.info(f"LeyStop: {total} registros nuevos")
@@ -425,6 +402,8 @@ def main():
     creds = leer_creds()
     bde_user = creds.get("BDE_USER", "")
     bde_pass = creds.get("BDE_PASS", "")
+    supa_url = creds.get("SUPABASE_URL", "")
+    supa_key = creds.get("SUPABASE_SERVICE_KEY", "")
 
     if not bde_user:
         log.error("Sin credenciales BCE en .env")
@@ -433,7 +412,11 @@ def main():
     conn = sqlite3.connect(DB_PATH)
     total_nuevos = 0
 
-    # ── BCE Empleo ────────────────────────────────────────────────────────────
+    # Capturar estado ANTES de actualizar (para sync incremental)
+    periodo_antes   = ultimo_periodo_empleo(conn)
+    id_semana_antes = ultimo_id_semana(conn)
+
+    # ── BCE Empleo ────────────────────────────────────────────────────────────────────────
     log.info("\n── BCE Empleo Regional ──")
     try:
         n = actualizar_empleo(conn, bde_user, bde_pass)
@@ -441,7 +424,7 @@ def main():
     except Exception as e:
         log.error(f"Error BCE: {e}")
 
-    # ── LeyStop ───────────────────────────────────────────────────────────────
+    # ── LeyStop ────────────────────────────────────────────────────────────────────────────
     log.info("\n── LeyStop Seguridad ──")
     try:
         n = actualizar_leystop(conn)
@@ -449,20 +432,29 @@ def main():
     except Exception as e:
         log.error(f"Error LeyStop: {e}")
 
+    # ── Supabase — sincronizacion incremental ──────────────────────────────────────
+    if total_nuevos > 0 and supa_url and supa_key:
+        log.info("\n── Sincronizando Supabase ──")
+        try:
+            import urllib3; urllib3.disable_warnings()
+            sb = SupaREST(supa_url, supa_key)
+            sync_empleo_supabase(sb, conn, periodo_antes)
+            sync_leystop_supabase(sb, conn, id_semana_antes)
+            log.info("✓ Supabase sincronizado")
+        except Exception as e:
+            log.error(f"Error Supabase: {e}")
+    elif total_nuevos > 0:
+        log.warning("Sin credenciales Supabase en .env — datos NO sincronizados")
+
     conn.close()
 
-    # ── Resultado ─────────────────────────────────────────────────────────────
-    log.info(f"\n{'='*50}")
+    # ── Resultado ───────────────────────────────────────────────────────────────────────
+    log.info(f'\n{"="*50}')
     log.info(f"Total registros nuevos: {total_nuevos}")
-
     if total_nuevos > 0:
-        log.info("Hay datos nuevos → regenerando dashboard...")
-        import subprocess
-        subprocess.run(["python", "generar_dashboard.py"], check=True)
-        log.info("Dashboard regenerado ✓")
+        log.info("✓ SQLite + Supabase actualizados. El dashboard refleja los cambios de inmediato.")
     else:
-        log.info("Sin datos nuevos — dashboard no modificado")
-
+        log.info("Sin datos nuevos")
     log.info("=" * 50)
 
 if __name__ == "__main__":
