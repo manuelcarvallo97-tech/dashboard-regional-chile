@@ -49,11 +49,16 @@ class SupaREST:
             "Prefer": "resolution=merge-duplicates,return=minimal",
         }
 
-    def upsert(self, tabla, rows):
+    def upsert(self, tabla, rows, on_conflict=None):
         if not rows: return True
+        headers = dict(self.headers)
+        prefer = "resolution=merge-duplicates,return=minimal"
+        if on_conflict:
+            prefer += f",on_conflict={on_conflict}"
+        headers["Prefer"] = prefer
         r = requests.post(
             f"{self.base}/{tabla}",
-            headers=self.headers,
+            headers=headers,
             data=json.dumps(rows, ensure_ascii=False, default=str),
             timeout=60, verify=False,
         )
@@ -75,7 +80,7 @@ def sync_empleo_supabase(sb, conn, desde_periodo):
     rows = [clean_supa(dict(zip(cols, r))) for r in cursor.fetchall()]
     if not rows:
         log.info("  Supabase empleo: sin filas nuevas"); return 0
-    if sb.upsert("registros_bce_empleo", rows):
+    if sb.upsert("registros_bce_empleo", rows, on_conflict="serie_id,periodo"):
         log.info(f"  Supabase empleo: ✓ {len(rows)} filas"); return len(rows)
     return 0
 
@@ -87,7 +92,7 @@ def sync_leystop_supabase(sb, conn, desde_id_semana):
     cols = [d[0] for d in cursor.description]
     semanas = [clean_supa(dict(zip(cols, r))) for r in cursor.fetchall()]
     if semanas:
-        sb.upsert("leystop_semanas", semanas)
+        sb.upsert("leystop_semanas", semanas, on_conflict="id")
         log.info(f"  Supabase semanas: ✓ {len(semanas)} semanas")
     cursor = conn.execute("""
         SELECT id_semana, id_region, nombre_region, semana, fecha_desde_iso, fecha_hasta_iso, anno,
@@ -106,7 +111,7 @@ def sync_leystop_supabase(sb, conn, desde_id_semana):
     rows = [clean_supa(dict(zip(cols, r))) for r in cursor.fetchall()]
     if not rows:
         log.info("  Supabase leystop: sin filas nuevas"); return 0
-    if sb.upsert("registros_leystop", rows):
+    if sb.upsert("registros_leystop", rows, on_conflict="id_semana,id_region"):
         log.info(f"  Supabase leystop: ✓ {len(rows)} filas"); return len(rows)
     return 0
 
