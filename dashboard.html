@@ -1933,7 +1933,7 @@ function setTabCenso(tab, btn) {
 }
 
 function getCensoReg(selId) {
-  return CENSO.datos[document.getElementById(selId).value];
+  return CENSO_DATA.datos[document.getElementById(selId).value];
 }
 
 function pct(n, d) { return d > 0 ? (n/d*100) : 0; }
@@ -1998,7 +1998,7 @@ function makeHBar(id, labels, datasets) {
 function poblarSelectsCenso() {
   const selIds = ['censo-region','censo-region-viv','censo-region-edu','censo-region-con'];
   // Ordenar regiones por código numérico
-  const ordenadas = Object.entries(CENSO.datos).sort((a,b) => parseInt(a[0])-parseInt(b[0]));
+  const ordenadas = Object.entries(CENSO_DATA.datos).sort((a,b) => parseInt(a[0])-parseInt(b[0]));
   selIds.forEach(id => {
     const sel = document.getElementById(id);
     if(!sel) return;
@@ -2052,7 +2052,7 @@ function renderCenso() {
   const cols = ['Región','Población','% Mujeres','Prom. edad','% Inmigrantes','% Pueblos orig.','% Discapacidad'];
   let thead = '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${c}</th>`:`<th onclick="sortDT('censo-tabla-demo',${i})">${c}</th>`).join('')+'</tr></thead>';
   let tbody = '<tbody>';
-  Object.values(CENSO.datos).sort((a,b)=>b.n_per-a.n_per).forEach(reg => {
+  Object.values(CENSO_DATA.datos).sort((a,b)=>b.n_per-a.n_per).forEach(reg => {
     const p=reg.n_per;
     const isAct = reg.cod === r.cod;
     tbody += `<tr style="${isAct?'background:#f5f3ff;font-weight:600':''}">
@@ -2106,7 +2106,7 @@ function renderCensoViv() {
   const cols = ['Región','Viv. ocupadas','% Hacinadas','% Irrecuperables','% Déficit cuant.','% Allegados','% Jef. mujer'];
   let thead = '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${c}</th>`:`<th onclick="sortDT('censo-tabla-viv',${i})">${c}</th>`).join('')+'</tr></thead>';
   let tbody = '<tbody>';
-  Object.values(CENSO.datos).sort((a,b)=>pct(b.n_deficit_cuantitativo,b.n_vp_ocupada)-pct(a.n_deficit_cuantitativo,a.n_vp_ocupada)).forEach(reg => {
+  Object.values(CENSO_DATA.datos).sort((a,b)=>pct(b.n_deficit_cuantitativo,b.n_vp_ocupada)-pct(a.n_deficit_cuantitativo,a.n_vp_ocupada)).forEach(reg => {
     const v=reg.n_vp_ocupada, h=reg.n_hog;
     const isAct = reg.cod === r.cod;
     tbody += `<tr style="${isAct?'background:#f5f3ff;font-weight:600':''}">
@@ -2172,7 +2172,7 @@ function renderCensoEdu() {
   const cols = ['Región','Prom. escolaridad','% Analfabetismo','% Parvularia','% Básica','% Media','% Superior'];
   let thead = '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${c}</th>`:`<th onclick="sortDT('censo-tabla-edu',${i})">${c}</th>`).join('')+'</tr></thead>';
   let tbody = '<tbody>';
-  Object.values(CENSO.datos).sort((a,b)=>b.prom_escolaridad18-a.prom_escolaridad18).forEach(reg => {
+  Object.values(CENSO_DATA.datos).sort((a,b)=>b.prom_escolaridad18-a.prom_escolaridad18).forEach(reg => {
     const p=reg.n_per;
     const ta=reg.n_asistencia_parv+reg.n_asistencia_basica+reg.n_asistencia_media+reg.n_asistencia_superior;
     const isAct = reg.cod === r.cod;
@@ -2227,7 +2227,7 @@ function renderCensoCon() {
     n_serv_internet_movil:'Internet móvil', n_serv_internet_satelital:'Internet satelital',
     n_serv_tel_movil:'Teléfono móvil', n_serv_compu:'Computador', n_serv_tablet:'Tablet',
   };
-  const regsSorted = Object.values(CENSO.datos).sort((a,b) => pct(b[digitalVar],b.n_hog) - pct(a[digitalVar],a.n_hog));
+  const regsSorted = Object.values(CENSO_DATA.datos).sort((a,b) => pct(b[digitalVar],b.n_hog) - pct(a[digitalVar],a.n_hog));
   makeBarSeg('censo-chart-digital',
     regsSorted.map(reg => reg.nombre.replace('Metropolitana','RM').replace('Arica y Parinacota','Arica')),
     [
@@ -2263,7 +2263,7 @@ function renderCensoCon() {
   const cols = ['Región','% Internet','% Agua pública','% Alcantarillado','% Electricidad','% Retiro basura','% Sin saneamiento'];
   let thead = '<thead><tr>'+cols.map((c,i)=>i===0?`<th>${c}</th>`:`<th onclick="sortDT('censo-tabla-con',${i})">${c}</th>`).join('')+'</tr></thead>';
   let tbody = '<tbody>';
-  Object.values(CENSO.datos).sort((a,b)=>pct(b.n_internet,b.n_hog)-pct(a.n_internet,a.n_hog)).forEach(reg => {
+  Object.values(CENSO_DATA.datos).sort((a,b)=>pct(b.n_internet,b.n_hog)-pct(a.n_internet,a.n_hog)).forEach(reg => {
     const v=reg.n_vp_ocupada, h=reg.n_hog;
     const isAct = reg.cod === r.cod;
     tbody += `<tr style="${isAct?'background:#f5f3ff;font-weight:600':''}">
