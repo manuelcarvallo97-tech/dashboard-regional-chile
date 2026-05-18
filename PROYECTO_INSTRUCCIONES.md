@@ -4,17 +4,17 @@
 Manuel Carvallo, asesor División de Coordinación Interministerial, Ministerio del Interior de Chile.
 
 ## Qué es este proyecto
-Sistema de monitoreo de indicadores regionales para las 16 regiones de Chile. Dashboard HTML interactivo publicado en GitHub Pages / Vercel, con datos servidos desde Supabase en tiempo real.
+Sistema de monitoreo de indicadores regionales para las 16 regiones de Chile. Dashboard HTML interactivo publicado en Vercel y GitHub Pages, con datos servidos desde Supabase en tiempo real.
 
-**URL del dashboard (producción):**
-https://manuelcarvallo97-tech.github.io/dashboard-regional-chile/dashboard.html
+**URL del dashboard (producción — usar esta):**
+https://dashboard-regional-chile.vercel.app/
 
 **Repositorio GitHub:**
 https://github.com/manuelcarvallo97-tech/dashboard-regional-chile
 
 ---
 
-## Estado actual — Fase 2 completada ✅
+## Estado actual — Fase 2 completa ✅
 
 ### Arquitectura
 ```
@@ -22,17 +22,17 @@ GitHub Actions (lunes y jueves 10:00 AM Chile)
   BCE API ──► actualizar_datos.py ──► Supabase (fuente de verdad)
   LeyStop ──►
 
-Supabase ──► fetch() ──► dashboard.html (GitHub Pages)
+Supabase ──► fetch() ──► dashboard.html (Vercel / GitHub Pages)
 ```
 
-- **Base de datos:** Supabase PostgreSQL (no SQLite, no archivos locales)
-- **Dashboard:** HTML estático que hace fetch() a Supabase al abrirse — sin servidor, sin build
-- **Actualización:** GitHub Actions automático, sin intervención manual
-- **Minuta PDF:** Botón en el header, genera PDF con jsPDF desde los datos cargados
+- **Base de datos:** Supabase PostgreSQL
+- **Dashboard:** HTML estático con fetch() a Supabase — sin servidor, sin build
+- **Actualización:** GitHub Actions automático lunes y jueves
+- **Minuta PDF:** Botón en el header, genera PDF con jsPDF
 
-### Lo que YA NO existe
-- `generar_dashboard.py` ya no se usa para publicar (solo como referencia del JS)
-- No hay datos embebidos en el HTML — todo viene de Supabase o JSON estáticos
+### Lo que YA NO se usa
+- `generar_dashboard.py` — no se usa para publicar (solo como referencia del JS base)
+- No hay datos embebidos en el HTML
 - No hay `.bat` necesarios para publicar
 - No se hace `git push` del `dashboard.html` para actualizar datos
 
@@ -40,9 +40,9 @@ Supabase ──► fetch() ──► dashboard.html (GitHub Pages)
 
 ## Stack técnico
 - **Lenguaje:** Python 3.12
-- **Base de datos:** Supabase (PostgreSQL) — nunca SQLite en producción
+- **Base de datos:** Supabase (PostgreSQL)
 - **Dashboard:** HTML autónomo con Chart.js + fetch a Supabase
-- **Publicación:** GitHub Pages (rama `main`) + Vercel (preview de `dev`)
+- **Publicación:** Vercel (producción) + GitHub Pages (espejo)
 - **Automatización:** GitHub Actions (`.github/workflows/actualizar.yml`)
 - **Credenciales locales:** archivo `.env` (nunca en GitHub)
 
@@ -63,15 +63,19 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwa2ZvYXZ
 
 | Tabla | Descripción | Filas aprox. |
 |-------|-------------|--------------|
-| `registros_leystop` | Seguridad pública semanal por región | ~2.700 |
-| `leystop_semanas` | Catálogo de semanas LeyStop | ~175 |
+| `registros_leystop` | Seguridad pública semanal por región | ~2.900 |
+| `leystop_semanas` | Catálogo de semanas LeyStop | ~178 |
+| `registros_leystop_delitos` | Delitos desagregados DMCS | ⚠️ pendiente crear y sync |
 | `registros_bce` | PIB regional trimestral y anual | ~15.000 |
 | `registros_bce_empleo` | Empleo mensual por región | ~6.000 |
 | `registros_bcn` | Indicadores BCN SIIT | ~7.770 |
 | `bce_catalogo` | Catálogo de series BCE | ~500 |
 | `registros_adis` | ADIS RSH — vacío, pendiente | 0 |
 
-**RLS activado en todas las tablas** — anon key solo puede leer, nunca escribir.
+**RLS activado en todas las tablas** — anon key solo puede leer.
+
+### Nota importante — formato de fechas en Supabase
+Los períodos en `registros_bce` están en formato **DD-MM-YYYY** (ej: `"01-01-2010"`), no ISO. El dashboard tiene la función `_normalizarPeriodo()` que los convierte automáticamente.
 
 ---
 
@@ -79,54 +83,47 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwa2ZvYXZ
 
 ### 1. BCE — Banco Central ✅
 - PIB regional trimestral y anual (2010–2024)
-- Empleo mensual 16 regiones (2010–2026)
-- Script local: `bce_empleo.py`, `bce_api.py`
+- Empleo mensual 16 regiones (2010–2026-03)
 - Se actualiza automáticamente vía GitHub Actions
 
-### 2. LeyStop Carabineros ✅ (parcial)
-- Semanas 160–172 disponibles en Supabase
-- Semanas 173+ bloqueadas por WAF — usar cable de red en el Ministerio y correr `actualizar_datos.py`
-- Se actualiza automáticamente vía GitHub Actions (cuando no hay bloqueo WAF)
+### 2. LeyStop Carabineros ✅
+- Semanas 160–178 en Supabase (semanas 1–19 de 2026)
+- Se actualiza automáticamente vía GitHub Actions
+- **Nota WAF:** usar cable de red — WiFi del Ministerio bloquea LeyStop
 
-### 3. BCN SIIT ✅
-- 7.770 registros, 16 regiones, 10 secciones
-- Datos históricos — no se actualiza frecuentemente
+### 3. Delitos desagregados DMCS ⚠️ Pendiente
+- SQLite local tiene datos semanas 153–176 (parcial, semanas 07-16/2026 devolvieron 0 registros)
+- Semanas 177–178 pendientes de descargar (se cortó WiFi)
+- Tabla `registros_leystop_delitos` existe en SQLite pero NO en Supabase aún
+- **Próximo paso:** terminar descarga con cable + crear tabla en Supabase + sync
 
-### 4. Censo 2024 ✅
+### 4. BCN SIIT ✅
+- 7.770 registros históricos en Supabase
+
+### 5. Censo 2024 ✅
 - Archivo estático: `censo_regiones.json` en el repo
 - El dashboard hace `fetch("censo_regiones.json")` — no está en Supabase
 
-### 5. CASEN 2024 ✅
+### 6. CASEN 2024 ✅
 - Archivo estático: `casen_regiones.json` en el repo
 - El dashboard hace `fetch("casen_regiones.json")` — no está en Supabase
+- Los gráficos renderizan al hacer clic en la pestaña (comportamiento normal de Chart.js)
 
-### 6. ADIS RSH 🔄 Pendiente
-- Endpoint conocido pero `desagregadoTerritorialType` correcto aún no confirmado
-- Login: `POST /authorization/login` con `{run: INT_sin_DV, password: MD5(pwd)}`
-- Token: JWT Bearer en sessionStorage como `ngx-webstorage|session`
+### 7. ADIS RSH 🔄 Pendiente
+- `desagregadoTerritorialType` correcto aún no confirmado
 
 ---
 
-## Dashboard — módulos actuales
+## Dashboard — módulos y estado
 
-### Navegación (nav superior):
-1. **🛡 Seguridad Pública** — LeyStop
-   - Resumen por región, evolución temporal, actividad operativa, DMCS
-2. **📈 PIB Regional** — BCE
-   - Evolución, sectores productivos, resumen nacional
-   - Frecuencia anual/trimestral, tablas ordenables
-3. **💼 Empleo** — BCE/INE
-   - Semáforo rojo >8%, ámbar >6–8%, verde <6%
-   - Evolución por región, ranking
-4. **🏘 Censo 2024** — INE
-   - Demografía, Vivienda, Educación, Conectividad
-5. **🏠 CASEN 2024** — MIDESO
-   - Pobreza, ingresos, salud, vulnerabilidad
-
-### Funcionalidad especial:
-- **Botón "Minuta Regional PDF"** en el header — genera PDF con jsPDF
-  - Secciones: Geográfico, Demográfico, Población Vulnerable, Economía, Educación, Salud, Vivienda, Seguridad, Mercado Laboral
-  - Funciona con los datos ya cargados desde Supabase
+| Módulo | Estado | Fuente |
+|--------|--------|--------|
+| 🛡 Seguridad Pública | ✅ Funcionando | Supabase registros_leystop |
+| 📈 PIB Regional | ✅ Funcionando | Supabase registros_bce |
+| 💼 Empleo | ✅ Funcionando | Supabase registros_bce_empleo |
+| 🏘 Censo 2024 | ✅ Funcionando | censo_regiones.json (estático) |
+| 🏠 CASEN 2024 | ✅ Funcionando | casen_regiones.json (estático) |
+| 🔍 DMCS | ⚠️ Vacío | registros_leystop_delitos (no en Supabase aún) |
 
 ---
 
@@ -134,9 +131,10 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwa2ZvYXZ
 
 | Archivo | Descripción |
 |---------|-------------|
-| `dashboard.html` | Dashboard principal — hace fetch a Supabase |
-| `pdf_minuta.js` | Lógica generación PDF (inyectado por parche) |
-| `actualizar_datos.py` | Descarga BCE + LeyStop → SQLite local → Supabase |
+| `dashboard.html` | Dashboard principal — fetch a Supabase + JSONs estáticos |
+| `pdf_minuta.js` | Lógica generación PDF (jsPDF) |
+| `actualizar_datos.py` | Descarga BCE + LeyStop → SQLite → Supabase (incremental, con on_conflict) |
+| `cargar_historico_delitos.py` | Descarga delitos desagregados desde LeyStop |
 | `generar_dashboard_v2.py` | Regenera dashboard.html desde generar_dashboard.py base |
 | `parche_pdf_dashboard.py` | Inyecta botón PDF en dashboard.html |
 | `migrate_to_supabase.py` | Migración histórica completa SQLite → Supabase |
@@ -144,7 +142,48 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwa2ZvYXZ
 | `casen_regiones.json` | Datos CASEN 2024 (estático, no en Supabase) |
 | `requirements.txt` | Dependencias Python |
 | `.github/workflows/actualizar.yml` | GitHub Action lunes y jueves 10:00 AM |
-| `generar_dashboard.py` | Script original (referencia del JS — NO se usa para publicar) |
+| `generar_dashboard.py` | Script original (referencia JS — NO se usa para publicar) |
+
+---
+
+## Pendiente DMCS — pasos para completar
+
+1. **Terminar descarga** (con cable de red):
+```bash
+python cargar_historico_delitos.py --desde 153
+```
+
+2. **Crear tabla en Supabase** — ejecutar en el editor SQL de Supabase:
+```sql
+CREATE TABLE IF NOT EXISTS registros_leystop_delitos (
+    id_semana       INTEGER,
+    anno            INTEGER,
+    semana          TEXT,
+    fecha_desde_iso TEXT,
+    fecha_hasta_iso TEXT,
+    id_region       INTEGER,
+    nombre_region   TEXT,
+    nombre_delito   TEXT,
+    es_dmcs         INTEGER DEFAULT 0,
+    ultima_semana_ant INTEGER,
+    ultima_semana   INTEGER,
+    dias28_ant      INTEGER,
+    dias28          INTEGER,
+    anno_fecha_ant  INTEGER,
+    anno_fecha      INTEGER,
+    umbral          REAL,
+    PRIMARY KEY (id_semana, id_region, nombre_delito)
+);
+ALTER TABLE registros_leystop_delitos ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "lectura_publica" ON registros_leystop_delitos FOR SELECT USING (true);
+```
+
+3. **Sync a Supabase**:
+```bash
+python migrate_to_supabase.py --tabla delitos
+```
+
+4. **El módulo DMCS se activará automáticamente** — el JS ya está listo, solo necesita datos en Supabase.
 
 ---
 
@@ -153,13 +192,11 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwa2ZvYXZ
 ### Flujo de trabajo
 ```
 1. Trabajar en rama dev
-2. Probar en Vercel preview (deploy automático de dev)
-3. Merge a main → GitHub Pages se actualiza
+2. Probar en Vercel preview
+3. Merge a main → producción
 ```
 
-### Para cambios en el HTML/JS del dashboard:
-El `dashboard.html` tiene toda la lógica en una sola página. La estructura es:
-
+### Estructura del dashboard.html
 ```
 <head> → CSS + librerías (Chart.js, jsPDF)
 <body>
@@ -169,51 +206,24 @@ El `dashboard.html` tiene toda la lógica en una sola página. La estructura es:
   ├── Módulos HTML (#mod-seguridad, #mod-pib, #mod-empleo, #mod-censo, #mod-casen)
   └── <script>
         ├── Config Supabase (SUPA_URL, SUPA_KEY)
-        ├── cargarDatos() — fetch async a Supabase + JSON estáticos
+        ├── _normalizarPeriodo() ← convierte DD-MM-YYYY a YYYY-MM-DD
+        ├── cargarDatos() — fetch async a Supabase + JSONs estáticos
         ├── window.onload = async → await cargarDatos() → init UI
-        ├── Módulo Seguridad (renderResumen, renderEvolucionSeg, renderOperativo, renderDMCS)
-        ├── Módulo PIB (renderEvolucionPib, renderSectores, renderResumenPib)
-        ├── Módulo Empleo (renderResumenEmp, renderEvolucionEmp, renderRankingEmp)
-        ├── Módulo Censo (renderCenso, renderCensoViv, renderCensoEdu, renderCensoCon)
-        └── Módulo CASEN (renderCasenPob, renderCasenIngreso, renderCasenSalud)
+        ├── Módulo Seguridad
+        ├── Módulo PIB
+        ├── Módulo Empleo
+        ├── Módulo Censo (usa CENSO_DATA, no CENSO)
+        └── Módulo CASEN
 ```
-
-### Para regenerar el dashboard.html desde cero:
-```bash
-python generar_dashboard.py      # genera base
-python parche_pdf_dashboard.py   # inyecta botón PDF
-# Luego git add dashboard.html pdf_minuta.js && git push origin dev
-```
-
-### Para actualizar datos manualmente:
-```bash
-python actualizar_datos.py
-# Descarga BCE + LeyStop → guarda en SQLite local → sube a Supabase
-# NO requiere git push
-```
-
----
-
-## Rama dev y colaboración
-
-- **`main`** → producción (GitHub Pages)
-- **`dev`** → desarrollo (Vercel preview automático)
-- Colaborador **Diego** tiene acceso de solo lectura vía anon key de Supabase
 
 ---
 
 ## Notas importantes
-- Red WiFi del Ministerio bloquea GitHub, LeyStop y npm → **usar cable de red**
+- Usar **cable de red** en el Ministerio — WiFi bloquea GitHub, LeyStop y npm
 - SSL del Ministerio requiere `verify=False` en requests a LeyStop
 - Git requiere `http.sslVerify false` para conectar a GitHub desde el Ministerio
 - La DB SQLite local (`bcn_indicadores.db`) nunca se sube a GitHub
 - Las credenciales están en `.env` local y en GitHub Secrets
-- GitHub Actions crea una DB temporal en memoria cuando no hay SQLite local
-
----
-
-## Pendiente
-
-- **ADIS RSH** — Población vulnerable (bloqueado: `desagregadoTerritorialType` correcto pendiente)
-- **LeyStop semanas 173+** — Bloqueado por WAF, usar cable de red
-- **Módulo Población Vulnerable** en el dashboard (cuando se resuelva ADIS)
+- GitHub Actions usa DB temporal en memoria (sin SQLite local)
+- Períodos en `registros_bce` en formato DD-MM-YYYY — normalizado con `_normalizarPeriodo()`
+- El upsert a Supabase usa `on_conflict` explícito para evitar errores 409
