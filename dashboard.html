@@ -572,7 +572,24 @@ async function cargarDatos() {
     regiones: regionesSeg,
   };
 
-  DELITOS = { datos: [], nombres_delitos: [], tiene_datos: false };
+  showLoader("Cargando datos DMCS...");
+
+  // ── DELITOS desagregados ────────────────────────────────────────
+  const rawDelitos = await supaFetchAll(
+    "registros_leystop_delitos",
+    "select=id_semana,id_region,nombre_region,nombre_delito,es_dmcs,ultima_semana_ant,ultima_semana,dias28_ant,dias28,anno_fecha_ant,anno_fecha,umbral&order=id_semana,id_region"
+  );
+
+  if (rawDelitos && rawDelitos.length > 0) {
+    const nombresDelitos = [...new Set(rawDelitos.map(d => d.nombre_delito))].sort();
+    DELITOS = {
+      datos: rawDelitos,
+      nombres_delitos: nombresDelitos,
+      tiene_datos: true,
+    };
+  } else {
+    DELITOS = { datos: [], nombres_delitos: [], tiene_datos: false };
+  }
 
   showLoader("Cargando PIB regional...");
 
