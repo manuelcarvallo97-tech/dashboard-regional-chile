@@ -1168,7 +1168,7 @@ function delitosPorSemanaRegion(id_semana, nombre_region) {
 }
 
 function dmcsPorSemanaRegion(id_semana, nombre_region) {
-  return delitosPorSemanaRegion(id_semana, nombre_region).filter(d => d.es_dmcs === 1);
+  return delitosPorSemanaRegion(id_semana, nombre_region).filter(d => (d.es_dmcs === 1 || d.es_dmcs === true));
 }
 
 function renderDMCS() {
@@ -1185,7 +1185,7 @@ function renderDMCS() {
 
   // Datos de todos los delitos para la semana/región seleccionada
   const todosDelitos = delitosPorSemanaRegion(id_sem, regFiltro);
-  const soloDmcs     = todosDelitos.filter(d => d.es_dmcs === 1);
+  const soloDmcs     = todosDelitos.filter(d => (d.es_dmcs === 1 || d.es_dmcs === true));
 
   // Totales DMCS nacionales o de la región
   const totalDmcsAnno = soloDmcs.reduce((a,d) => a + (d.anno_fecha||0), 0);
@@ -2441,7 +2441,20 @@ window.onload = async function() {
   // Seguridad — semanas
   poblarSemana('res-semana', renderResumen);
   poblarSemana('op-semana', renderOperativo);
-  poblarSemana('dmcs-semana', renderDMCS);
+  // Poblar selector DMCS solo con semanas que tienen datos de delitos
+  (function() {
+    const sel = document.getElementById('dmcs-semana');
+    if (!sel) return;
+    sel.innerHTML = '';
+    const semanasConDelitos = new Set(DELITOS.datos.map(d => d.id_semana));
+    const semanasFiltradas = SEG.semanas.filter(s => semanasConDelitos.has(s.id_semana));
+    semanasFiltradas.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.id_semana; o.textContent = s.nombre; sel.appendChild(o);
+    });
+    if (semanasFiltradas.length) sel.value = semanasFiltradas[semanasFiltradas.length-1].id_semana;
+    sel.onchange = renderDMCS;
+  })();
   poblarRegionSeg('evo-seg-region', renderEvolucionSeg);
 
   // Filtros región en Resumen y DMCS
