@@ -65,7 +65,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwa2ZvYXZ
 |-------|-------------|--------------|
 | `registros_leystop` | Seguridad pública semanal por región | ~2.900 |
 | `leystop_semanas` | Catálogo de semanas LeyStop | ~178 |
-| `registros_leystop_delitos` | Delitos desagregados DMCS | ⚠️ pendiente crear y sync |
+| `registros_leystop_delitos` | Delitos desagregados DMCS | ~8.736 |
 | `registros_bce` | PIB regional trimestral y anual | ~15.000 |
 | `registros_bce_empleo` | Empleo mensual por región | ~6.000 |
 | `registros_bcn` | Indicadores BCN SIIT | ~7.770 |
@@ -74,8 +74,10 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwa2ZvYXZ
 
 **RLS activado en todas las tablas** — anon key solo puede leer.
 
-### Nota importante — formato de fechas en Supabase
-Los períodos en `registros_bce` están en formato **DD-MM-YYYY** (ej: `"01-01-2010"`), no ISO. El dashboard tiene la función `_normalizarPeriodo()` que los convierte automáticamente.
+### Notas técnicas importantes sobre Supabase
+- Períodos en `registros_bce` están en formato **DD-MM-YYYY** — el dashboard los normaliza con `_normalizarPeriodo()`
+- `es_dmcs` en `registros_leystop_delitos` llega como **booleano** desde Supabase — el dashboard filtra con `(d.es_dmcs === 1 || d.es_dmcs === true)`
+- El upsert usa `on_conflict` explícito para evitar errores 409
 
 ---
 
@@ -86,27 +88,27 @@ Los períodos en `registros_bce` están en formato **DD-MM-YYYY** (ej: `"01-01-2
 - Empleo mensual 16 regiones (2010–2026-03)
 - Se actualiza automáticamente vía GitHub Actions
 
-### 2. LeyStop Carabineros ✅
+### 2. LeyStop — Seguridad ✅
 - Semanas 160–178 en Supabase (semanas 1–19 de 2026)
 - Se actualiza automáticamente vía GitHub Actions
 - **Nota WAF:** usar cable de red — WiFi del Ministerio bloquea LeyStop
 
-### 3. Delitos desagregados DMCS ⚠️ Pendiente
-- SQLite local tiene datos semanas 153–176 (parcial, semanas 07-16/2026 devolvieron 0 registros)
-- Semanas 177–178 pendientes de descargar (se cortó WiFi)
-- Tabla `registros_leystop_delitos` existe en SQLite pero NO en Supabase aún
-- **Próximo paso:** terminar descarga con cable + crear tabla en Supabase + sync
+### 3. Delitos desagregados DMCS ✅
+- 8.736 registros en Supabase (semanas 153–178)
+- Semanas 14-18/2026 tienen datos parciales (LeyStop los publicó con retraso)
+- Para actualizar: `python cargar_historico_delitos.py --desde ULTIMA_SEMANA --force`
+- Luego sync: `python sync_delitos_supabase.py`
 
 ### 4. BCN SIIT ✅
 - 7.770 registros históricos en Supabase
 
 ### 5. Censo 2024 ✅
 - Archivo estático: `censo_regiones.json` en el repo
-- El dashboard hace `fetch("censo_regiones.json")` — no está en Supabase
+- fetch desde el browser — no está en Supabase
 
 ### 6. CASEN 2024 ✅
 - Archivo estático: `casen_regiones.json` en el repo
-- El dashboard hace `fetch("casen_regiones.json")` — no está en Supabase
+- fetch desde el browser — no está en Supabase
 - Los gráficos renderizan al hacer clic en la pestaña (comportamiento normal de Chart.js)
 
 ### 7. ADIS RSH 🔄 Pendiente
@@ -119,11 +121,11 @@ Los períodos en `registros_bce` están en formato **DD-MM-YYYY** (ej: `"01-01-2
 | Módulo | Estado | Fuente |
 |--------|--------|--------|
 | 🛡 Seguridad Pública | ✅ Funcionando | Supabase registros_leystop |
+| 🔍 DMCS | ✅ Funcionando | Supabase registros_leystop_delitos |
 | 📈 PIB Regional | ✅ Funcionando | Supabase registros_bce |
 | 💼 Empleo | ✅ Funcionando | Supabase registros_bce_empleo |
 | 🏘 Censo 2024 | ✅ Funcionando | censo_regiones.json (estático) |
 | 🏠 CASEN 2024 | ✅ Funcionando | casen_regiones.json (estático) |
-| 🔍 DMCS | ⚠️ Vacío | registros_leystop_delitos (no en Supabase aún) |
 
 ---
 
@@ -133,11 +135,12 @@ Los períodos en `registros_bce` están en formato **DD-MM-YYYY** (ej: `"01-01-2
 |---------|-------------|
 | `dashboard.html` | Dashboard principal — fetch a Supabase + JSONs estáticos |
 | `pdf_minuta.js` | Lógica generación PDF (jsPDF) |
-| `actualizar_datos.py` | Descarga BCE + LeyStop → SQLite → Supabase (incremental, con on_conflict) |
+| `actualizar_datos.py` | Descarga BCE + LeyStop → SQLite → Supabase (incremental, on_conflict) |
 | `cargar_historico_delitos.py` | Descarga delitos desagregados desde LeyStop |
+| `sync_delitos_supabase.py` | Sube registros_leystop_delitos a Supabase con on_conflict |
+| `migrate_to_supabase.py` | Migración histórica completa SQLite → Supabase |
 | `generar_dashboard_v2.py` | Regenera dashboard.html desde generar_dashboard.py base |
 | `parche_pdf_dashboard.py` | Inyecta botón PDF en dashboard.html |
-| `migrate_to_supabase.py` | Migración histórica completa SQLite → Supabase |
 | `censo_regiones.json` | Datos Censo 2024 (estático, no en Supabase) |
 | `casen_regiones.json` | Datos CASEN 2024 (estático, no en Supabase) |
 | `requirements.txt` | Dependencias Python |
@@ -146,44 +149,23 @@ Los períodos en `registros_bce` están en formato **DD-MM-YYYY** (ej: `"01-01-2
 
 ---
 
-## Pendiente DMCS — pasos para completar
+## Flujo de actualización
 
-1. **Terminar descarga** (con cable de red):
+### Automático (GitHub Actions — lunes y jueves 10:00 AM)
+```
+BCE API → datos nuevos → Supabase → dashboard actualizado en tiempo real
+LeyStop →
+```
+
+### Manual desde laptop (con cable de red)
 ```bash
-python cargar_historico_delitos.py --desde 153
-```
+# Actualizar BCE + LeyStop
+python actualizar_datos.py
 
-2. **Crear tabla en Supabase** — ejecutar en el editor SQL de Supabase:
-```sql
-CREATE TABLE IF NOT EXISTS registros_leystop_delitos (
-    id_semana       INTEGER,
-    anno            INTEGER,
-    semana          TEXT,
-    fecha_desde_iso TEXT,
-    fecha_hasta_iso TEXT,
-    id_region       INTEGER,
-    nombre_region   TEXT,
-    nombre_delito   TEXT,
-    es_dmcs         INTEGER DEFAULT 0,
-    ultima_semana_ant INTEGER,
-    ultima_semana   INTEGER,
-    dias28_ant      INTEGER,
-    dias28          INTEGER,
-    anno_fecha_ant  INTEGER,
-    anno_fecha      INTEGER,
-    umbral          REAL,
-    PRIMARY KEY (id_semana, id_region, nombre_delito)
-);
-ALTER TABLE registros_leystop_delitos ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "lectura_publica" ON registros_leystop_delitos FOR SELECT USING (true);
+# Actualizar delitos DMCS (cuando haya semanas nuevas)
+python cargar_historico_delitos.py --desde ULTIMA_SEMANA
+python sync_delitos_supabase.py
 ```
-
-3. **Sync a Supabase**:
-```bash
-python migrate_to_supabase.py --tabla delitos
-```
-
-4. **El módulo DMCS se activará automáticamente** — el JS ya está listo, solo necesita datos en Supabase.
 
 ---
 
@@ -208,13 +190,28 @@ python migrate_to_supabase.py --tabla delitos
         ├── Config Supabase (SUPA_URL, SUPA_KEY)
         ├── _normalizarPeriodo() ← convierte DD-MM-YYYY a YYYY-MM-DD
         ├── cargarDatos() — fetch async a Supabase + JSONs estáticos
+        │     ├── registros_leystop + leystop_semanas → SEG
+        │     ├── registros_leystop_delitos → DELITOS
+        │     ├── registros_bce → PIB
+        │     ├── registros_bce_empleo → EMP
+        │     ├── censo_regiones.json → CENSO_DATA
+        │     └── casen_regiones.json → CASEN
         ├── window.onload = async → await cargarDatos() → init UI
         ├── Módulo Seguridad
+        ├── Módulo DMCS (filtra es_dmcs === 1 || true; selector solo semanas con datos)
         ├── Módulo PIB
         ├── Módulo Empleo
         ├── Módulo Censo (usa CENSO_DATA, no CENSO)
         └── Módulo CASEN
 ```
+
+---
+
+## Rama dev y colaboración
+
+- **`main`** → producción (Vercel + GitHub Pages)
+- **`dev`** → desarrollo (Vercel preview automático)
+- Colaborador **Diego** — acceso solo lectura con anon key de Supabase
 
 ---
 
@@ -225,5 +222,10 @@ python migrate_to_supabase.py --tabla delitos
 - La DB SQLite local (`bcn_indicadores.db`) nunca se sube a GitHub
 - Las credenciales están en `.env` local y en GitHub Secrets
 - GitHub Actions usa DB temporal en memoria (sin SQLite local)
-- Períodos en `registros_bce` en formato DD-MM-YYYY — normalizado con `_normalizarPeriodo()`
-- El upsert a Supabase usa `on_conflict` explícito para evitar errores 409
+
+---
+
+## Pendiente
+
+- **ADIS RSH** — población vulnerable por región (endpoint pendiente)
+- **Limpieza repo** — eliminar archivos temporales: `d.id_semana`, `dashboard_actual.html`, `sync_faltantes.py`, `region_arica_y_parinacota.json`, `region_los_lagos.json`
