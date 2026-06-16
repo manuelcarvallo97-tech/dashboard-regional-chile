@@ -1989,10 +1989,16 @@ function getPIBNacional(ind,t) {{
     if(sub===null&&ext===null) return null;
     return (sub||0)+(ext||0);
   }} else {{
-    // Anual: encadenados
+    // Anual: usar subtotal BCE si disponible; si no, sumar regiones individualmente
     const sub=PIB.subtotal_enc_anual[t]??null, ext=PIB.extra_enc_anual[t]??null;
-    if(sub===null&&ext===null) return null;
-    return (sub||0)+(ext||0);
+    if(sub!==null) return sub+(ext||0);
+    let sumReg=0, hasData=false;
+    for(const reg of PIB.regiones) {{
+      const v=((PIB.datos_enc_anual['PIB']||{{}})[reg]||{{}})[t]??null;
+      if(v!==null){{sumReg+=v; hasData=true;}}
+    }}
+    if(!hasData&&ext===null) return null;
+    return sumReg+(ext||0);
   }}
 }}
 function calcPeso(sector,ind,region,t) {{
