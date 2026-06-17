@@ -2800,22 +2800,25 @@ window.onload = function() {
   </div>
   <div class="content">
 
-    <!-- ── DMCS ── -->
+    <!-- ── SEGURIDAD PÚBLICA ── -->
     <div class="card" style="border-top:4px solid #dc2626;margin-bottom:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <h3 style="margin:0">🔴 DMCS — Delitos de Mayor Connotación Social</h3>
+        <h3 style="margin:0">🛡 Seguridad Pública</h3>
         <span style="font-size:11px;color:#888" id="res-ej-dmcs-semana"></span>
       </div>
       <div class="kpi-grid" id="res-ej-leystop-kpis" style="margin-bottom:16px"></div>
-      <div class="kpi-grid" id="res-ej-kpi-dmcs"></div>
-      <div class="grid2" style="margin-top:16px">
-        <div>
-          <h4 style="font-size:13px;font-weight:600;color:#555;margin-bottom:10px">DMCS por tipo — año a la fecha</h4>
-          <canvas id="res-ej-chart-dmcs-bar" style="max-height:320px"></canvas>
-        </div>
-        <div>
-          <h4 style="font-size:13px;font-weight:600;color:#555;margin-bottom:10px">Distribución DMCS</h4>
-          <canvas id="res-ej-chart-dmcs-pie" style="max-height:320px"></canvas>
+      <div style="margin:4px 0 10px;padding-top:14px;border-top:1px solid #e5e7eb">
+        <h4 style="font-size:13px;font-weight:700;color:#dc2626;margin:0 0 12px">🔴 DMCS — Delitos de Mayor Connotación Social</h4>
+        <div class="kpi-grid" id="res-ej-kpi-dmcs" style="margin-bottom:14px"></div>
+        <div class="grid2" style="margin-top:8px">
+          <div>
+            <h4 style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px">DMCS por tipo — año a la fecha</h4>
+            <canvas id="res-ej-chart-dmcs-bar" style="max-height:320px"></canvas>
+          </div>
+          <div>
+            <h4 style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px">Distribución DMCS</h4>
+            <canvas id="res-ej-chart-dmcs-pie" style="max-height:320px"></canvas>
+          </div>
         </div>
       </div>
     </div>
@@ -2847,7 +2850,15 @@ window.onload = function() {
             <div class="tabla-wrap"><table class="dt" id="res-ej-tabla-sec"></table></div>
           </div>
         </div>
-        <h4 style="font-size:13px;font-weight:600;color:#555;margin-bottom:10px">Desocupación: tasa simple vs. trimestre móvil</h4>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding-top:14px;border-top:1px solid #f0f0f0">
+          <h4 style="font-size:13px;font-weight:600;color:#555;margin:0">Desocupación: tasa simple vs. trimestre móvil</h4>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <div class="fg"><label style="font-size:11px;color:#888">Desde</label>
+            <select id="res-ej-emp-desde" onchange="renderResumenEjecutivo()" style="padding:4px 8px;border:1.5px solid #d0d0d0;border-radius:6px;font-size:11px;min-width:72px"></select></div>
+            <div class="fg"><label style="font-size:11px;color:#888">Hasta</label>
+            <select id="res-ej-emp-hasta" onchange="renderResumenEjecutivo()" style="padding:4px 8px;border:1.5px solid #d0d0d0;border-radius:6px;font-size:11px;min-width:72px"></select></div>
+          </div>
+        </div>
         <div class="kpi-grid" id="res-ej-kpi-emp"></div>
         <canvas id="res-ej-chart-emp" style="max-height:220px;margin-top:14px"></canvas>
       </div>
@@ -3166,6 +3177,17 @@ function poblarSelectsResumenEjecutivo() {
       sel.value = idx===0 ? años[Math.max(0,años.length-8)] : años[años.length-1];
     });
   }
+  // Empleo selectors — años con datos
+  const _empDat = EMP.datos['__NACIONAL__'] || Object.values(EMP.datos)[0];
+  if(_empDat && _empDat.periodos && _empDat.periodos.length) {
+    const añosEmp = [...new Set(_empDat.periodos.map(p=>p.substring(0,4)))].sort();
+    ['res-ej-emp-desde','res-ej-emp-hasta'].forEach((id, idx) => {
+      const sel = document.getElementById(id);
+      if(!sel) return;
+      añosEmp.forEach(a => { const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); });
+      sel.value = idx===0 ? añosEmp[Math.max(0,añosEmp.length-3)] : añosEmp[añosEmp.length-1];
+    });
+  }
 }
 
 function resEjGetCenso(nombre) {
@@ -3215,9 +3237,16 @@ function renderResumenEjecutivo() {
       const e=Object.entries(s).sort((a,b)=>b[1]-a[1])[0]; return e?e[0]:delitoMasCom;
     })();
 
+    // Tasa total delitos / 100k hab (LeyStop tasa_registro = tasa directa para región)
+    let tasaTotal100k = tasaLY;
+    if(isNac) {
+      const _popLYT = segData.reduce((s,r)=>r.tasa_registro&&r.casos_anno_fecha?s+(r.casos_anno_fecha*100000/r.tasa_registro):s, 0);
+      if(_popLYT > 0) tasaTotal100k = totalDelLY * 100000 / _popLYT;
+    }
     document.getElementById('res-ej-leystop-kpis').innerHTML =
       `<div class="kpi azul"><div class="kpi-label">Delitos registrados LeyStop — año a la fecha</div><div class="kpi-value">${num(totalDelLY)}</div><div class="kpi-sub">${isNac?'Total nacional':regKey}</div></div>`+
       `<div class="kpi ${varDelito===null?'':varDelito<0?'verde':'rojo'}"><div class="kpi-label">Variación vs año anterior</div><div class="kpi-value">${fmtCambio(varDelito)}</div><div class="kpi-sub">total delitos año a la fecha</div></div>`+
+      `<div class="kpi azul"><div class="kpi-label">Tasa delitos / 100k hab.</div><div class="kpi-value">${tasaTotal100k!==null?tasaTotal100k.toFixed(1):'—'}</div><div class="kpi-sub">LeyStop año a la fecha</div></div>`+
       `<div class="kpi amber"><div class="kpi-label">Delito más común</div><div class="kpi-value" style="font-size:12px;line-height:1.4;font-weight:600">${delitoMasComCasos}</div><div class="kpi-sub">mayor n° de registros</div></div>`;
 
     if(!DELITOS.tiene_datos) {
@@ -3339,13 +3368,13 @@ function renderResumenEjecutivo() {
     const ultAñoGlobal = PIB.años_enc_anual[PIB.años_enc_anual.length-1];
 
     // Evolucion PIB - solo nivel, sin linea var%
-    const pibVals = anos.map(a => isNac ? getPIBNacional('miles_enc',a) : getValPib('PIB','miles_enc',regKey,a));
+    const pibVals = años.map(a => isNac ? getPIBNacional('miles_enc',a) : getValPib('PIB','miles_enc',regKey,a));
     destroyChart('res-ej-chart-pib');
     const ctxP = document.getElementById('res-ej-chart-pib');
     if(ctxP) {
       charts['res-ej-chart-pib'] = new Chart(ctxP, {
         type:'line',
-        data:{labels:anos,datasets:[{label:'Vol. enc. (MM$ base 2018)',data:pibVals,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',tension:.3,fill:true,pointRadius:3,borderWidth:2}]},
+        data:{labels:años,datasets:[{label:'Vol. enc. (MM$ base 2018)',data:pibVals,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',tension:.3,fill:true,pointRadius:3,borderWidth:2}]},
         options:{responsive:true,maintainAspectRatio:true,
           plugins:{legend:{display:false},datalabels:{display:false},tooltip:{mode:'index',intersect:false}},
           scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}},grid:{color:'#f0f0f0'},title:{display:true,text:'MM$ enc. 2018',font:{size:9}}}}
@@ -3413,7 +3442,9 @@ function renderResumenEjecutivo() {
         `<div class="kpi ${varAnualTm===null?'':varAnualTm>0?'rojo':'verde'}"><div class="kpi-label">Var. anual trim. móvil (p.p.)</div><div class="kpi-value">${varAnualTm!==null?(varAnualTm>0?'+':'')+varAnualTm.toFixed(1):'—'}</div><div class="kpi-sub">vs mismo mes año ant.</div></div>`+
         `<div class="kpi ${varAnualTasa===null?'':varAnualTasa>0?'rojo':'verde'}"><div class="kpi-label">Var. anual tasa simple (p.p.)</div><div class="kpi-value">${varAnualTasa!==null?(varAnualTasa>0?'+':'')+varAnualTasa.toFixed(1):'—'}</div><div class="kpi-sub">vs mismo mes año ant.</div></div>`;
 
-      const desdeYr=desde?parseInt(desde):null, hastaYr=hasta?parseInt(hasta):null;
+      const empDesde = document.getElementById('res-ej-emp-desde')?.value || '';
+      const empHasta = document.getElementById('res-ej-emp-hasta')?.value || '';
+      const desdeYr=empDesde?parseInt(empDesde):null, hastaYr=empHasta?parseInt(empHasta):null;
       const filtPs=ps.filter(p=>{const yr=parseInt(p.substring(0,4));return(!desdeYr||yr>=desdeYr)&&(!hastaYr||yr<=hastaYr);});
       const filtTasa=filtPs.map(p=>{const i=ps.indexOf(p);return dEmp.tasa[i];});
       const filtTm  =filtPs.map(p=>{const i=ps.indexOf(p);return dEmp.tasa_tm?dEmp.tasa_tm[i]:null;});
