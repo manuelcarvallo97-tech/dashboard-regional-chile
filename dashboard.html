@@ -118,7 +118,8 @@ table.dt tr.censo-nac-row td{background:#f0fdf4!important;font-weight:700;color:
 
 <!-- ══ NAVEGACIÓN DE MÓDULOS ══ -->
 <nav class="mod-nav">
-  <div class="mod-btn active" onclick="setModulo('seguridad',this)">🛡 Seguridad Pública</div>
+  <div class="mod-btn active" onclick="setModulo('resumen',this)">📋 Resumen</div>
+  <div class="mod-btn" onclick="setModulo('seguridad',this)">🛡 Seguridad Pública</div>
   <div class="mod-btn" onclick="setModulo('pib',this)">📈 PIB Regional</div>
   <div class="mod-btn" onclick="setModulo('censo',this)">🏘 Censo 2024</div>
   <div class="mod-btn" onclick="setModulo('empleo',this)">💼 Empleo</div>
@@ -128,7 +129,7 @@ table.dt tr.censo-nac-row td{background:#f0fdf4!important;font-weight:700;color:
 <!-- ══════════════════════════════════════════════════════════════
      MÓDULO: SEGURIDAD
 ══════════════════════════════════════════════════════════════ -->
-<div class="modulo active" id="mod-seguridad">
+<div class="modulo" id="mod-seguridad">
   <div class="tabs">
     <div class="tab-seg active" onclick="setTabSeg('resumen',this)">Resumen por región</div>
     <div class="tab-seg" onclick="setTabSeg('evolucion',this)">Evolución temporal</div>
@@ -2781,6 +2782,90 @@ window.onload = function() {
   </div>
 </div><!-- /mod-casen -->
 
+
+<div class="modulo active" id="mod-resumen">
+  <div class="region-bar">
+    <label>Región:</label>
+    <select id="res-ej-region" onchange="renderResumenEjecutivo()">
+      <option value="">🇨🇱 Nacional (total)</option>
+    </select>
+  </div>
+  <div class="content">
+
+    <!-- ── SEGURIDAD PÚBLICA ── -->
+    <div class="card" style="border-top:4px solid #dc2626;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <h3 style="margin:0">🛡 Seguridad Pública</h3>
+        <span style="font-size:11px;color:#888" id="res-ej-dmcs-semana"></span>
+      </div>
+      <div class="kpi-grid" id="res-ej-leystop-kpis" style="margin-bottom:12px"></div>
+      <div id="res-ej-leystop-top3" style="margin-bottom:14px"></div>
+      <div style="margin:4px 0 10px;padding-top:14px;border-top:1px solid #e5e7eb">
+        <h4 style="font-size:13px;font-weight:700;color:#dc2626;margin:0 0 12px">🔴 DMCS — Delitos de Mayor Connotación Social</h4>
+        <div class="kpi-grid" id="res-ej-kpi-dmcs" style="margin-bottom:14px"></div>
+        <div class="grid2" style="margin-top:8px">
+          <div>
+            <h4 style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px">DMCS por tipo — año a la fecha</h4>
+            <canvas id="res-ej-chart-dmcs-bar" style="max-height:320px"></canvas>
+          </div>
+          <div>
+            <h4 style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px">Distribución DMCS</h4>
+            <canvas id="res-ej-chart-dmcs-pie" style="max-height:320px"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PIB ── -->
+    <div class="card" style="border-top:4px solid #2563eb;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+        <h3 style="margin:0">📈 PIB Regional — Banco Central</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+          <div class="fg">
+            <label>Año desde</label>
+            <select id="res-ej-pib-desde" onchange="renderResumenEjecutivo()" style="padding:6px 10px;border:1.5px solid #d0d0d0;border-radius:8px;font-size:12px;min-width:80px"></select>
+          </div>
+          <div class="fg">
+            <label>Año hasta</label>
+            <select id="res-ej-pib-hasta" onchange="renderResumenEjecutivo()" style="padding:6px 10px;border:1.5px solid #d0d0d0;border-radius:8px;font-size:12px;min-width:80px"></select>
+          </div>
+        </div>
+      </div>
+      <div id="res-ej-pib-body">
+        <div class="grid2" style="margin-bottom:20px">
+          <div>
+            <h4 style="font-size:13px;font-weight:600;color:#555;margin-bottom:10px">Evolución PIB (vol. encadenado, base 2018)</h4>
+            <canvas id="res-ej-chart-pib" style="max-height:250px"></canvas>
+          </div>
+          <div>
+            <div id="res-ej-kpi-percap" style="margin-bottom:12px"></div>
+          <h4 style="font-size:13px;font-weight:600;color:#555;margin-bottom:10px">Top 5 sectores productivos — <span id="res-ej-sec-año"></span></h4>
+            <div class="tabla-wrap"><table class="dt" id="res-ej-tabla-sec"></table></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding-top:14px;border-top:1px solid #f0f0f0">
+          <h4 style="font-size:13px;font-weight:600;color:#555;margin:0">Desocupación: tasa simple vs. trimestre móvil</h4>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <div class="fg"><label style="font-size:11px;color:#888">Desde</label>
+            <select id="res-ej-emp-desde" onchange="renderResumenEjecutivo()" style="padding:4px 8px;border:1.5px solid #d0d0d0;border-radius:6px;font-size:11px;min-width:72px"></select></div>
+            <div class="fg"><label style="font-size:11px;color:#888">Hasta</label>
+            <select id="res-ej-emp-hasta" onchange="renderResumenEjecutivo()" style="padding:4px 8px;border:1.5px solid #d0d0d0;border-radius:6px;font-size:11px;min-width:72px"></select></div>
+          </div>
+        </div>
+        <div class="kpi-grid" id="res-ej-kpi-emp"></div>
+        <canvas id="res-ej-chart-emp" style="max-height:220px;margin-top:14px"></canvas>
+      </div>
+    </div>
+
+    <!-- ── CENSO ── -->
+    <div class="card" style="border-top:4px solid #7c3aed">
+      <h3 style="margin-bottom:14px">🏘 Censo 2024 — Demografía</h3>
+      <div class="kpi-grid" id="res-ej-kpi-censo"></div>
+    </div>
+
+  </div><!-- /content resumen -->
+</div><!-- /mod-resumen -->
+
 <script>
 // ══════════════════════════════════════════════════════════════
 // CASEN 2024
@@ -3061,6 +3146,418 @@ function initCasen(){
   poblarSelectsCasen();
   document.getElementById('ci-tipo').onchange=renderCasenIngreso;
   document.getElementById('cs-prest-tipo').onchange=renderCasenPrest;
+}
+
+// ══════════════════════════════════════════════════════════════
+// RESUMEN EJECUTIVO
+// ══════════════════════════════════════════════════════════════
+function poblarSelectsResumenEjecutivo() {
+  const selReg = document.getElementById('res-ej-region');
+  if(selReg) {
+    CENSO_ORDEN_NS.forEach(cod => {
+      const r = CENSO.datos[String(cod)];
+      const o = document.createElement('option');
+      o.value = r.nombre; o.textContent = r.nombre; selReg.appendChild(o);
+    });
+  }
+  const años = PIB.años_enc_anual;
+  if(años && años.length) {
+    ['res-ej-pib-desde','res-ej-pib-hasta'].forEach((id, idx) => {
+      const sel = document.getElementById(id);
+      if(!sel) return;
+      años.forEach(a => { const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); });
+      sel.value = idx===0 ? años[Math.max(0,años.length-8)] : años[años.length-1];
+    });
+  }
+  // Empleo selectors — años con datos
+  const _empDat = EMP.datos['__NACIONAL__'] || Object.values(EMP.datos)[0];
+  if(_empDat && _empDat.periodos && _empDat.periodos.length) {
+    const añosEmp = [...new Set(_empDat.periodos.map(p=>p.substring(0,4)))].sort();
+    ['res-ej-emp-desde','res-ej-emp-hasta'].forEach((id, idx) => {
+      const sel = document.getElementById(id);
+      if(!sel) return;
+      añosEmp.forEach(a => { const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); });
+      sel.value = idx===0 ? añosEmp[Math.max(0,añosEmp.length-3)] : añosEmp[añosEmp.length-1];
+    });
+  }
+}
+
+function resEjGetCenso(nombre) {
+  if(!nombre) return CENSO_NAC;
+  const cod = CENSO_ORDEN_NS.find(c => CENSO.datos[String(c)].nombre === nombre);
+  return cod ? CENSO.datos[String(cod)] : CENSO_NAC;
+}
+
+function resEjToSegKey(censoNombre) {
+  if(censoNombre === 'Metropolitana') return 'Metropolitana de Santiago';
+  return censoNombre;
+}
+
+function renderResumenEjecutivo() {
+  const reg    = document.getElementById('res-ej-region')?.value || '';
+  const regKey = resEjToSegKey(reg);
+  const isNac  = !reg;
+
+  // ── BLOQUE DELITOS + DMCS ──
+  (function() {
+    const ultiSem = SEG.semanas.length ? SEG.semanas[SEG.semanas.length-1].id_semana : null;
+    const sem = SEG.semanas.find(s => s.id_semana === ultiSem);
+    const el = document.getElementById('res-ej-dmcs-semana');
+    if(el) el.textContent = sem ? sem.nombre : '';
+
+    // Datos LeyStop (total delitos, todos los tipos)
+    const segData = datosParaSemana(ultiSem);
+    const segReg  = isNac ? null : segData.find(r => r.nombre_region === regKey);
+    const totalDelLY  = isNac ? segData.reduce((a,r)=>a+(r.casos_anno_fecha||0),0) : (segReg?.casos_anno_fecha||0);
+    const tasaLY      = isNac ? null : (segReg?.tasa_registro||null);
+    const delitoMasCom= isNac
+      ? (() => { const c={}; segData.forEach(r=>{if(r.mayor_registro_1)c[r.mayor_registro_1]=(c[r.mayor_registro_1]||0)+1;}); const e=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]; return e?e[0]:'—'; })()
+      : (segReg?.mayor_registro_1||'—');
+
+    // Todos los delitos (DELITOS data) para variación y delito más común por casos
+    const todosFiltrados = DELITOS.tiene_datos
+      ? DELITOS.datos.filter(d => d.id_semana===ultiSem && (isNac || d.nombre_region===regKey))
+      : [];
+    const totalDelitoAnno = todosFiltrados.reduce((a,d)=>a+(d.anno_fecha||0),0);
+    const totalDelitoAnt  = todosFiltrados.reduce((a,d)=>a+(d.anno_fecha_ant||0),0);
+    const varDelito = totalDelitoAnt>0 ? ((totalDelitoAnno-totalDelitoAnt)/totalDelitoAnt*100) : null;
+
+    // Delito más común por N° de casos (desde DELITOS si disponible, si no desde SEG)
+    const delitoMasComCasos = (() => {
+      if(!DELITOS.tiene_datos) return delitoMasCom;
+      const s={}; todosFiltrados.forEach(d=>{ s[d.nombre_delito]=(s[d.nombre_delito]||0)+(d.anno_fecha||0); });
+      const e=Object.entries(s).sort((a,b)=>b[1]-a[1])[0]; return e?e[0]:delitoMasCom;
+    })();
+
+    // Tasa total delitos / 100k hab (LeyStop tasa_registro = tasa directa para región)
+    let tasaTotal100k = tasaLY;
+    if(isNac) {
+      const _popLYT = segData.reduce((s,r)=>r.tasa_registro&&r.casos_anno_fecha?s+(r.casos_anno_fecha*100000/r.tasa_registro):s, 0);
+      if(_popLYT > 0) tasaTotal100k = totalDelLY * 100000 / _popLYT;
+    }
+    document.getElementById('res-ej-leystop-kpis').innerHTML =
+      `<div class="kpi azul"><div class="kpi-label">Delitos registrados LeyStop — año a la fecha</div><div class="kpi-value">${num(totalDelLY)}</div><div class="kpi-sub">${isNac?'Total nacional':regKey}</div></div>`+
+      `<div class="kpi ${varDelito===null?'':varDelito<0?'verde':'rojo'}"><div class="kpi-label">Variación vs año anterior</div><div class="kpi-value">${fmtCambio(varDelito)}</div><div class="kpi-sub">total delitos año a la fecha</div></div>`+
+      `<div class="kpi azul"><div class="kpi-label">Tasa delitos / 100k hab.</div><div class="kpi-value">${tasaTotal100k!==null?tasaTotal100k.toFixed(1):'—'}</div><div class="kpi-sub">LeyStop año a la fecha</div></div>`+
+      `<div class="kpi amber"><div class="kpi-label">Delito más común</div><div class="kpi-value" style="font-size:12px;line-height:1.4;font-weight:600">${delitoMasComCasos}</div><div class="kpi-sub">mayor n° de registros</div></div>`;
+
+    // Top 3 delitos más comunes (todos los tipos, año a la fecha)
+    const _top3Map = {};
+    todosFiltrados.forEach(d => { _top3Map[d.nombre_delito] = (_top3Map[d.nombre_delito]||0) + (d.anno_fecha||0); });
+    const _top3 = Object.entries(_top3Map).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    const _top3El = document.getElementById('res-ej-leystop-top3');
+    if(_top3El) {
+      if(!_top3.length) {
+        _top3El.innerHTML = '';
+      } else {
+        const _medals = ['🥇','🥈','🥉'];
+        _top3El.innerHTML =
+          `<div style="font-size:10px;color:#78350f;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px">Top 3 delitos más frecuentes — año a la fecha</div>` +
+          `<div style="display:flex;gap:10px;flex-wrap:wrap">` +
+          _top3.map(([nombre, n], i) =>
+            `<div style="flex:1;min-width:155px;background:#fffbeb;border-radius:10px;padding:10px 14px;border-left:3px solid #d97706">` +
+            `<div style="font-size:10px;color:#92400e;font-weight:600;margin-bottom:4px">${_medals[i]} N°${i+1}</div>` +
+            `<div style="font-size:12px;font-weight:600;color:#1a1a1a;line-height:1.3">${nombre}</div>` +
+            `<div style="font-size:11px;color:#888;margin-top:3px">${n.toLocaleString('es-CL')} casos</div>` +
+            `</div>`
+          ).join('') +
+          `</div>`;
+      }
+    }
+
+    if(!DELITOS.tiene_datos) {
+      document.getElementById('res-ej-kpi-dmcs').innerHTML='<p style="color:#aaa;font-size:12px;padding:8px 0">Sin datos DMCS disponibles.</p>';
+      return;
+    }
+
+    const soloDmcs  = DELITOS.datos.filter(d => (d.es_dmcs===1||d.es_dmcs===true));
+    const filtrados = soloDmcs.filter(d => d.id_semana===ultiSem && (isNac || d.nombre_region===regKey));
+    const totalAnno = filtrados.reduce((a,d)=>a+(d.anno_fecha||0),0);
+    const totalAnt  = filtrados.reduce((a,d)=>a+(d.anno_fecha_ant||0),0);
+    const varD      = totalAnt>0 ? ((totalAnno-totalAnt)/totalAnt*100) : null;
+    const pctDmcs   = totalDelitoAnno>0 ? (totalAnno/totalDelitoAnno*100) : null;
+
+    // Tasa DMCS vía población estimada desde LeyStop
+    // pop_LY = casos_LY × 100000 / tasa_LY  →  tasa_DMCS = DMCS × 100000 / pop_LY = DMCS × tasa_LY / casos_LY
+    let tasaDmcs100k = null;
+    if(!isNac && tasaLY && totalDelLY) {
+      tasaDmcs100k = totalAnno * tasaLY / totalDelLY;
+    } else if(isNac) {
+      const popLYTotal = segData.reduce((s,r)=>r.tasa_registro&&r.casos_anno_fecha?s+(r.casos_anno_fecha*100000/r.tasa_registro):s, 0);
+      if(popLYTotal>0) tasaDmcs100k = totalAnno * 100000 / popLYTotal;
+    }
+
+    // Ranking tasa DMCS/100k por región
+    let rankTasaDmcs = null;
+    if(!isNac) {
+      const regRanking = SEG.regiones.map(rName => {
+        const sRow = segData.find(r=>r.nombre_region===rName);
+        if(!sRow||!sRow.tasa_registro||!sRow.casos_anno_fecha) return {r:rName,tasa:null};
+        const dmcsT = DELITOS.datos.filter(d=>(d.es_dmcs===1||d.es_dmcs===true)&&d.id_semana===ultiSem&&d.nombre_region===rName).reduce((a,d)=>a+(d.anno_fecha||0),0);
+        return {r:rName, tasa: dmcsT * sRow.tasa_registro / sRow.casos_anno_fecha};
+      }).filter(x=>x.tasa!==null).sort((a,b)=>b.tasa-a.tasa);
+      const pos = regRanking.findIndex(x=>x.r===regKey);
+      if(pos>=0) rankTasaDmcs = pos+1;
+    }
+    const rankStr = rankTasaDmcs ? `${rankTasaDmcs}° de ${SEG.regiones.length} regiones` : '';
+
+    document.getElementById('res-ej-kpi-dmcs').innerHTML =
+      `<div class="kpi rojo"><div class="kpi-label">DMCS año a la fecha</div><div class="kpi-value">${num(totalAnno)}</div><div class="kpi-sub">${isNac?'Total nacional':regKey}</div></div>`+
+      `<div class="kpi ${varD===null?'azul':varD<0?'verde':'rojo'}"><div class="kpi-label">Variación vs año anterior</div><div class="kpi-value">${fmtCambio(varD)}</div><div class="kpi-sub">año a la fecha</div></div>`+
+      `<div class="kpi azul"><div class="kpi-label">Tasa DMCS / 100k hab. (LeyStop)</div><div class="kpi-value">${tasaDmcs100k!==null?tasaDmcs100k.toFixed(1):'—'}</div><div class="kpi-sub">${rankStr||'año a la fecha'}</div></div>`+
+      `<div class="kpi azul"><div class="kpi-label">% del total de delitos</div><div class="kpi-value">${pctDmcs!==null?pctDmcs.toFixed(1)+'%':'—'}</div><div class="kpi-sub">son DMCS (año a la fecha)</div></div>`;
+
+    const sumaPorDelito = {}, sumaAntPorDelito = {};
+    filtrados.forEach(d => {
+      sumaPorDelito[d.nombre_delito]    = (sumaPorDelito[d.nombre_delito]||0)    + (d.anno_fecha||0);
+      sumaAntPorDelito[d.nombre_delito] = (sumaAntPorDelito[d.nombre_delito]||0) + (d.anno_fecha_ant||0);
+    });
+    const dmcsOrdenados = Object.entries(sumaPorDelito).sort((a,b)=>b[1]-a[1]);
+    const barLabels = dmcsOrdenados.map(([k])=>k.length>35?k.substring(0,35)+'…':k);
+    const barVals   = dmcsOrdenados.map(([,v])=>v);
+    const barValsAnt= dmcsOrdenados.map(([k])=>sumaAntPorDelito[k]||0);
+
+    destroyChart('res-ej-chart-dmcs-bar');
+    const ctxBar = document.getElementById('res-ej-chart-dmcs-bar');
+    if(ctxBar && dmcsOrdenados.length>0) {
+      charts['res-ej-chart-dmcs-bar'] = new Chart(ctxBar, {
+        type:'bar',
+        data:{
+          labels:barLabels,
+          datasets:[
+            {label:'2026 (año a la fecha)',data:barVals,backgroundColor:dmcsOrdenados.map((_,i)=>DMCS_COLORES[i%DMCS_COLORES.length]),borderRadius:3},
+            {label:'2025 (año a la fecha)',data:barValsAnt,backgroundColor:'rgba(156,163,175,.5)',borderRadius:3}
+          ]
+        },
+        plugins:[ChartDataLabels],
+        options:{
+          responsive:true,maintainAspectRatio:true,indexAxis:'y',
+          plugins:{
+            legend:{display:true,position:'bottom',labels:{font:{size:11},padding:10}},
+            tooltip:{mode:'index',intersect:false},
+            datalabels:{
+              display:ctx=>ctx.datasetIndex===0&&ctx.dataset.data[ctx.dataIndex]>0,
+              color:'#333',font:{size:9,weight:'600'},anchor:'end',align:'end',clamp:true,
+              formatter:v=>v>0?Math.round(v).toLocaleString('es-CL'):''
+            }
+          },
+          scales:{
+            x:{ticks:{font:{size:10}},grid:{color:'#f0f0f0'}},
+            y:{ticks:{font:{size:10},maxRotation:0}}
+          }
+        }
+      });
+    }
+
+    destroyChart('res-ej-chart-dmcs-pie');
+    const ctxPie = document.getElementById('res-ej-chart-dmcs-pie');
+    if(ctxPie && dmcsOrdenados.length>0) {
+      charts['res-ej-chart-dmcs-pie'] = new Chart(ctxPie, {
+        type:'doughnut',
+        data:{
+          labels:dmcsOrdenados.map(([k])=>k.length>30?k.substring(0,30)+'…':k),
+          datasets:[{data:barVals,backgroundColor:dmcsOrdenados.map((_,i)=>DMCS_COLORES[i%DMCS_COLORES.length]),borderWidth:2,borderColor:'#fff'}]
+        },
+        plugins:[ChartDataLabels],
+        options:{
+          responsive:true,maintainAspectRatio:true,
+          plugins:{
+            legend:{position:'right',labels:{font:{size:10},padding:8}},
+            tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${Math.round(ctx.parsed).toLocaleString('es-CL')}`}},
+            datalabels:{
+              display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,
+              color:'#fff',font:{size:9,weight:'700'},
+              formatter:(v,ctx)=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);return t>0?(v/t*100).toFixed(1)+'%':'';}
+            }
+          }
+        }
+      });
+    }
+  })();
+
+  // -- BLOQUE PIB + EMPLEO --
+  (function() {
+    const empKey = isNac ? '__NACIONAL__' : regKey;
+    const desde = document.getElementById('res-ej-pib-desde')?.value || '';
+    const hasta = document.getElementById('res-ej-pib-hasta')?.value || '';
+    const años  = PIB.años_enc_anual.filter(a=>(!desde||a>=desde)&&(!hasta||a<=hasta));
+    const ultAñoGlobal = PIB.años_enc_anual[PIB.años_enc_anual.length-1];
+
+    // Evolucion PIB - solo nivel, sin linea var%
+    const pibVals = años.map(a => isNac ? getPIBNacional('miles_enc',a) : getValPib('PIB','miles_enc',regKey,a));
+    destroyChart('res-ej-chart-pib');
+    const ctxP = document.getElementById('res-ej-chart-pib');
+    if(ctxP) {
+      charts['res-ej-chart-pib'] = new Chart(ctxP, {
+        type:'line',
+        data:{labels:años,datasets:[{label:'Vol. enc. (MM$ base 2018)',data:pibVals,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',tension:.3,fill:true,pointRadius:3,borderWidth:2}]},
+        options:{responsive:true,maintainAspectRatio:true,
+          plugins:{legend:{display:false},datalabels:{display:false},tooltip:{mode:'index',intersect:false}},
+          scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}},grid:{color:'#f0f0f0'},title:{display:true,text:'MM$ enc. 2018',font:{size:9}}}}
+        }
+      });
+    }
+
+    // PIB per capita (arriba de la tabla de sectores)
+    const censoRPib = resEjGetCenso(reg);
+    const popPib = censoRPib?.n_per || 0;
+    const pibUlt = isNac ? getPIBNacional('miles_enc',ultAñoGlobal) : getValPib('PIB','miles_enc',regKey,ultAñoGlobal);
+    // millones de pesos per capita = pibUlt (miles MM$) * 1000 / poblacion
+    const pibPerCapMill = (pibUlt !== null && popPib > 0) ? (pibUlt * 1000 / popPib) : null;
+    const pibPerCapStr  = pibPerCapMill !== null ? pibPerCapMill.toFixed(2).replace('.',',') + ' millones de pesos' : '—';
+    // Tabla Top5 sectores con % PIB nacional
+    const tablaAño = hasta || ultAñoGlobal;
+    const secAñoEl = document.getElementById('res-ej-sec-año');
+    if(secAñoEl) secAñoEl.textContent = tablaAño||'';
+    const pibNacTotal = getPIBNacional('miles_enc', tablaAño);
+    const kpiPerCapEl = document.getElementById('res-ej-kpi-percap');
+    if(isNac) {
+      if(kpiPerCapEl) kpiPerCapEl.innerHTML =
+        `<div class="kpi azul" style="padding:12px 16px"><div class="kpi-label">PIB per cápita ${ultAñoGlobal} (enc. base 2018)</div><div class="kpi-value" style="font-size:15px">${pibPerCapStr}</div><div class="kpi-sub">por habitante · Censo 2024</div></div>`;
+      document.getElementById('res-ej-tabla-sec').innerHTML =
+        '<tr><td colspan="3" style="padding:16px;color:#aaa;text-align:center;font-size:12px">Selecciona una región para ver los sectores productivos</td></tr>';
+    } else {
+      const pibTot = getValPib('PIB','miles_enc',regKey,tablaAño);
+      const varTot = calcVarEnc('PIB',regKey,tablaAño);
+      const pesNac = (pibTot!==null && pibNacTotal) ? (pibTot/pibNacTotal*100) : null;
+      const vfmt = v => v===null?'—':v>=0?`<span class="pos">+${v.toFixed(1)}%</span>`:`<span class="neg">${v.toFixed(1)}%</span>`;
+      if(kpiPerCapEl) kpiPerCapEl.innerHTML =
+        `<div class="kpi-grid" style="gap:8px;margin-bottom:4px">` +
+        `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">PIB per cápita ${tablaAño}</div><div class="kpi-value" style="font-size:14px">${pibPerCapStr}</div><div class="kpi-sub">por habitante · Censo 2024</div></div>` +
+        `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">PIB total ${tablaAño}</div><div class="kpi-value" style="font-size:14px">${pibTot!==null?(pibTot/1000).toFixed(2).replace('.',',') + ' bill.':'—'}</div><div class="kpi-sub">billones de pesos enc. base 2018</div></div>` +
+        `<div class="kpi ${varTot===null?'azul':varTot>=0?'verde':'rojo'}" style="padding:10px 14px"><div class="kpi-label">Var. % anual</div><div class="kpi-value">${vfmt(varTot)}</div><div class="kpi-sub">vs año anterior</div></div>` +
+        `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">% PIB nacional</div><div class="kpi-value">${pesNac!==null?pesNac.toFixed(1)+'%':'—'}</div><div class="kpi-sub">participación ${tablaAño}</div></div>` +
+        `</div>`;
+      const sectoresLista = PIB.sectores_enc_anual.filter(s=>s!=='PIB');
+      const secsRanked = sectoresLista.map(s=>({
+        nombre: DISP[s]||s,
+        valor:  getValPib(s,'miles_enc',regKey,tablaAño),
+        var_:   calcVarEnc(s,regKey,tablaAño),
+        pesNac: (()=>{ const v=getValPib(s,'miles_enc',regKey,tablaAño); return (v!==null&&pibNacTotal)?v/pibNacTotal*100:null; })()
+      })).filter(x=>x.valor!==null).sort((a,b)=>b.valor-a.valor).slice(0,5);
+      let tsec='<thead><tr><th>Sector</th><th style="min-width:90px">MM$ enc.</th><th style="min-width:55px">Var. %</th><th style="min-width:65px">% PIB nac.</th></tr></thead><tbody>';
+      secsRanked.forEach(s=>{
+        tsec+=`<tr><td style="text-align:left;font-weight:500">${s.nombre}</td><td>${Math.round(s.valor).toLocaleString('es-CL')}</td><td>${vfmt(s.var_)}</td><td>${s.pesNac!==null?s.pesNac.toFixed(2)+'%':'—'}</td></tr>`;
+      });
+      tsec+='</tbody>';
+      document.getElementById('res-ej-tabla-sec').innerHTML=tsec;
+    }
+
+    // Empleo - regional + nacional
+    const dEmp = EMP.datos[empKey];
+    const dNac = EMP.datos['__NACIONAL__'];
+    if(dEmp) {
+      const ps=dEmp.periodos, ultIdx=ps.length-1, ultPer=ps[ultIdx];
+      const ultTasa=dEmp.tasa[ultIdx], ultTm=dEmp.tasa_tm?dEmp.tasa_tm[ultIdx]:null;
+      const varAnualTasa=(ultIdx>=12&&dEmp.tasa[ultIdx-12]!==null&&ultTasa!==null)?parseFloat((ultTasa-dEmp.tasa[ultIdx-12]).toFixed(2)):null;
+      const varAnualTm=(dEmp.tasa_tm&&ultIdx>=12&&dEmp.tasa_tm[ultIdx-12]!==null&&ultTm!==null)?parseFloat((ultTm-dEmp.tasa_tm[ultIdx-12]).toFixed(2)):null;
+      const nacIdx=dNac?dNac.periodos.indexOf(ultPer):-1;
+      const nacTasa=(dNac&&nacIdx>=0)?dNac.tasa[nacIdx]:null;
+      const nacTm=(dNac&&dNac.tasa_tm&&nacIdx>=0)?dNac.tasa_tm[nacIdx]:null;
+
+      const ftVals = dEmp.ft ? [dEmp.ft[ultIdx], ultIdx>=1?dEmp.ft[ultIdx-1]:null, ultIdx>=2?dEmp.ft[ultIdx-2]:null].filter(v=>v!==null) : [];
+      const ftProm = ftVals.length ? Math.round(ftVals.reduce((a,b)=>a+b,0)/ftVals.length) : null;
+      document.getElementById('res-ej-kpi-emp').innerHTML=
+        `<div class="kpi ${ultTm!==null&&ultTm>8?'rojo':ultTm!==null&&ultTm>6?'amber':'verde'}"><div class="kpi-label">Tasa trim. móvil</div><div class="kpi-value">${fmtEmpNum(ultTm)}%</div><div class="kpi-sub">${isNac?'Nacional':regKey}</div></div>`+
+        `<div class="kpi azul"><div class="kpi-label">Tasa desoc. 🇨🇱 nacional</div><div class="kpi-value">${fmtEmpNum(nacTasa)}%</div><div class="kpi-sub">${fmtEmpPer(ultPer)}</div></div>`+
+        `<div class="kpi azul"><div class="kpi-label">Tasa trim. móvil 🇨🇱 nacional</div><div class="kpi-value">${fmtEmpNum(nacTm)}%</div><div class="kpi-sub">${fmtEmpPer(ultPer)}</div></div>`+
+        `<div class="kpi ${varAnualTm===null?'':varAnualTm>0?'rojo':'verde'}"><div class="kpi-label">Var. anual trim. móvil (p.p.)</div><div class="kpi-value">${varAnualTm!==null?(varAnualTm>0?'+':'')+varAnualTm.toFixed(1):'—'}</div><div class="kpi-sub">vs mismo mes año ant.</div></div>`+
+        `<div class="kpi ${varAnualTasa===null?'':varAnualTasa>0?'rojo':'verde'}"><div class="kpi-label">Var. anual tasa simple (p.p.)</div><div class="kpi-value">${varAnualTasa!==null?(varAnualTasa>0?'+':'')+varAnualTasa.toFixed(1):'—'}</div><div class="kpi-sub">vs mismo mes año ant.</div></div>`+
+        `<div class="kpi azul"><div class="kpi-label">Fuerza de trabajo</div><div class="kpi-value">${ftProm!==null?ftProm.toLocaleString('es-CL'):'—'}</div><div class="kpi-sub">miles · prom. últ. 3 meses</div></div>`;
+
+      const empDesde = document.getElementById('res-ej-emp-desde')?.value || '';
+      const empHasta = document.getElementById('res-ej-emp-hasta')?.value || '';
+      const desdeYr=empDesde?parseInt(empDesde):null, hastaYr=empHasta?parseInt(empHasta):null;
+      const filtPs=ps.filter(p=>{const yr=parseInt(p.substring(0,4));return(!desdeYr||yr>=desdeYr)&&(!hastaYr||yr<=hastaYr);});
+      const filtTasa=filtPs.map(p=>{const i=ps.indexOf(p);return dEmp.tasa[i];});
+      const filtTm  =filtPs.map(p=>{const i=ps.indexOf(p);return dEmp.tasa_tm?dEmp.tasa_tm[i]:null;});
+      destroyChart('res-ej-chart-emp');
+      const ctxE=document.getElementById('res-ej-chart-emp');
+      if(ctxE){
+        charts['res-ej-chart-emp']=new Chart(ctxE,{
+          type:'line',
+          data:{labels:filtPs.map(p=>fmtEmpPer(p)),datasets:[
+            {label:'Tasa desocupación (%)',data:filtTasa,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.06)',tension:.3,fill:true,pointRadius:1,borderWidth:2},
+            {label:'Tasa trimestre móvil (%)',data:filtTm,borderColor:'#059669',backgroundColor:'transparent',tension:.3,fill:false,pointRadius:1.5,borderWidth:2.5}
+          ]},
+          options:{responsive:true,maintainAspectRatio:true,
+            plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11}}},datalabels:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!==null?c.parsed.y.toFixed(1)+'%':'—'}`}}},
+            scales:{x:{ticks:{font:{size:9},maxTicksLimit:24,maxRotation:45}},y:{ticks:{font:{size:10},callback:v=>v+'%'},grid:{color:'#f0f0f0'}}}
+          }
+        });
+      }
+    } else {
+      document.getElementById('res-ej-kpi-emp').innerHTML='<p style="color:#aaa;font-size:12px">Sin datos de empleo.</p>';
+      destroyChart('res-ej-chart-emp');
+    }
+  })();
+
+  // -- BLOQUE CENSO --
+  (function() {
+    const censoR  = resEjGetCenso(reg);
+    const pop     = censoR.n_per;
+    const nacPop  = CENSO_NAC.n_per;
+    const pctPobNac  = nacPop>0 ? (pop/nacPop*100) : null;
+    const pctOrig    = pop>0 ? censoR.n_pueblos_orig/pop*100 : null;
+    const pctImmig   = pop>0 ? censoR.n_inmigrantes/pop*100 : null;
+    const nacPctOrig = nacPop>0 ? CENSO_NAC.n_pueblos_orig/nacPop*100 : null;
+    const nacPctImmig= nacPop>0 ? CENSO_NAC.n_inmigrantes/nacPop*100 : null;
+    const nacEdad    = CENSO_NAC.prom_edad;
+
+    const allReg = CENSO_ORDEN_NS.map(cod=>CENSO.datos[String(cod)]);
+    const sortedImmig = [...allReg].sort((a,b)=>(b.n_inmigrantes/b.n_per)-(a.n_inmigrantes/a.n_per));
+    const sortedOrig  = [...allReg].sort((a,b)=>(b.n_pueblos_orig/b.n_per)-(a.n_pueblos_orig/a.n_per));
+    const sortedEdad  = [...allReg].sort((a,b)=>b.prom_edad-a.prom_edad);
+    const sortedPob   = [...allReg].sort((a,b)=>b.n_per-a.n_per);
+    const rk = (sorted,nombre) => { const i=sorted.findIndex(x=>x.nombre===nombre); return i>=0?i+1:null; };
+    const nombre = censoR.nombre||'Nacional';
+
+    const kpiVsNac = (label, regVal, nacVal, regSub, nacSub, rkN, cls='') =>
+      `<div class="kpi ${cls}" style="min-width:185px">
+        <div class="kpi-label">${label}</div>
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-top:4px">
+          <div style="flex:1"><div class="kpi-value" style="font-size:18px">${regVal}</div><div class="kpi-sub">${regSub}</div></div>
+          <div style="text-align:right;border-left:1px solid #f0f0f0;padding-left:10px">
+            <div style="font-size:13px;font-weight:600;color:#888">vs ${nacVal}</div>
+            <div style="font-size:10px;color:#aaa">${nacSub}</div>
+          </div>
+        </div>
+        ${rkN?`<div style="font-size:10px;color:#64748b;margin-top:6px;padding-top:5px;border-top:1px solid #f0f0f0">🏅 ${rkN}</div>`:''}
+      </div>`;
+
+    let censoHtml = '';
+    const rkPob = isNac ? null : rk(sortedPob, nombre);
+    censoHtml += `<div class="kpi azul">
+      <div class="kpi-label">Población total</div>
+      <div class="kpi-value">${fmtN(pop)}</div>
+      <div class="kpi-sub">${pctPobNac!==null?fmtP(pctPobNac)+' de la población nacional':''}</div>
+      ${rkPob?`<div style="font-size:10px;color:#64748b;margin-top:6px;padding-top:5px;border-top:1px solid #f0f0f0">🏅 ${rkPob}° de 16 regiones (por tamaño)</div>`:''}
+    </div>`;
+
+    if(isNac) {
+      censoHtml +=
+        kpiCenso('Pueblos originarios', nacPctOrig!==null?fmtP(nacPctOrig):'—', fmtN(CENSO_NAC.n_pueblos_orig)+' personas') +
+        kpiCenso('Inmigrantes', nacPctImmig!==null?fmtP(nacPctImmig):'—', fmtN(CENSO_NAC.n_inmigrantes)+' personas') +
+        kpiCenso('Edad promedio', fmtD(nacEdad), 'años');
+    } else {
+      const rkImmig = rk(sortedImmig, nombre);
+      const rkOrig  = rk(sortedOrig, nombre);
+      const rkEdad  = rk(sortedEdad, nombre);
+      censoHtml += kpiVsNac('Inmigrantes',
+        pctImmig!==null?fmtP(pctImmig):'—', nacPctImmig!==null?fmtP(nacPctImmig):'',
+        fmtN(censoR.n_inmigrantes)+' personas', fmtN(CENSO_NAC.n_inmigrantes)+' (nacional)',
+        rkImmig?rkImmig+'° de 16 regiones':'', pctImmig!==null&&pctImmig>10?'amber':'');
+      censoHtml += kpiVsNac('Pueblos originarios',
+        pctOrig!==null?fmtP(pctOrig):'—', nacPctOrig!==null?fmtP(nacPctOrig):'',
+        fmtN(censoR.n_pueblos_orig)+' personas', fmtN(CENSO_NAC.n_pueblos_orig)+' (nacional)',
+        rkOrig?rkOrig+'° de 16 regiones':'');
+      censoHtml += kpiVsNac('Edad promedio',
+        fmtD(censoR.prom_edad)+' años', nacEdad!==null?fmtD(nacEdad)+' años':'',
+        nombre, 'promedio nacional',
+        rkEdad?rkEdad+'° de 16 regiones (mayor a menor)':'');
+    }
+    document.getElementById('res-ej-kpi-censo').innerHTML = censoHtml;
+  })();
 }
 </script>
 
