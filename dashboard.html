@@ -118,8 +118,8 @@ table.dt tr.censo-nac-row td{background:#f0fdf4!important;font-weight:700;color:
 
 <!-- ══ NAVEGACIÓN DE MÓDULOS ══ -->
 <nav class="mod-nav">
-  <div class="mod-btn" onclick="setModulo('resumen',this)">📋 Resumen</div>
-  <div class="mod-btn active" onclick="setModulo('seguridad',this)">🛡 Seguridad Pública</div>
+  <div class="mod-btn active" onclick="setModulo('resumen',this)">📋 Resumen</div>
+  <div class="mod-btn" onclick="setModulo('seguridad',this)">🛡 Seguridad Pública</div>
   <div class="mod-btn" onclick="setModulo('pib',this)">📈 PIB Regional</div>
   <div class="mod-btn" onclick="setModulo('censo',this)">🏘 Censo 2024</div>
   <div class="mod-btn" onclick="setModulo('empleo',this)">💼 Empleo</div>
@@ -129,7 +129,7 @@ table.dt tr.censo-nac-row td{background:#f0fdf4!important;font-weight:700;color:
 <!-- ══════════════════════════════════════════════════════════════
      MÓDULO: SEGURIDAD
 ══════════════════════════════════════════════════════════════ -->
-<div class="modulo active" id="mod-seguridad">
+<div class="modulo" id="mod-seguridad">
   <div class="tabs">
     <div class="tab-seg active" onclick="setTabSeg('resumen',this)">Resumen por región</div>
     <div class="tab-seg" onclick="setTabSeg('evolucion',this)">Evolución temporal</div>
@@ -2517,8 +2517,9 @@ window.onload = function() {
   // CASEN 2024
   initCasen();
 
-  // Resumen Ejecutivo — poblar selects
+  // Resumen Ejecutivo — poblar selects y renderizar como pestaña inicial
   poblarSelectsResumenEjecutivo();
+  renderResumenEjecutivo();
 
   // Empleo — render inicial (con setTimeout para asegurar que Chart.js esté listo)
   setTimeout(function(){
@@ -2791,7 +2792,7 @@ window.onload = function() {
 <!-- ══════════════════════════════════════════════════════════════
      MÓDULO: RESUMEN EJECUTIVO
 ══════════════════════════════════════════════════════════════ -->
-<div class="modulo" id="mod-resumen">
+<div class="modulo active" id="mod-resumen">
   <div class="region-bar">
     <label>Región:</label>
     <select id="res-ej-region" onchange="renderResumenEjecutivo()">
