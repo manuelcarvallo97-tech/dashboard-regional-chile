@@ -3389,22 +3389,29 @@ function renderResumenEjecutivo() {
     // millones de pesos per capita = pibUlt (miles MM$) * 1000 / poblacion
     const pibPerCapMill = (pibUlt !== null && popPib > 0) ? (pibUlt * 1000 / popPib) : null;
     const pibPerCapStr  = pibPerCapMill !== null ? pibPerCapMill.toFixed(2).replace('.',',') + ' millones de pesos' : '—';
-    const kpiPerCapEl   = document.getElementById('res-ej-kpi-percap');
-    if(kpiPerCapEl) kpiPerCapEl.innerHTML =
-      `<div class="kpi azul" style="padding:12px 16px"><div class="kpi-label">PIB per cápita ${ultAñoGlobal} (enc. base 2018)</div><div class="kpi-value" style="font-size:15px">${pibPerCapStr}</div><div class="kpi-sub">por habitante · Censo 2024</div></div>`;
-
-    // Tabla Top5 sectores: total PIB + top 5 con % PIB nacional
+    // Tabla Top5 sectores con % PIB nacional
     const tablaAño = hasta || ultAñoGlobal;
     const secAñoEl = document.getElementById('res-ej-sec-año');
     if(secAñoEl) secAñoEl.textContent = tablaAño||'';
     const pibNacTotal = getPIBNacional('miles_enc', tablaAño);
+    const kpiPerCapEl = document.getElementById('res-ej-kpi-percap');
     if(isNac) {
+      if(kpiPerCapEl) kpiPerCapEl.innerHTML =
+        `<div class="kpi azul" style="padding:12px 16px"><div class="kpi-label">PIB per cápita ${ultAñoGlobal} (enc. base 2018)</div><div class="kpi-value" style="font-size:15px">${pibPerCapStr}</div><div class="kpi-sub">por habitante · Censo 2024</div></div>`;
       document.getElementById('res-ej-tabla-sec').innerHTML =
-        '<tr><td colspan="4" style="padding:16px;color:#aaa;text-align:center;font-size:12px">Selecciona una región para ver los sectores productivos</td></tr>';
+        '<tr><td colspan="3" style="padding:16px;color:#aaa;text-align:center;font-size:12px">Selecciona una región para ver los sectores productivos</td></tr>';
     } else {
       const pibTot = getValPib('PIB','miles_enc',regKey,tablaAño);
       const varTot = calcVarEnc('PIB',regKey,tablaAño);
       const pesNac = (pibTot!==null && pibNacTotal) ? (pibTot/pibNacTotal*100) : null;
+      const vfmt = v => v===null?'—':v>=0?`<span class="pos">+${v.toFixed(1)}%</span>`:`<span class="neg">${v.toFixed(1)}%</span>`;
+      if(kpiPerCapEl) kpiPerCapEl.innerHTML =
+        `<div class="kpi-grid" style="gap:8px;margin-bottom:4px">` +
+        `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">PIB per cápita ${tablaAño}</div><div class="kpi-value" style="font-size:14px">${pibPerCapStr}</div><div class="kpi-sub">por habitante · Censo 2024</div></div>` +
+        `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">PIB total ${tablaAño} (MM$ enc.)</div><div class="kpi-value" style="font-size:14px">${pibTot!==null?Math.round(pibTot).toLocaleString('es-CL'):'—'}</div><div class="kpi-sub">miles de mill. base 2018</div></div>` +
+        `<div class="kpi ${varTot===null?'azul':varTot>=0?'verde':'rojo'}" style="padding:10px 14px"><div class="kpi-label">Var. % anual</div><div class="kpi-value">${vfmt(varTot)}</div><div class="kpi-sub">vs año anterior</div></div>` +
+        `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">% PIB nacional</div><div class="kpi-value">${pesNac!==null?pesNac.toFixed(1)+'%':'—'}</div><div class="kpi-sub">participación ${tablaAño}</div></div>` +
+        `</div>`;
       const sectoresLista = PIB.sectores_enc_anual.filter(s=>s!=='PIB');
       const secsRanked = sectoresLista.map(s=>({
         nombre: DISP[s]||s,
@@ -3412,9 +3419,7 @@ function renderResumenEjecutivo() {
         var_:   calcVarEnc(s,regKey,tablaAño),
         pesNac: (()=>{ const v=getValPib(s,'miles_enc',regKey,tablaAño); return (v!==null&&pibNacTotal)?v/pibNacTotal*100:null; })()
       })).filter(x=>x.valor!==null).sort((a,b)=>b.valor-a.valor).slice(0,5);
-      const vfmt = v => v===null?'—':v>=0?`<span class="pos">+${v.toFixed(1)}%</span>`:`<span class="neg">${v.toFixed(1)}%</span>`;
       let tsec='<thead><tr><th>Sector</th><th style="min-width:90px">MM$ enc.</th><th style="min-width:55px">Var. %</th><th style="min-width:65px">% PIB nac.</th></tr></thead><tbody>';
-      tsec+=`<tr style="background:#eff6ff;border-left:4px solid #2563eb"><td style="text-align:left;font-weight:700;color:#2563eb">PIB Regional Total</td><td style="font-weight:700">${pibTot!==null?Math.round(pibTot).toLocaleString('es-CL'):'—'}</td><td>${vfmt(varTot)}</td><td style="font-weight:700">${pesNac!==null?pesNac.toFixed(1)+'%':'—'}</td></tr>`;
       secsRanked.forEach(s=>{
         tsec+=`<tr><td style="text-align:left;font-weight:500">${s.nombre}</td><td>${Math.round(s.valor).toLocaleString('es-CL')}</td><td>${vfmt(s.var_)}</td><td>${s.pesNac!==null?s.pesNac.toFixed(2)+'%':'—'}</td></tr>`;
       });
