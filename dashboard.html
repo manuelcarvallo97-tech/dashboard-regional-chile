@@ -3439,13 +3439,15 @@ function renderResumenEjecutivo() {
       const nacTasa=(dNac&&nacIdx>=0)?dNac.tasa[nacIdx]:null;
       const nacTm=(dNac&&dNac.tasa_tm&&nacIdx>=0)?dNac.tasa_tm[nacIdx]:null;
 
+      const ftVals = dEmp.ft ? [dEmp.ft[ultIdx], ultIdx>=1?dEmp.ft[ultIdx-1]:null, ultIdx>=2?dEmp.ft[ultIdx-2]:null].filter(v=>v!==null) : [];
+      const ftProm = ftVals.length ? Math.round(ftVals.reduce((a,b)=>a+b,0)/ftVals.length) : null;
       document.getElementById('res-ej-kpi-emp').innerHTML=
-        `<div class="kpi ${ultTasa!==null&&ultTasa>8?'rojo':ultTasa!==null&&ultTasa>6?'amber':'verde'}"><div class="kpi-label">Tasa desocupación</div><div class="kpi-value">${fmtEmpNum(ultTasa)}%</div><div class="kpi-sub">${isNac?'Nacional':regKey} · ${fmtEmpPer(ultPer)}</div></div>`+
         `<div class="kpi ${ultTm!==null&&ultTm>8?'rojo':ultTm!==null&&ultTm>6?'amber':'verde'}"><div class="kpi-label">Tasa trim. móvil</div><div class="kpi-value">${fmtEmpNum(ultTm)}%</div><div class="kpi-sub">${isNac?'Nacional':regKey}</div></div>`+
         `<div class="kpi azul"><div class="kpi-label">Tasa desoc. 🇨🇱 nacional</div><div class="kpi-value">${fmtEmpNum(nacTasa)}%</div><div class="kpi-sub">${fmtEmpPer(ultPer)}</div></div>`+
         `<div class="kpi azul"><div class="kpi-label">Tasa trim. móvil 🇨🇱 nacional</div><div class="kpi-value">${fmtEmpNum(nacTm)}%</div><div class="kpi-sub">${fmtEmpPer(ultPer)}</div></div>`+
         `<div class="kpi ${varAnualTm===null?'':varAnualTm>0?'rojo':'verde'}"><div class="kpi-label">Var. anual trim. móvil (p.p.)</div><div class="kpi-value">${varAnualTm!==null?(varAnualTm>0?'+':'')+varAnualTm.toFixed(1):'—'}</div><div class="kpi-sub">vs mismo mes año ant.</div></div>`+
-        `<div class="kpi ${varAnualTasa===null?'':varAnualTasa>0?'rojo':'verde'}"><div class="kpi-label">Var. anual tasa simple (p.p.)</div><div class="kpi-value">${varAnualTasa!==null?(varAnualTasa>0?'+':'')+varAnualTasa.toFixed(1):'—'}</div><div class="kpi-sub">vs mismo mes año ant.</div></div>`;
+        `<div class="kpi ${varAnualTasa===null?'':varAnualTasa>0?'rojo':'verde'}"><div class="kpi-label">Var. anual tasa simple (p.p.)</div><div class="kpi-value">${varAnualTasa!==null?(varAnualTasa>0?'+':'')+varAnualTasa.toFixed(1):'—'}</div><div class="kpi-sub">vs mismo mes año ant.</div></div>`+
+        `<div class="kpi azul"><div class="kpi-label">Fuerza de trabajo</div><div class="kpi-value">${ftProm!==null?ftProm.toLocaleString('es-CL'):'—'}</div><div class="kpi-sub">miles · prom. últ. 3 meses</div></div>`;
 
       const empDesde = document.getElementById('res-ej-emp-desde')?.value || '';
       const empHasta = document.getElementById('res-ej-emp-hasta')?.value || '';
