@@ -282,6 +282,26 @@ regiones_emp = sorted(_regs_raw, key=lambda r: next((i for i,x in enumerate(ORDE
 periodos_emp = sorted(df_emp['periodo'].unique().tolist())
 años_emp = sorted(set(p[:4] for p in periodos_emp))
 
+def calc_tasa_tm(desocupados, ft):
+    """Tasa de desocupación trimestre móvil (estándar INE): para cada mes,
+    suma de desocupados de ese mes + los dos anteriores / suma de fuerza de
+    trabajo de los mismos tres meses, *100. Los dos primeros meses (sin
+    trimestre completo) quedan en None."""
+    out = []
+    n = len(desocupados)
+    for i in range(n):
+        if i < 2:
+            out.append(None)
+            continue
+        des3 = desocupados[i-2:i+1]
+        ft3 = ft[i-2:i+1]
+        if any(v is None or (isinstance(v, float) and math.isnan(v)) for v in des3 + ft3):
+            out.append(None)
+            continue
+        sft = sum(ft3)
+        out.append(round(sum(des3) / sft * 100, 2) if sft else None)
+    return out
+
 datos_emp = {}
 for reg in regiones_emp:
     sub_t = df_emp[(df_emp['nombre_region']==reg)&(df_emp['indicador']=='Tasa de desocupación')].sort_values('periodo')
@@ -294,6 +314,7 @@ for reg in regiones_emp:
     datos_emp[reg] = {
         'periodos':    merged['periodo'].tolist(),
         'tasa':        [clean_emp(v) for v in merged['tasa'].tolist()],
+        'tasa_tm':     calc_tasa_tm(merged['desocupados'].tolist(), merged['ft'].tolist()),
         'ocupados':    [clean_emp(v) for v in merged['ocupados'].tolist()],
         'ft':          [clean_emp(v) for v in merged['ft'].tolist()],
         'desocupados': [clean_emp(v) for v in merged['desocupados'].tolist()],
@@ -322,6 +343,7 @@ _nac['tasa'] = (_nac['desocupados'] / _nac['ft'] * 100).round(2)
 datos_emp['__NACIONAL__'] = {
     'periodos':    _nac['periodo'].tolist(),
     'tasa':        [clean_emp(v) for v in _nac['tasa'].tolist()],
+    'tasa_tm':     calc_tasa_tm(_nac['desocupados'].tolist(), _nac['ft'].tolist()),
     'ocupados':    [clean_emp(v) for v in _nac['ocupados'].tolist()],
     'ft':          [clean_emp(v) for v in _nac['ft'].tolist()],
     'desocupados': [clean_emp(v) for v in _nac['desocupados'].tolist()],
@@ -428,17 +450,21 @@ function fmtEmpMiles(v){return v===null||v===undefined?'—':Math.round(v).toLoc
 function renderEmpResumen() {
   const per = document.getElementById('emp-res-periodo').value;
   const ind = document.getElementById('emp-res-ind').value;
-  const indL = {tasa:'Tasa de desocupación (%)',ocupados:'Ocupados (miles)',ft:'Fuerza de trabajo* (miles)',desocupados:'Desocupados (miles)'};
+  const indL = {tasa:'Tasa de desocupación (%)',tasa_tm:'Tasa desocup. trimestre móvil (%)',ocupados:'Ocupados (miles)',ft:'Fuerza de trabajo* (miles)',desocupados:'Desocupados (miles)'};
+  const isRate = ind==='tasa'||ind==='tasa_tm';
   document.getElementById('emp-res-chart-title').textContent = indL[ind]+' — '+fmtEmpPer(per);
 
   // Valores nacionales (ponderados correctamente)
   const nacTasa = empGetVal('__NACIONAL__',per,'tasa');
+  const nacTm   = empGetVal('__NACIONAL__',per,'tasa_tm');
   const nacOcup = empGetVal('__NACIONAL__',per,'ocupados');
   const nacFt   = empGetVal('__NACIONAL__',per,'ft');
   const nacDes  = empGetVal('__NACIONAL__',per,'desocupados');
+  const nacRate = ind==='tasa_tm'?nacTm:nacTasa;
 
   const vals   = EMP.regiones.map(r=>empGetVal(r,per,ind));
   const tasas  = EMP.regiones.map(r=>empGetVal(r,per,'tasa'));
+  const tms    = EMP.regiones.map(r=>empGetVal(r,per,'tasa_tm'));
   const ocups  = EMP.regiones.map(r=>empGetVal(r,per,'ocupados'));
   const fts    = EMP.regiones.map(r=>empGetVal(r,per,'ft'));
   const desocs = EMP.regiones.map(r=>empGetVal(r,per,'desocupados'));
@@ -452,18 +478,18 @@ function renderEmpResumen() {
     <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #f87171"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Total desocupados</div><div class="kpi-value">${fmtEmpMiles(nacDes)}</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Miles a nivel nacional</div></div>
     <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #34d399"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Fuerza de trabajo</div><div class="kpi-value">${fmtEmpMiles(nacFt)}</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Miles a nivel nacional</div></div>
     <div class="kpi" style="background:#1a3a5c;color:white;border-left:4px solid #fbbf24"><div class="kpi-label" style="color:rgba(255,255,255,.7)">🇨🇱 Tasa desocup. nacional</div><div class="kpi-value">${fmtEmpNum(nacTasa)}%</div><div class="kpi-sub" style="color:rgba(255,255,255,.6)">Ponderada por FT — ${fmtEmpPer(per)}</div></div>
-    <div class="kpi rojo"><div class="kpi-label">Mayor desocupación</div><div class="kpi-value">${ind==='tasa'?fmtEmpNum(maxV):fmtEmpMiles(maxV)}</div><div class="kpi-sub">${rMax||''}</div></div>
-    <div class="kpi verde"><div class="kpi-label">Menor desocupación</div><div class="kpi-value">${ind==='tasa'?fmtEmpNum(minV):fmtEmpMiles(minV)}</div><div class="kpi-sub">${rMin||''}</div></div>`;
+    <div class="kpi rojo"><div class="kpi-label">Mayor desocupación</div><div class="kpi-value">${isRate?fmtEmpNum(maxV):fmtEmpMiles(maxV)}</div><div class="kpi-sub">${rMax||''}</div></div>
+    <div class="kpi verde"><div class="kpi-label">Menor desocupación</div><div class="kpi-value">${isRate?fmtEmpNum(minV):fmtEmpMiles(minV)}</div><div class="kpi-sub">${rMin||''}</div></div>`;
 
   const sorted = EMP.regiones.map((r,i)=>{return{r,v:vals[i],t:tasas[i],o:ocups[i],f:fts[i],d:desocs[i]}}).filter(x=>x.v!==null).sort((a,b)=>b.v-a.v);
-  const bg = sorted.map(x=>ind==='tasa'?(x.v>nacTasa?'rgba(220,38,38,.8)':x.v>6?'rgba(217,119,6,.8)':'rgba(22,163,74,.8)'):'rgba(37,99,235,.75)');
-  const nacVal = ind==='tasa'?nacTasa:ind==='ocupados'?nacOcup:ind==='ft'?nacFt:nacDes;
+  const bg = sorted.map(x=>isRate?(nacRate!==null&&x.v>nacRate?'rgba(220,38,38,.8)':x.v>6?'rgba(217,119,6,.8)':'rgba(22,163,74,.8)'):'rgba(37,99,235,.75)');
+  const nacVal = ind==='tasa'?nacTasa:ind==='tasa_tm'?nacTm:ind==='ocupados'?nacOcup:ind==='ft'?nacFt:nacDes;
   const chartLabels = sorted.map(x=>x.r.replace('Metropolitana de Santiago','RM'));
   const datasets = [{label:indL[ind],data:sorted.map(x=>x.v),backgroundColor:bg,borderRadius:3}];
-  if(ind==='tasa' && nacTasa!==null) {
+  if(isRate && nacRate!==null) {
     datasets.push({
-      label:'Promedio nacional ('+fmtEmpNum(nacTasa)+'%)',
-      data:sorted.map(()=>nacTasa),
+      label:'Promedio nacional ('+fmtEmpNum(nacRate)+'%)',
+      data:sorted.map(()=>nacRate),
       type:'line',
       borderColor:'rgba(251,191,36,1)',
       borderWidth:2,
@@ -483,26 +509,28 @@ function renderEmpResumen() {
   let thead=`<thead><tr>
     <th>Región</th>
     <th onclick="sortDT('emp-tabla-resumen',1)">Tasa desocup. %</th>
-    <th onclick="sortDT('emp-tabla-resumen',2)">Ocupados (miles)</th>
-    <th onclick="sortDT('emp-tabla-resumen',3)">Desocupados (miles)</th>
-    <th onclick="sortDT('emp-tabla-resumen',4)">Fuerza de trabajo*</th>
+    <th onclick="sortDT('emp-tabla-resumen',2)">Tasa trim. móvil %</th>
+    <th onclick="sortDT('emp-tabla-resumen',3)">Ocupados (miles)</th>
+    <th onclick="sortDT('emp-tabla-resumen',4)">Desocupados (miles)</th>
+    <th onclick="sortDT('emp-tabla-resumen',5)">Fuerza de trabajo*</th>
   </tr></thead>`;
   let tbody='<tbody>';
   // Fila nacional integrada primero (mismo ancho de columnas, diferenciada con color de fondo y borde)
   tbody+=`<tr style="background:#e8f0fe;font-weight:700;border-left:4px solid #1a3a5c;">
     <td style="color:#1a3a5c">🇨🇱 Nacional (promedio ponderado)</td>
     <td style="color:#1a3a5c">${fmtEmpNum(nacTasa)}%</td>
+    <td style="color:#1a3a5c">${fmtEmpNum(nacTm)}%</td>
     <td style="color:#1a3a5c">${fmtEmpMiles(nacOcup)}</td>
     <td style="color:#dc2626;font-weight:700">${fmtEmpMiles(nacDes)}</td>
     <td style="color:#1a3a5c">${fmtEmpMiles(nacFt)}</td>
   </tr>`;
   EMP.regiones.forEach((r,i)=>{
-    const t=tasas[i],o=ocups[i],f=fts[i],d=desocs[i];
+    const t=tasas[i],tm=tms[i],o=ocups[i],f=fts[i],d=desocs[i];
     const sobreprom = nacTasa!==null&&t!==null&&t>nacTasa;
     const muybajo  = nacTasa!==null&&t!==null&&t<(nacTasa-2);
     const tasaColor = sobreprom?'color:#dc2626;font-weight:600':muybajo?'color:#16a34a;font-weight:600':'';
     const rowBg = sobreprom?'background:#fff5f5':muybajo?'background:#f0fff4':'';
-    tbody+=`<tr style="${rowBg}"><td>${r}</td><td style="${tasaColor}">${fmtEmpNum(t)}%</td><td>${fmtEmpMiles(o)}</td><td style="${sobreprom?'color:#dc2626':''}">${fmtEmpMiles(d)}</td><td>${fmtEmpMiles(f)}</td></tr>`;
+    tbody+=`<tr style="${rowBg}"><td>${r}</td><td style="${tasaColor}">${fmtEmpNum(t)}%</td><td>${fmtEmpNum(tm)}%</td><td>${fmtEmpMiles(o)}</td><td style="${sobreprom?'color:#dc2626':''}">${fmtEmpMiles(d)}</td><td>${fmtEmpMiles(f)}</td></tr>`;
   });
   document.getElementById('emp-tabla-resumen').innerHTML=thead+tbody+'</tbody>';
 }
@@ -510,6 +538,8 @@ function renderEmpResumen() {
 function renderEmpEvolucion() {
   const desde = document.getElementById('emp-evo-desde').value;
   const hasta = document.getElementById('emp-evo-hasta').value;
+  const ind1 = document.getElementById('emp-evo-ind1').value;
+  const ind1L = ind1==='tasa_tm'?'Tasa desocup. trimestre móvil (%)':'Tasa de desocupación (%)';
   const selEls = document.querySelectorAll('#emp-evo-region-list input[type=checkbox]:checked');
   const selRegs = Array.from(selEls).map(el=>el.value);
   if(!selRegs.length) return;
@@ -538,7 +568,7 @@ function renderEmpEvolucion() {
   const dFirst = EMP.datos[firstReg==='__NACIONAL__'?'__NACIONAL__':firstReg];
   const psFirst = dFirst ? dFirst.periodos.filter(p=>p>=desde+'-01'&&p<=hasta+'-12') : [];
   const iiFirst = psFirst.map(p=>dFirst.periodos.indexOf(p));
-  const tasasFirst = iiFirst.map(i=>dFirst.tasa[i]);
+  const tasasFirst = iiFirst.map(i=>dFirst[ind1][i]);
   const noNullFirst = tasasFirst.filter(v=>v!==null);
   const ult=noNullFirst[noNullFirst.length-1];
   const prom=noNullFirst.length?noNullFirst.reduce((a,b)=>a+b,0)/noNullFirst.length:null;
@@ -553,7 +583,7 @@ function renderEmpEvolucion() {
     <div class="kpi verde"><div class="kpi-label">Mín. desocupación</div><div class="kpi-value">${fmtEmpNum(minT)}%</div></div>`;
 
   const titleSuffix = selRegs.length>1 ? 'Comparativa seleccionada' : regLabel;
-  document.getElementById('emp-evo-title-tasa').textContent=titleSuffix+' — Tasa de desocupación (%)';
+  document.getElementById('emp-evo-title-tasa').textContent=titleSuffix+' — '+ind1L;
   document.getElementById('emp-evo-title-ocup').textContent=titleSuffix+' — Ocupados (miles)';
   document.getElementById('emp-evo-title-ft').textContent=titleSuffix+' — Fuerza de trabajo* (miles)';
   document.getElementById('emp-evo-title-des').textContent=titleSuffix+' — Desocupados (miles)';
@@ -565,7 +595,7 @@ function renderEmpEvolucion() {
     const psR = d.periodos.filter(p=>p>=desde+'-01'&&p<=hasta+'-12');
     const iiR = psR.map(p=>d.periodos.indexOf(p));
     // Alinear con ps común
-    const tData = ps.map(p=>{const i=d.periodos.indexOf(p);return i>=0?d.tasa[i]:null;});
+    const tData = ps.map(p=>{const i=d.periodos.indexOf(p);return i>=0?d[ind1][i]:null;});
     const oData = ps.map(p=>{const i=d.periodos.indexOf(p);return i>=0?d.ocupados[i]:null;});
     const fData = ps.map(p=>{const i=d.periodos.indexOf(p);return i>=0?d.ft[i]:null;});
     const dData = ps.map(p=>{const i=d.periodos.indexOf(p);return i>=0?d.desocupados[i]:null;});
@@ -615,12 +645,13 @@ function fmtEmpVar(v){
 function renderEmpRanking() {
   const per=document.getElementById('emp-rank-periodo').value;
   const nacTasa=empGetVal('__NACIONAL__',per,'tasa');
+  const nacTm=empGetVal('__NACIONAL__',per,'tasa_tm');
   const nacOcup=empGetVal('__NACIONAL__',per,'ocupados');
   const nacFt=empGetVal('__NACIONAL__',per,'ft');
   const nacDes=empGetVal('__NACIONAL__',per,'desocupados');
 
   const pairs=EMP.regiones.map(r=>{
-    return{r,t:empGetVal(r,per,'tasa'),o:empGetVal(r,per,'ocupados'),f:empGetVal(r,per,'ft'),d:empGetVal(r,per,'desocupados'),vm:empGetVarMes(r,per),va:empGetVarAnual(r,per)}
+    return{r,t:empGetVal(r,per,'tasa'),tm:empGetVal(r,per,'tasa_tm'),o:empGetVal(r,per,'ocupados'),f:empGetVal(r,per,'ft'),d:empGetVal(r,per,'desocupados'),vm:empGetVarMes(r,per),va:empGetVarAnual(r,per)}
   }).filter(x=>x.t!==null).sort((a,b)=>b.t-a.t);
 
   document.getElementById('emp-rank-title').textContent='Ranking completo — '+fmtEmpPer(per);
@@ -648,6 +679,7 @@ function renderEmpRanking() {
   let thead=`<thead><tr>
     <th>#</th><th>Región</th>
     <th>Tasa %</th>
+    <th>Tasa trim. móvil %</th>
     <th>Var. mensual</th>
     <th>Var. anual</th>
     <th>Desocupados</th>
@@ -660,6 +692,7 @@ function renderEmpRanking() {
     <td style="color:#1a3a5c">—</td>
     <td style="text-align:left;color:#1a3a5c">🇨🇱 Nacional (prom. ponderado)</td>
     <td style="color:#1a3a5c">${fmtEmpNum(nacTasa)}%</td>
+    <td style="color:#1a3a5c">${fmtEmpNum(nacTm)}%</td>
     <td>${fmtEmpVar(nacVm)}</td>
     <td>${fmtEmpVar(nacVa)}</td>
     <td style="color:#dc2626;font-weight:700">${fmtEmpMiles(nacDes)}</td>
@@ -675,6 +708,7 @@ function renderEmpRanking() {
       <td>${i+1}</td>
       <td style="text-align:left;font-weight:500">${x.r}</td>
       <td style="${tasaColor}">${fmtEmpNum(x.t)}%</td>
+      <td>${fmtEmpNum(x.tm)}%</td>
       <td>${fmtEmpVar(x.vm)}</td>
       <td>${fmtEmpVar(x.va)}</td>
       <td style="${sobreprom?'color:#dc2626':''}">${fmtEmpMiles(x.d)}</td>
@@ -766,6 +800,12 @@ function makeLineMulti(id,labels,datasets,showLegend=false,isTasa=false) {
 }
 
 """
+
+# ── Resumen Ejecutivo — HTML y JS embebidos directamente por el generador ──
+resumen_html_block = '<div class="modulo active" id="mod-resumen">\n  <div class="region-bar">\n    <label>Región:</label>\n    <select id="res-ej-region" onchange="renderResumenEjecutivo()">\n      <option value="">🇨🇱 Nacional (total)</option>\n    </select>\n  </div>\n  <div class="content">\n\n    <!-- ── SEGURIDAD PÚBLICA ── -->\n    <div class="card" style="border-top:4px solid #dc2626;margin-bottom:20px">\n      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">\n        <h3 style="margin:0">🛡 Seguridad Pública</h3>\n        <span style="font-size:11px;color:#888" id="res-ej-dmcs-semana"></span>\n      </div>\n      <div class="kpi-grid" id="res-ej-leystop-kpis" style="margin-bottom:12px"></div>\n      <div id="res-ej-leystop-top3" style="margin-bottom:14px"></div>\n      <div style="margin:4px 0 10px;padding-top:14px;border-top:1px solid #e5e7eb">\n        <h4 style="font-size:13px;font-weight:700;color:#dc2626;margin:0 0 12px">🔴 DMCS — Delitos de Mayor Connotación Social</h4>\n        <div class="kpi-grid" id="res-ej-kpi-dmcs" style="margin-bottom:14px"></div>\n        <div class="grid2" style="margin-top:8px">\n          <div>\n            <h4 style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px">DMCS por tipo — año a la fecha</h4>\n            <canvas id="res-ej-chart-dmcs-bar" style="max-height:320px"></canvas>\n          </div>\n          <div>\n            <h4 style="font-size:12px;font-weight:600;color:#555;margin-bottom:10px">Distribución DMCS</h4>\n            <canvas id="res-ej-chart-dmcs-pie" style="max-height:320px"></canvas>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <!-- ── PIB ── -->\n    <div class="card" style="border-top:4px solid #2563eb;margin-bottom:20px">\n      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px">\n        <h3 style="margin:0">📈 PIB Regional — Banco Central</h3>\n        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">\n          <div class="fg">\n            <label>Año desde</label>\n            <select id="res-ej-pib-desde" onchange="renderResumenEjecutivo()" style="padding:6px 10px;border:1.5px solid #d0d0d0;border-radius:8px;font-size:12px;min-width:80px"></select>\n          </div>\n          <div class="fg">\n            <label>Año hasta</label>\n            <select id="res-ej-pib-hasta" onchange="renderResumenEjecutivo()" style="padding:6px 10px;border:1.5px solid #d0d0d0;border-radius:8px;font-size:12px;min-width:80px"></select>\n          </div>\n        </div>\n      </div>\n      <div id="res-ej-pib-body">\n        <div class="grid2" style="margin-bottom:20px">\n          <div>\n            <h4 style="font-size:13px;font-weight:600;color:#555;margin-bottom:10px">Evolución PIB (vol. encadenado, base 2018)</h4>\n            <canvas id="res-ej-chart-pib" style="max-height:250px"></canvas>\n          </div>\n          <div>\n            <div id="res-ej-kpi-percap" style="margin-bottom:12px"></div>\n          <h4 style="font-size:13px;font-weight:600;color:#555;margin-bottom:10px">Top 5 sectores productivos — <span id="res-ej-sec-año"></span></h4>\n            <div class="tabla-wrap"><table class="dt" id="res-ej-tabla-sec"></table></div>\n          </div>\n        </div>\n        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding-top:14px;border-top:1px solid #f0f0f0">\n          <h4 style="font-size:13px;font-weight:600;color:#555;margin:0">Desocupación: tasa simple vs. trimestre móvil</h4>\n          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">\n            <div class="fg"><label style="font-size:11px;color:#888">Desde</label>\n            <select id="res-ej-emp-desde" onchange="renderResumenEjecutivo()" style="padding:4px 8px;border:1.5px solid #d0d0d0;border-radius:6px;font-size:11px;min-width:72px"></select></div>\n            <div class="fg"><label style="font-size:11px;color:#888">Hasta</label>\n            <select id="res-ej-emp-hasta" onchange="renderResumenEjecutivo()" style="padding:4px 8px;border:1.5px solid #d0d0d0;border-radius:6px;font-size:11px;min-width:72px"></select></div>\n          </div>\n        </div>\n        <div class="kpi-grid" id="res-ej-kpi-emp"></div>\n        <canvas id="res-ej-chart-emp" style="max-height:220px;margin-top:14px"></canvas>\n      </div>\n    </div>\n\n    <!-- ── CENSO ── -->\n    <div class="card" style="border-top:4px solid #7c3aed">\n      <h3 style="margin-bottom:14px">🏘 Censo 2024 — Demografía</h3>\n      <div class="kpi-grid" id="res-ej-kpi-censo"></div>\n    </div>\n\n  </div><!-- /content resumen -->\n</div><!-- /mod-resumen -->'
+
+resumen_js_block = '// ══════════════════════════════════════════════════════════════\n// RESUMEN EJECUTIVO\n// ══════════════════════════════════════════════════════════════\nfunction poblarSelectsResumenEjecutivo() {\n  const selReg = document.getElementById(\'res-ej-region\');\n  if(selReg) {\n    CENSO_ORDEN_NS.forEach(cod => {\n      const r = CENSO.datos[String(cod)];\n      const o = document.createElement(\'option\');\n      o.value = r.nombre; o.textContent = r.nombre; selReg.appendChild(o);\n    });\n  }\n  const años = PIB.años_enc_anual;\n  if(años && años.length) {\n    [\'res-ej-pib-desde\',\'res-ej-pib-hasta\'].forEach((id, idx) => {\n      const sel = document.getElementById(id);\n      if(!sel) return;\n      años.forEach(a => { const o=document.createElement(\'option\'); o.value=a; o.textContent=a; sel.appendChild(o); });\n      sel.value = idx===0 ? años[Math.max(0,años.length-8)] : años[años.length-1];\n    });\n  }\n  // Empleo selectors — años con datos\n  const _empDat = EMP.datos[\'__NACIONAL__\'] || Object.values(EMP.datos)[0];\n  if(_empDat && _empDat.periodos && _empDat.periodos.length) {\n    const añosEmp = [...new Set(_empDat.periodos.map(p=>p.substring(0,4)))].sort();\n    [\'res-ej-emp-desde\',\'res-ej-emp-hasta\'].forEach((id, idx) => {\n      const sel = document.getElementById(id);\n      if(!sel) return;\n      añosEmp.forEach(a => { const o=document.createElement(\'option\'); o.value=a; o.textContent=a; sel.appendChild(o); });\n      sel.value = idx===0 ? añosEmp[Math.max(0,añosEmp.length-3)] : añosEmp[añosEmp.length-1];\n    });\n  }\n}\n\nfunction resEjGetCenso(nombre) {\n  if(!nombre) return CENSO_NAC;\n  const cod = CENSO_ORDEN_NS.find(c => CENSO.datos[String(c)].nombre === nombre);\n  return cod ? CENSO.datos[String(cod)] : CENSO_NAC;\n}\n\nfunction resEjToSegKey(censoNombre) {\n  if(censoNombre === \'Metropolitana\') return \'Metropolitana de Santiago\';\n  return censoNombre;\n}\n\nfunction renderResumenEjecutivo() {\n  const reg    = document.getElementById(\'res-ej-region\')?.value || \'\';\n  const regKey = resEjToSegKey(reg);\n  const isNac  = !reg;\n\n  // ── BLOQUE DELITOS + DMCS ──\n  (function() {\n    const ultiSem = SEG.semanas.length ? SEG.semanas[SEG.semanas.length-1].id_semana : null;\n    const sem = SEG.semanas.find(s => s.id_semana === ultiSem);\n    const el = document.getElementById(\'res-ej-dmcs-semana\');\n    if(el) el.textContent = sem ? sem.nombre : \'\';\n\n    // Datos LeyStop (total delitos, todos los tipos)\n    const segData = datosParaSemana(ultiSem);\n    const segReg  = isNac ? null : segData.find(r => r.nombre_region === regKey);\n    const totalDelLY  = isNac ? segData.reduce((a,r)=>a+(r.casos_anno_fecha||0),0) : (segReg?.casos_anno_fecha||0);\n    const tasaLY      = isNac ? null : (segReg?.tasa_registro||null);\n    const delitoMasCom= isNac\n      ? (() => { const c={}; segData.forEach(r=>{if(r.mayor_registro_1)c[r.mayor_registro_1]=(c[r.mayor_registro_1]||0)+1;}); const e=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]; return e?e[0]:\'—\'; })()\n      : (segReg?.mayor_registro_1||\'—\');\n\n    // Todos los delitos (DELITOS data) para variación y delito más común por casos\n    const todosFiltrados = DELITOS.tiene_datos\n      ? DELITOS.datos.filter(d => d.id_semana===ultiSem && (isNac || d.nombre_region===regKey))\n      : [];\n    const totalDelitoAnno = todosFiltrados.reduce((a,d)=>a+(d.anno_fecha||0),0);\n    const totalDelitoAnt  = todosFiltrados.reduce((a,d)=>a+(d.anno_fecha_ant||0),0);\n    const varDelito = totalDelitoAnt>0 ? ((totalDelitoAnno-totalDelitoAnt)/totalDelitoAnt*100) : null;\n\n    // Delito más común por N° de casos (desde DELITOS si disponible, si no desde SEG)\n    const delitoMasComCasos = (() => {\n      if(!DELITOS.tiene_datos) return delitoMasCom;\n      const s={}; todosFiltrados.forEach(d=>{ s[d.nombre_delito]=(s[d.nombre_delito]||0)+(d.anno_fecha||0); });\n      const e=Object.entries(s).sort((a,b)=>b[1]-a[1])[0]; return e?e[0]:delitoMasCom;\n    })();\n\n    // Tasa total delitos / 100k hab (LeyStop tasa_registro = tasa directa para región)\n    let tasaTotal100k = tasaLY;\n    if(isNac) {\n      const _popLYT = segData.reduce((s,r)=>r.tasa_registro&&r.casos_anno_fecha?s+(r.casos_anno_fecha*100000/r.tasa_registro):s, 0);\n      if(_popLYT > 0) tasaTotal100k = totalDelLY * 100000 / _popLYT;\n    }\n    document.getElementById(\'res-ej-leystop-kpis\').innerHTML =\n      `<div class="kpi azul"><div class="kpi-label">Delitos registrados LeyStop — año a la fecha</div><div class="kpi-value">${num(totalDelLY)}</div><div class="kpi-sub">${isNac?\'Total nacional\':regKey}</div></div>`+\n      `<div class="kpi ${varDelito===null?\'\':varDelito<0?\'verde\':\'rojo\'}"><div class="kpi-label">Variación vs año anterior</div><div class="kpi-value">${fmtCambio(varDelito)}</div><div class="kpi-sub">total delitos año a la fecha</div></div>`+\n      `<div class="kpi azul"><div class="kpi-label">Tasa delitos / 100k hab.</div><div class="kpi-value">${tasaTotal100k!==null?tasaTotal100k.toFixed(1):\'—\'}</div><div class="kpi-sub">LeyStop año a la fecha</div></div>`+\n      `<div class="kpi amber"><div class="kpi-label">Delito más común</div><div class="kpi-value" style="font-size:12px;line-height:1.4;font-weight:600">${delitoMasComCasos}</div><div class="kpi-sub">mayor n° de registros</div></div>`;\n\n    // Top 3 delitos más comunes (todos los tipos, año a la fecha)\n    const _top3Map = {};\n    todosFiltrados.forEach(d => { _top3Map[d.nombre_delito] = (_top3Map[d.nombre_delito]||0) + (d.anno_fecha||0); });\n    const _top3 = Object.entries(_top3Map).sort((a,b)=>b[1]-a[1]).slice(0,3);\n    const _top3El = document.getElementById(\'res-ej-leystop-top3\');\n    if(_top3El) {\n      if(!_top3.length) {\n        _top3El.innerHTML = \'\';\n      } else {\n        const _medals = [\'🥇\',\'🥈\',\'🥉\'];\n        _top3El.innerHTML =\n          `<div style="font-size:10px;color:#78350f;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px">Top 3 delitos más frecuentes — año a la fecha</div>` +\n          `<div style="display:flex;gap:10px;flex-wrap:wrap">` +\n          _top3.map(([nombre, n], i) =>\n            `<div style="flex:1;min-width:155px;background:#fffbeb;border-radius:10px;padding:10px 14px;border-left:3px solid #d97706">` +\n            `<div style="font-size:10px;color:#92400e;font-weight:600;margin-bottom:4px">${_medals[i]} N°${i+1}</div>` +\n            `<div style="font-size:12px;font-weight:600;color:#1a1a1a;line-height:1.3">${nombre}</div>` +\n            `<div style="font-size:11px;color:#888;margin-top:3px">${n.toLocaleString(\'es-CL\')} casos</div>` +\n            `</div>`\n          ).join(\'\') +\n          `</div>`;\n      }\n    }\n\n    if(!DELITOS.tiene_datos) {\n      document.getElementById(\'res-ej-kpi-dmcs\').innerHTML=\'<p style="color:#aaa;font-size:12px;padding:8px 0">Sin datos DMCS disponibles.</p>\';\n      return;\n    }\n\n    const soloDmcs  = DELITOS.datos.filter(d => (d.es_dmcs===1||d.es_dmcs===true));\n    const filtrados = soloDmcs.filter(d => d.id_semana===ultiSem && (isNac || d.nombre_region===regKey));\n    const totalAnno = filtrados.reduce((a,d)=>a+(d.anno_fecha||0),0);\n    const totalAnt  = filtrados.reduce((a,d)=>a+(d.anno_fecha_ant||0),0);\n    const varD      = totalAnt>0 ? ((totalAnno-totalAnt)/totalAnt*100) : null;\n    const pctDmcs   = totalDelitoAnno>0 ? (totalAnno/totalDelitoAnno*100) : null;\n\n    // Tasa DMCS vía población estimada desde LeyStop\n    // pop_LY = casos_LY × 100000 / tasa_LY  →  tasa_DMCS = DMCS × 100000 / pop_LY = DMCS × tasa_LY / casos_LY\n    let tasaDmcs100k = null;\n    if(!isNac && tasaLY && totalDelLY) {\n      tasaDmcs100k = totalAnno * tasaLY / totalDelLY;\n    } else if(isNac) {\n      const popLYTotal = segData.reduce((s,r)=>r.tasa_registro&&r.casos_anno_fecha?s+(r.casos_anno_fecha*100000/r.tasa_registro):s, 0);\n      if(popLYTotal>0) tasaDmcs100k = totalAnno * 100000 / popLYTotal;\n    }\n\n    // Ranking tasa DMCS/100k por región\n    let rankTasaDmcs = null;\n    if(!isNac) {\n      const regRanking = SEG.regiones.map(rName => {\n        const sRow = segData.find(r=>r.nombre_region===rName);\n        if(!sRow||!sRow.tasa_registro||!sRow.casos_anno_fecha) return {r:rName,tasa:null};\n        const dmcsT = DELITOS.datos.filter(d=>(d.es_dmcs===1||d.es_dmcs===true)&&d.id_semana===ultiSem&&d.nombre_region===rName).reduce((a,d)=>a+(d.anno_fecha||0),0);\n        return {r:rName, tasa: dmcsT * sRow.tasa_registro / sRow.casos_anno_fecha};\n      }).filter(x=>x.tasa!==null).sort((a,b)=>b.tasa-a.tasa);\n      const pos = regRanking.findIndex(x=>x.r===regKey);\n      if(pos>=0) rankTasaDmcs = pos+1;\n    }\n    const rankStr = rankTasaDmcs ? `${rankTasaDmcs}° de ${SEG.regiones.length} regiones` : \'\';\n\n    document.getElementById(\'res-ej-kpi-dmcs\').innerHTML =\n      `<div class="kpi rojo"><div class="kpi-label">DMCS año a la fecha</div><div class="kpi-value">${num(totalAnno)}</div><div class="kpi-sub">${isNac?\'Total nacional\':regKey}</div></div>`+\n      `<div class="kpi ${varD===null?\'azul\':varD<0?\'verde\':\'rojo\'}"><div class="kpi-label">Variación vs año anterior</div><div class="kpi-value">${fmtCambio(varD)}</div><div class="kpi-sub">año a la fecha</div></div>`+\n      `<div class="kpi azul"><div class="kpi-label">Tasa DMCS / 100k hab. (LeyStop)</div><div class="kpi-value">${tasaDmcs100k!==null?tasaDmcs100k.toFixed(1):\'—\'}</div><div class="kpi-sub">${rankStr||\'año a la fecha\'}</div></div>`+\n      `<div class="kpi azul"><div class="kpi-label">% del total de delitos</div><div class="kpi-value">${pctDmcs!==null?pctDmcs.toFixed(1)+\'%\':\'—\'}</div><div class="kpi-sub">son DMCS (año a la fecha)</div></div>`;\n\n    const sumaPorDelito = {}, sumaAntPorDelito = {};\n    filtrados.forEach(d => {\n      sumaPorDelito[d.nombre_delito]    = (sumaPorDelito[d.nombre_delito]||0)    + (d.anno_fecha||0);\n      sumaAntPorDelito[d.nombre_delito] = (sumaAntPorDelito[d.nombre_delito]||0) + (d.anno_fecha_ant||0);\n    });\n    const dmcsOrdenados = Object.entries(sumaPorDelito).sort((a,b)=>b[1]-a[1]);\n    const barLabels = dmcsOrdenados.map(([k])=>k.length>35?k.substring(0,35)+\'…\':k);\n    const barVals   = dmcsOrdenados.map(([,v])=>v);\n    const barValsAnt= dmcsOrdenados.map(([k])=>sumaAntPorDelito[k]||0);\n\n    destroyChart(\'res-ej-chart-dmcs-bar\');\n    const ctxBar = document.getElementById(\'res-ej-chart-dmcs-bar\');\n    if(ctxBar && dmcsOrdenados.length>0) {\n      charts[\'res-ej-chart-dmcs-bar\'] = new Chart(ctxBar, {\n        type:\'bar\',\n        data:{\n          labels:barLabels,\n          datasets:[\n            {label:\'2026 (año a la fecha)\',data:barVals,backgroundColor:dmcsOrdenados.map((_,i)=>DMCS_COLORES[i%DMCS_COLORES.length]),borderRadius:3},\n            {label:\'2025 (año a la fecha)\',data:barValsAnt,backgroundColor:\'rgba(156,163,175,.5)\',borderRadius:3}\n          ]\n        },\n        plugins:[ChartDataLabels],\n        options:{\n          responsive:true,maintainAspectRatio:true,indexAxis:\'y\',\n          plugins:{\n            legend:{display:true,position:\'bottom\',labels:{font:{size:11},padding:10}},\n            tooltip:{mode:\'index\',intersect:false},\n            datalabels:{\n              display:ctx=>ctx.datasetIndex===0&&ctx.dataset.data[ctx.dataIndex]>0,\n              color:\'#333\',font:{size:9,weight:\'600\'},anchor:\'end\',align:\'end\',clamp:true,\n              formatter:v=>v>0?Math.round(v).toLocaleString(\'es-CL\'):\'\'\n            }\n          },\n          scales:{\n            x:{ticks:{font:{size:10}},grid:{color:\'#f0f0f0\'}},\n            y:{ticks:{font:{size:10},maxRotation:0}}\n          }\n        }\n      });\n    }\n\n    destroyChart(\'res-ej-chart-dmcs-pie\');\n    const ctxPie = document.getElementById(\'res-ej-chart-dmcs-pie\');\n    if(ctxPie && dmcsOrdenados.length>0) {\n      charts[\'res-ej-chart-dmcs-pie\'] = new Chart(ctxPie, {\n        type:\'doughnut\',\n        data:{\n          labels:dmcsOrdenados.map(([k])=>k.length>30?k.substring(0,30)+\'…\':k),\n          datasets:[{data:barVals,backgroundColor:dmcsOrdenados.map((_,i)=>DMCS_COLORES[i%DMCS_COLORES.length]),borderWidth:2,borderColor:\'#fff\'}]\n        },\n        plugins:[ChartDataLabels],\n        options:{\n          responsive:true,maintainAspectRatio:true,\n          plugins:{\n            legend:{position:\'right\',labels:{font:{size:10},padding:8}},\n            tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${Math.round(ctx.parsed).toLocaleString(\'es-CL\')}`}},\n            datalabels:{\n              display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,\n              color:\'#fff\',font:{size:9,weight:\'700\'},\n              formatter:(v,ctx)=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);return t>0?(v/t*100).toFixed(1)+\'%\':\'\';}\n            }\n          }\n        }\n      });\n    }\n  })();\n\n  // -- BLOQUE PIB + EMPLEO --\n  (function() {\n    const empKey = isNac ? \'__NACIONAL__\' : regKey;\n    const desde = document.getElementById(\'res-ej-pib-desde\')?.value || \'\';\n    const hasta = document.getElementById(\'res-ej-pib-hasta\')?.value || \'\';\n    const años  = PIB.años_enc_anual.filter(a=>(!desde||a>=desde)&&(!hasta||a<=hasta));\n    const ultAñoGlobal = PIB.años_enc_anual[PIB.años_enc_anual.length-1];\n\n    // Evolucion PIB - solo nivel, sin linea var%\n    const pibVals = años.map(a => isNac ? getPIBNacional(\'miles_enc\',a) : getValPib(\'PIB\',\'miles_enc\',regKey,a));\n    destroyChart(\'res-ej-chart-pib\');\n    const ctxP = document.getElementById(\'res-ej-chart-pib\');\n    if(ctxP) {\n      charts[\'res-ej-chart-pib\'] = new Chart(ctxP, {\n        type:\'line\',\n        data:{labels:años,datasets:[{label:\'Vol. enc. (MM$ base 2018)\',data:pibVals,borderColor:\'#2563eb\',backgroundColor:\'rgba(37,99,235,.08)\',tension:.3,fill:true,pointRadius:3,borderWidth:2}]},\n        options:{responsive:true,maintainAspectRatio:true,\n          plugins:{legend:{display:false},datalabels:{display:false},tooltip:{mode:\'index\',intersect:false}},\n          scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}},grid:{color:\'#f0f0f0\'},title:{display:true,text:\'MM$ enc. 2018\',font:{size:9}}}}\n        }\n      });\n    }\n\n    // PIB per capita (arriba de la tabla de sectores)\n    const censoRPib = resEjGetCenso(reg);\n    const popPib = censoRPib?.n_per || 0;\n    const pibUlt = isNac ? getPIBNacional(\'miles_enc\',ultAñoGlobal) : getValPib(\'PIB\',\'miles_enc\',regKey,ultAñoGlobal);\n    // millones de pesos per capita = pibUlt (miles MM$) * 1000 / poblacion\n    const pibPerCapMill = (pibUlt !== null && popPib > 0) ? (pibUlt * 1000 / popPib) : null;\n    const pibPerCapStr  = pibPerCapMill !== null ? pibPerCapMill.toFixed(2).replace(\'.\',\',\') + \' millones de pesos\' : \'—\';\n    // Tabla Top5 sectores con % PIB nacional\n    const tablaAño = hasta || ultAñoGlobal;\n    const secAñoEl = document.getElementById(\'res-ej-sec-año\');\n    if(secAñoEl) secAñoEl.textContent = tablaAño||\'\';\n    const pibNacTotal = getPIBNacional(\'miles_enc\', tablaAño);\n    const kpiPerCapEl = document.getElementById(\'res-ej-kpi-percap\');\n    if(isNac) {\n      if(kpiPerCapEl) kpiPerCapEl.innerHTML =\n        `<div class="kpi azul" style="padding:12px 16px"><div class="kpi-label">PIB per cápita ${ultAñoGlobal} (enc. base 2018)</div><div class="kpi-value" style="font-size:15px">${pibPerCapStr}</div><div class="kpi-sub">por habitante · Censo 2024</div></div>`;\n      document.getElementById(\'res-ej-tabla-sec\').innerHTML =\n        \'<tr><td colspan="3" style="padding:16px;color:#aaa;text-align:center;font-size:12px">Selecciona una región para ver los sectores productivos</td></tr>\';\n    } else {\n      const pibTot = getValPib(\'PIB\',\'miles_enc\',regKey,tablaAño);\n      const varTot = calcVarEnc(\'PIB\',regKey,tablaAño);\n      const pesNac = (pibTot!==null && pibNacTotal) ? (pibTot/pibNacTotal*100) : null;\n      const vfmt = v => v===null?\'—\':v>=0?`<span class="pos">+${v.toFixed(1)}%</span>`:`<span class="neg">${v.toFixed(1)}%</span>`;\n      if(kpiPerCapEl) kpiPerCapEl.innerHTML =\n        `<div class="kpi-grid" style="gap:8px;margin-bottom:4px">` +\n        `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">PIB per cápita ${tablaAño}</div><div class="kpi-value" style="font-size:14px">${pibPerCapStr}</div><div class="kpi-sub">por habitante · Censo 2024</div></div>` +\n        `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">PIB total ${tablaAño}</div><div class="kpi-value" style="font-size:14px">${pibTot!==null?(pibTot/1000).toFixed(2).replace(\'.\',\',\') + \' bill.\':\'—\'}</div><div class="kpi-sub">billones de pesos enc. base 2018</div></div>` +\n        `<div class="kpi ${varTot===null?\'azul\':varTot>=0?\'verde\':\'rojo\'}" style="padding:10px 14px"><div class="kpi-label">Var. % anual</div><div class="kpi-value">${vfmt(varTot)}</div><div class="kpi-sub">vs año anterior</div></div>` +\n        `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">% PIB nacional</div><div class="kpi-value">${pesNac!==null?pesNac.toFixed(1)+\'%\':\'—\'}</div><div class="kpi-sub">participación ${tablaAño}</div></div>` +\n        `</div>`;\n      const sectoresLista = PIB.sectores_enc_anual.filter(s=>s!==\'PIB\');\n      const secsRanked = sectoresLista.map(s=>({\n        nombre: DISP[s]||s,\n        valor:  getValPib(s,\'miles_enc\',regKey,tablaAño),\n        var_:   calcVarEnc(s,regKey,tablaAño),\n        pesNac: (()=>{ const v=getValPib(s,\'miles_enc\',regKey,tablaAño); return (v!==null&&pibNacTotal)?v/pibNacTotal*100:null; })()\n      })).filter(x=>x.valor!==null).sort((a,b)=>b.valor-a.valor).slice(0,5);\n      let tsec=\'<thead><tr><th>Sector</th><th style="min-width:90px">MM$ enc.</th><th style="min-width:55px">Var. %</th><th style="min-width:65px">% PIB nac.</th></tr></thead><tbody>\';\n      secsRanked.forEach(s=>{\n        tsec+=`<tr><td style="text-align:left;font-weight:500">${s.nombre}</td><td>${Math.round(s.valor).toLocaleString(\'es-CL\')}</td><td>${vfmt(s.var_)}</td><td>${s.pesNac!==null?s.pesNac.toFixed(2)+\'%\':\'—\'}</td></tr>`;\n      });\n      tsec+=\'</tbody>\';\n      document.getElementById(\'res-ej-tabla-sec\').innerHTML=tsec;\n    }\n\n    // Empleo - regional + nacional\n    const dEmp = EMP.datos[empKey];\n    const dNac = EMP.datos[\'__NACIONAL__\'];\n    if(dEmp) {\n      const ps=dEmp.periodos, ultIdx=ps.length-1, ultPer=ps[ultIdx];\n      const ultTasa=dEmp.tasa[ultIdx], ultTm=dEmp.tasa_tm?dEmp.tasa_tm[ultIdx]:null;\n      const varAnualTasa=(ultIdx>=12&&dEmp.tasa[ultIdx-12]!==null&&ultTasa!==null)?parseFloat((ultTasa-dEmp.tasa[ultIdx-12]).toFixed(2)):null;\n      const varAnualTm=(dEmp.tasa_tm&&ultIdx>=12&&dEmp.tasa_tm[ultIdx-12]!==null&&ultTm!==null)?parseFloat((ultTm-dEmp.tasa_tm[ultIdx-12]).toFixed(2)):null;\n      const nacIdx=dNac?dNac.periodos.indexOf(ultPer):-1;\n      const nacTasa=(dNac&&nacIdx>=0)?dNac.tasa[nacIdx]:null;\n      const nacTm=(dNac&&dNac.tasa_tm&&nacIdx>=0)?dNac.tasa_tm[nacIdx]:null;\n\n      const ftVals = dEmp.ft ? [dEmp.ft[ultIdx], ultIdx>=1?dEmp.ft[ultIdx-1]:null, ultIdx>=2?dEmp.ft[ultIdx-2]:null].filter(v=>v!==null) : [];\n      const ftProm = ftVals.length ? Math.round(ftVals.reduce((a,b)=>a+b,0)/ftVals.length) : null;\n      document.getElementById(\'res-ej-kpi-emp\').innerHTML=\n        `<div class="kpi ${ultTm!==null&&ultTm>8?\'rojo\':ultTm!==null&&ultTm>6?\'amber\':\'verde\'}"><div class="kpi-label">Tasa trim. móvil</div><div class="kpi-value">${fmtEmpNum(ultTm)}%</div><div class="kpi-sub">${isNac?\'Nacional\':regKey}</div></div>`+\n        `<div class="kpi azul"><div class="kpi-label">Tasa desoc. 🇨🇱 nacional</div><div class="kpi-value">${fmtEmpNum(nacTasa)}%</div><div class="kpi-sub">${fmtEmpPer(ultPer)}</div></div>`+\n        `<div class="kpi azul"><div class="kpi-label">Tasa trim. móvil 🇨🇱 nacional</div><div class="kpi-value">${fmtEmpNum(nacTm)}%</div><div class="kpi-sub">${fmtEmpPer(ultPer)}</div></div>`+\n        `<div class="kpi ${varAnualTm===null?\'\':varAnualTm>0?\'rojo\':\'verde\'}"><div class="kpi-label">Var. anual trim. móvil (p.p.)</div><div class="kpi-value">${varAnualTm!==null?(varAnualTm>0?\'+\':\'\')+varAnualTm.toFixed(1):\'—\'}</div><div class="kpi-sub">vs mismo mes año ant.</div></div>`+\n        `<div class="kpi ${varAnualTasa===null?\'\':varAnualTasa>0?\'rojo\':\'verde\'}"><div class="kpi-label">Var. anual tasa simple (p.p.)</div><div class="kpi-value">${varAnualTasa!==null?(varAnualTasa>0?\'+\':\'\')+varAnualTasa.toFixed(1):\'—\'}</div><div class="kpi-sub">vs mismo mes año ant.</div></div>`+\n        `<div class="kpi azul"><div class="kpi-label">Fuerza de trabajo</div><div class="kpi-value">${ftProm!==null?ftProm.toLocaleString(\'es-CL\'):\'—\'}</div><div class="kpi-sub">miles · prom. últ. 3 meses</div></div>`;\n\n      const empDesde = document.getElementById(\'res-ej-emp-desde\')?.value || \'\';\n      const empHasta = document.getElementById(\'res-ej-emp-hasta\')?.value || \'\';\n      const desdeYr=empDesde?parseInt(empDesde):null, hastaYr=empHasta?parseInt(empHasta):null;\n      const filtPs=ps.filter(p=>{const yr=parseInt(p.substring(0,4));return(!desdeYr||yr>=desdeYr)&&(!hastaYr||yr<=hastaYr);});\n      const filtTasa=filtPs.map(p=>{const i=ps.indexOf(p);return dEmp.tasa[i];});\n      const filtTm  =filtPs.map(p=>{const i=ps.indexOf(p);return dEmp.tasa_tm?dEmp.tasa_tm[i]:null;});\n      destroyChart(\'res-ej-chart-emp\');\n      const ctxE=document.getElementById(\'res-ej-chart-emp\');\n      if(ctxE){\n        charts[\'res-ej-chart-emp\']=new Chart(ctxE,{\n          type:\'line\',\n          data:{labels:filtPs.map(p=>fmtEmpPer(p)),datasets:[\n            {label:\'Tasa desocupación (%)\',data:filtTasa,borderColor:\'#2563eb\',backgroundColor:\'rgba(37,99,235,.06)\',tension:.3,fill:true,pointRadius:1,borderWidth:2},\n            {label:\'Tasa trimestre móvil (%)\',data:filtTm,borderColor:\'#059669\',backgroundColor:\'transparent\',tension:.3,fill:false,pointRadius:1.5,borderWidth:2.5}\n          ]},\n          options:{responsive:true,maintainAspectRatio:true,\n            plugins:{legend:{display:true,position:\'bottom\',labels:{font:{size:11}}},datalabels:{display:false},tooltip:{mode:\'index\',intersect:false,callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!==null?c.parsed.y.toFixed(1)+\'%\':\'—\'}`}}},\n            scales:{x:{ticks:{font:{size:9},maxTicksLimit:24,maxRotation:45}},y:{ticks:{font:{size:10},callback:v=>v+\'%\'},grid:{color:\'#f0f0f0\'}}}\n          }\n        });\n      }\n    } else {\n      document.getElementById(\'res-ej-kpi-emp\').innerHTML=\'<p style="color:#aaa;font-size:12px">Sin datos de empleo.</p>\';\n      destroyChart(\'res-ej-chart-emp\');\n    }\n  })();\n\n  // -- BLOQUE CENSO --\n  (function() {\n    const censoR  = resEjGetCenso(reg);\n    const pop     = censoR.n_per;\n    const nacPop  = CENSO_NAC.n_per;\n    const pctPobNac  = nacPop>0 ? (pop/nacPop*100) : null;\n    const pctOrig    = pop>0 ? censoR.n_pueblos_orig/pop*100 : null;\n    const pctImmig   = pop>0 ? censoR.n_inmigrantes/pop*100 : null;\n    const nacPctOrig = nacPop>0 ? CENSO_NAC.n_pueblos_orig/nacPop*100 : null;\n    const nacPctImmig= nacPop>0 ? CENSO_NAC.n_inmigrantes/nacPop*100 : null;\n    const nacEdad    = CENSO_NAC.prom_edad;\n\n    const allReg = CENSO_ORDEN_NS.map(cod=>CENSO.datos[String(cod)]);\n    const sortedImmig = [...allReg].sort((a,b)=>(b.n_inmigrantes/b.n_per)-(a.n_inmigrantes/a.n_per));\n    const sortedOrig  = [...allReg].sort((a,b)=>(b.n_pueblos_orig/b.n_per)-(a.n_pueblos_orig/a.n_per));\n    const sortedEdad  = [...allReg].sort((a,b)=>b.prom_edad-a.prom_edad);\n    const sortedPob   = [...allReg].sort((a,b)=>b.n_per-a.n_per);\n    const rk = (sorted,nombre) => { const i=sorted.findIndex(x=>x.nombre===nombre); return i>=0?i+1:null; };\n    const nombre = censoR.nombre||\'Nacional\';\n\n    const kpiVsNac = (label, regVal, nacVal, regSub, nacSub, rkN, cls=\'\') =>\n      `<div class="kpi ${cls}" style="min-width:185px">\n        <div class="kpi-label">${label}</div>\n        <div style="display:flex;gap:10px;align-items:flex-start;margin-top:4px">\n          <div style="flex:1"><div class="kpi-value" style="font-size:18px">${regVal}</div><div class="kpi-sub">${regSub}</div></div>\n          <div style="text-align:right;border-left:1px solid #f0f0f0;padding-left:10px">\n            <div style="font-size:13px;font-weight:600;color:#888">vs ${nacVal}</div>\n            <div style="font-size:10px;color:#aaa">${nacSub}</div>\n          </div>\n        </div>\n        ${rkN?`<div style="font-size:10px;color:#64748b;margin-top:6px;padding-top:5px;border-top:1px solid #f0f0f0">🏅 ${rkN}</div>`:\'\'}\n      </div>`;\n\n    let censoHtml = \'\';\n    const rkPob = isNac ? null : rk(sortedPob, nombre);\n    censoHtml += `<div class="kpi azul">\n      <div class="kpi-label">Población total</div>\n      <div class="kpi-value">${fmtN(pop)}</div>\n      <div class="kpi-sub">${pctPobNac!==null?fmtP(pctPobNac)+\' de la población nacional\':\'\'}</div>\n      ${rkPob?`<div style="font-size:10px;color:#64748b;margin-top:6px;padding-top:5px;border-top:1px solid #f0f0f0">🏅 ${rkPob}° de 16 regiones (por tamaño)</div>`:\'\'}\n    </div>`;\n\n    if(isNac) {\n      censoHtml +=\n        kpiCenso(\'Pueblos originarios\', nacPctOrig!==null?fmtP(nacPctOrig):\'—\', fmtN(CENSO_NAC.n_pueblos_orig)+\' personas\') +\n        kpiCenso(\'Inmigrantes\', nacPctImmig!==null?fmtP(nacPctImmig):\'—\', fmtN(CENSO_NAC.n_inmigrantes)+\' personas\') +\n        kpiCenso(\'Edad promedio\', fmtD(nacEdad), \'años\');\n    } else {\n      const rkImmig = rk(sortedImmig, nombre);\n      const rkOrig  = rk(sortedOrig, nombre);\n      const rkEdad  = rk(sortedEdad, nombre);\n      censoHtml += kpiVsNac(\'Inmigrantes\',\n        pctImmig!==null?fmtP(pctImmig):\'—\', nacPctImmig!==null?fmtP(nacPctImmig):\'\',\n        fmtN(censoR.n_inmigrantes)+\' personas\', fmtN(CENSO_NAC.n_inmigrantes)+\' (nacional)\',\n        rkImmig?rkImmig+\'° de 16 regiones\':\'\', pctImmig!==null&&pctImmig>10?\'amber\':\'\');\n      censoHtml += kpiVsNac(\'Pueblos originarios\',\n        pctOrig!==null?fmtP(pctOrig):\'—\', nacPctOrig!==null?fmtP(nacPctOrig):\'\',\n        fmtN(censoR.n_pueblos_orig)+\' personas\', fmtN(CENSO_NAC.n_pueblos_orig)+\' (nacional)\',\n        rkOrig?rkOrig+\'° de 16 regiones\':\'\');\n      censoHtml += kpiVsNac(\'Edad promedio\',\n        fmtD(censoR.prom_edad)+\' años\', nacEdad!==null?fmtD(nacEdad)+\' años\':\'\',\n        nombre, \'promedio nacional\',\n        rkEdad?rkEdad+\'° de 16 regiones (mayor a menor)\':\'\');\n    }\n    document.getElementById(\'res-ej-kpi-censo\').innerHTML = censoHtml;\n  })();\n}'
+
 
 html = f"""<!DOCTYPE html>
 <html lang="es">
@@ -887,7 +927,8 @@ table.dt tr.censo-nac-row td{{background:#f0fdf4!important;font-weight:700;color
 
 <!-- ══ NAVEGACIÓN DE MÓDULOS ══ -->
 <nav class="mod-nav">
-  <div class="mod-btn active" onclick="setModulo('seguridad',this)">🛡 Seguridad Pública</div>
+  <div class="mod-btn active" onclick="setModulo('resumen',this)">📋 Resumen</div>
+  <div class="mod-btn" onclick="setModulo('seguridad',this)">🛡 Seguridad Pública</div>
   <div class="mod-btn" onclick="setModulo('pib',this)">📈 PIB Regional</div>
   <div class="mod-btn" onclick="setModulo('censo',this)">🏘 Censo 2024</div>
   <div class="mod-btn" onclick="setModulo('empleo',this)">💼 Empleo</div>
@@ -897,7 +938,7 @@ table.dt tr.censo-nac-row td{{background:#f0fdf4!important;font-weight:700;color
 <!-- ══════════════════════════════════════════════════════════════
      MÓDULO: SEGURIDAD
 ══════════════════════════════════════════════════════════════ -->
-<div class="modulo active" id="mod-seguridad">
+<div class="modulo" id="mod-seguridad">
   <div class="tabs">
     <div class="tab-seg active" onclick="setTabSeg('resumen',this)">Resumen por región</div>
     <div class="tab-seg" onclick="setTabSeg('evolucion',this)">Evolución temporal</div>
@@ -1281,7 +1322,7 @@ let charts = {{}}, sortState = {{}};
 // ══════════════════════════════════════════════════════════════
 // NAV MÓDULOS
 // ══════════════════════════════════════════════════════════════
-const MOD_LABELS = {{'empleo':'💼 Empleo · BCE/INE',
+const MOD_LABELS = {{'resumen':'📋 Resumen Ejecutivo','empleo':'💼 Empleo · BCE/INE',
   casen:'🏠 CASEN 2024 · MIDESO',
   seguridad: '🛡 Seguridad Pública · Ley S.T.O.P',
   pib: '📈 PIB Regional · Banco Central',
@@ -1295,6 +1336,7 @@ function setModulo(id, btn) {{
   document.getElementById('mod-'+id).classList.add('active');
   document.getElementById('hdr-sub').textContent = MOD_LABELS[id] || '';
   // Trigger render del módulo activo
+  if(id === 'resumen') {{ poblarSelectsResumenEjecutivo(); renderResumenEjecutivo(); }}
   if(id === 'seguridad') renderResumen();
   if(id === 'pib') {{ renderEvolucionPib(); }}
   if(id === 'censo') {{ renderCenso(); }}
@@ -2862,7 +2904,7 @@ window.onload = function() {{
     poblarAñosPib(p,PIB.años_corr,p==='pib-evo'?8:6);
   }});
 
-  document.getElementById('hdr-sub').textContent = MOD_LABELS['seguridad'];
+  document.getElementById('hdr-sub').textContent = MOD_LABELS['resumen'];
 
   // Empleo — períodos
   ['emp-res-periodo','emp-rank-periodo'].forEach(id=>{{
@@ -2900,6 +2942,10 @@ window.onload = function() {{
   // CASEN 2024
   initCasen();
 
+  // Resumen Ejecutivo
+  poblarSelectsResumenEjecutivo();
+  renderResumenEjecutivo();
+
   // Empleo — render inicial (con setTimeout para asegurar que Chart.js esté listo)
   setTimeout(function(){{
     if(document.getElementById('emp-res-periodo') && document.getElementById('emp-res-periodo').options.length > 0) {{
@@ -2931,6 +2977,7 @@ window.onload = function() {{
         <div class="fg"><label>Indicador</label>
           <select id="emp-res-ind" onchange="renderEmpResumen()">
             <option value="tasa">Tasa de desocupación (%)</option>
+            <option value="tasa_tm">Tasa desocup. trimestre móvil (%)</option>
             <option value="desocupados">Desocupados (miles)</option>
             <option value="ocupados">Ocupados (miles de personas)</option>
             <option value="ft">Fuerza de trabajo* (miles)</option>
@@ -2955,7 +3002,7 @@ window.onload = function() {{
           <button class="btn-dl" onclick="downloadTable('emp-tabla-resumen','emp_comparativa_regional')">⬇ CSV</button>
         </div>
         <div class="tabla-wrap"><table class="dt" id="emp-tabla-resumen"></table></div>
-        <p class="nota">* Fuerza de trabajo = Ocupados / (1 - Tasa/100) &nbsp;|&nbsp; 🔴 Sobre promedio nacional &nbsp;|&nbsp; 🟢 2+ pp bajo promedio nacional</p>
+        <p class="nota">* Fuerza de trabajo = Ocupados / (1 - Tasa/100) &nbsp;|&nbsp; Tasa trim. móvil = Σ desocupados 3 meses / Σ fuerza de trabajo 3 meses &nbsp;|&nbsp; 🔴 Sobre promedio nacional &nbsp;|&nbsp; 🟢 2+ pp bajo promedio nacional</p>
       </div>
     </div>
 
@@ -2964,6 +3011,11 @@ window.onload = function() {{
       <div class="filtros" style="align-items:flex-start">
         <div class="fg"><label>Año desde</label><select id="emp-evo-desde" onchange="renderEmpEvolucion()"></select></div>
         <div class="fg"><label>Año hasta</label><select id="emp-evo-hasta" onchange="renderEmpEvolucion()"></select></div>
+        <div class="fg"><label>Indicador (gráfico principal)</label>
+          <select id="emp-evo-ind1" onchange="renderEmpEvolucion()">
+            <option value="tasa">Tasa de desocupación (%)</option>
+            <option value="tasa_tm">Tasa desocup. trimestre móvil (%)</option>
+          </select></div>
         <div class="fg" style="flex:2;min-width:260px">
           <label>Regiones (selecciona una o más)</label>
           <div id="emp-evo-region-list" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px;max-height:120px;overflow-y:auto;padding:6px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:12px"></div>
@@ -3160,6 +3212,8 @@ window.onload = function() {{
 
   </div>
 </div><!-- /mod-casen -->
+
+{resumen_html_block}
 
 <script>
 // ══════════════════════════════════════════════════════════════
@@ -3436,6 +3490,8 @@ function renderCasenSalud(){{
     '<tbody>'+rows.map(x=>cTRow([x.r,fp(x.fon),fp(x.isa),fp(x.aten),fp(x.prob),fp(x.ges)],x.r===isAct,
       ['','','',x.aten<85?'neg':'pos',x.prob>40?'neg':x.prob<25?'pos':'',x.ges<70?'neg':x.ges>80?'pos':''])).join('')+'</tbody>';
 }}
+
+{resumen_js_block}
 
 function initCasen(){{
   poblarSelectsCasen();

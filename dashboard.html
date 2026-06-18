@@ -513,7 +513,7 @@ let charts = {}, sortState = {};
 // ══════════════════════════════════════════════════════════════
 // NAV MÓDULOS
 // ══════════════════════════════════════════════════════════════
-const MOD_LABELS = {'empleo':'💼 Empleo · BCE/INE',
+const MOD_LABELS = {'resumen':'📋 Resumen Ejecutivo','empleo':'💼 Empleo · BCE/INE',
   casen:'🏠 CASEN 2024 · MIDESO',
   seguridad: '🛡 Seguridad Pública · Ley S.T.O.P',
   pib: '📈 PIB Regional · Banco Central',
@@ -527,6 +527,7 @@ function setModulo(id, btn) {
   document.getElementById('mod-'+id).classList.add('active');
   document.getElementById('hdr-sub').textContent = MOD_LABELS[id] || '';
   // Trigger render del módulo activo
+  if(id === 'resumen') { poblarSelectsResumenEjecutivo(); renderResumenEjecutivo(); }
   if(id === 'seguridad') renderResumen();
   if(id === 'pib') { renderEvolucionPib(); }
   if(id === 'censo') { renderCenso(); }
@@ -2477,7 +2478,7 @@ window.onload = function() {
     poblarAñosPib(p,PIB.años_corr,p==='pib-evo'?8:6);
   });
 
-  document.getElementById('hdr-sub').textContent = MOD_LABELS['seguridad'];
+  document.getElementById('hdr-sub').textContent = MOD_LABELS['resumen'];
 
   // Empleo — períodos
   ['emp-res-periodo','emp-rank-periodo'].forEach(id=>{
@@ -2514,6 +2515,10 @@ window.onload = function() {
 
   // CASEN 2024
   initCasen();
+
+  // Resumen Ejecutivo
+  poblarSelectsResumenEjecutivo();
+  renderResumenEjecutivo();
 
   // Empleo — render inicial (con setTimeout para asegurar que Chart.js esté listo)
   setTimeout(function(){
@@ -2781,7 +2786,6 @@ window.onload = function() {
 
   </div>
 </div><!-- /mod-casen -->
-
 
 <div class="modulo active" id="mod-resumen">
   <div class="region-bar">
@@ -3140,12 +3144,6 @@ function renderCasenSalud(){
     cTHead('cs-tabla',['Región','FONASA 2024','Isapre 2024','Recibió atención','Tuvo problemas','Cubierto AUGE-GES'])+
     '<tbody>'+rows.map(x=>cTRow([x.r,fp(x.fon),fp(x.isa),fp(x.aten),fp(x.prob),fp(x.ges)],x.r===isAct,
       ['','','',x.aten<85?'neg':'pos',x.prob>40?'neg':x.prob<25?'pos':'',x.ges<70?'neg':x.ges>80?'pos':''])).join('')+'</tbody>';
-}
-
-function initCasen(){
-  poblarSelectsCasen();
-  document.getElementById('ci-tipo').onchange=renderCasenIngreso;
-  document.getElementById('cs-prest-tipo').onchange=renderCasenPrest;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -3558,6 +3556,12 @@ function renderResumenEjecutivo() {
     }
     document.getElementById('res-ej-kpi-censo').innerHTML = censoHtml;
   })();
+}
+
+function initCasen(){
+  poblarSelectsCasen();
+  document.getElementById('ci-tipo').onchange=renderCasenIngreso;
+  document.getElementById('cs-prest-tipo').onchange=renderCasenPrest;
 }
 </script>
 
