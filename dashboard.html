@@ -2807,7 +2807,8 @@ window.onload = function() {
         <h3 style="margin:0">🛡 Seguridad Pública</h3>
         <span style="font-size:11px;color:#888" id="res-ej-dmcs-semana"></span>
       </div>
-      <div class="kpi-grid" id="res-ej-leystop-kpis" style="margin-bottom:16px"></div>
+      <div class="kpi-grid" id="res-ej-leystop-kpis" style="margin-bottom:12px"></div>
+      <div id="res-ej-leystop-top3" style="margin-bottom:14px"></div>
       <div style="margin:4px 0 10px;padding-top:14px;border-top:1px solid #e5e7eb">
         <h4 style="font-size:13px;font-weight:700;color:#dc2626;margin:0 0 12px">🔴 DMCS — Delitos de Mayor Connotación Social</h4>
         <div class="kpi-grid" id="res-ej-kpi-dmcs" style="margin-bottom:14px"></div>
@@ -3249,6 +3250,30 @@ function renderResumenEjecutivo() {
       `<div class="kpi ${varDelito===null?'':varDelito<0?'verde':'rojo'}"><div class="kpi-label">Variación vs año anterior</div><div class="kpi-value">${fmtCambio(varDelito)}</div><div class="kpi-sub">total delitos año a la fecha</div></div>`+
       `<div class="kpi azul"><div class="kpi-label">Tasa delitos / 100k hab.</div><div class="kpi-value">${tasaTotal100k!==null?tasaTotal100k.toFixed(1):'—'}</div><div class="kpi-sub">LeyStop año a la fecha</div></div>`+
       `<div class="kpi amber"><div class="kpi-label">Delito más común</div><div class="kpi-value" style="font-size:12px;line-height:1.4;font-weight:600">${delitoMasComCasos}</div><div class="kpi-sub">mayor n° de registros</div></div>`;
+
+    // Top 3 delitos más comunes (todos los tipos, año a la fecha)
+    const _top3Map = {};
+    todosFiltrados.forEach(d => { _top3Map[d.nombre_delito] = (_top3Map[d.nombre_delito]||0) + (d.anno_fecha||0); });
+    const _top3 = Object.entries(_top3Map).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    const _top3El = document.getElementById('res-ej-leystop-top3');
+    if(_top3El) {
+      if(!_top3.length) {
+        _top3El.innerHTML = '';
+      } else {
+        const _medals = ['🥇','🥈','🥉'];
+        _top3El.innerHTML =
+          `<div style="font-size:10px;color:#78350f;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px">Top 3 delitos más frecuentes — año a la fecha</div>` +
+          `<div style="display:flex;gap:10px;flex-wrap:wrap">` +
+          _top3.map(([nombre, n], i) =>
+            `<div style="flex:1;min-width:155px;background:#fffbeb;border-radius:10px;padding:10px 14px;border-left:3px solid #d97706">` +
+            `<div style="font-size:10px;color:#92400e;font-weight:600;margin-bottom:4px">${_medals[i]} N°${i+1}</div>` +
+            `<div style="font-size:12px;font-weight:600;color:#1a1a1a;line-height:1.3">${nombre}</div>` +
+            `<div style="font-size:11px;color:#888;margin-top:3px">${n.toLocaleString('es-CL')} casos</div>` +
+            `</div>`
+          ).join('') +
+          `</div>`;
+      }
+    }
 
     if(!DELITOS.tiene_datos) {
       document.getElementById('res-ej-kpi-dmcs').innerHTML='<p style="color:#aaa;font-size:12px;padding:8px 0">Sin datos DMCS disponibles.</p>';
