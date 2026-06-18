@@ -3408,7 +3408,7 @@ function renderResumenEjecutivo() {
       if(kpiPerCapEl) kpiPerCapEl.innerHTML =
         `<div class="kpi-grid" style="gap:8px;margin-bottom:4px">` +
         `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">PIB per cápita ${tablaAño}</div><div class="kpi-value" style="font-size:14px">${pibPerCapStr}</div><div class="kpi-sub">por habitante · Censo 2024</div></div>` +
-        `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">PIB total ${tablaAño} (MM$ enc.)</div><div class="kpi-value" style="font-size:14px">${pibTot!==null?Math.round(pibTot).toLocaleString('es-CL'):'—'}</div><div class="kpi-sub">miles de mill. base 2018</div></div>` +
+        `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">PIB total ${tablaAño}</div><div class="kpi-value" style="font-size:14px">${pibTot!==null?(pibTot/1000).toFixed(2).replace('.',',') + ' bill.':'—'}</div><div class="kpi-sub">billones de pesos enc. base 2018</div></div>` +
         `<div class="kpi ${varTot===null?'azul':varTot>=0?'verde':'rojo'}" style="padding:10px 14px"><div class="kpi-label">Var. % anual</div><div class="kpi-value">${vfmt(varTot)}</div><div class="kpi-sub">vs año anterior</div></div>` +
         `<div class="kpi azul" style="padding:10px 14px"><div class="kpi-label">% PIB nacional</div><div class="kpi-value">${pesNac!==null?pesNac.toFixed(1)+'%':'—'}</div><div class="kpi-sub">participación ${tablaAño}</div></div>` +
         `</div>`;
