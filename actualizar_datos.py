@@ -913,26 +913,34 @@ def main():
                 id INTEGER PRIMARY KEY, nombre TEXT, anno INTEGER, semana INTEGER,
                 fecha_desde TEXT, fecha_hasta TEXT, fecha_desde_iso TEXT, fecha_hasta_iso TEXT
             );
-            CREATE TABLE IF NOT EXISTS registros_leystop_delitos (
-                id_semana INTEGER, anno INTEGER, semana TEXT,
-                fecha_desde_iso TEXT, fecha_hasta_iso TEXT,
-                id_region INTEGER, nombre_region TEXT, nombre_delito TEXT, es_dmcs INTEGER DEFAULT 0,
-                ultima_semana_ant INTEGER, ultima_semana INTEGER,
-                dias28_ant INTEGER, dias28 INTEGER,
-                anno_fecha_ant INTEGER, anno_fecha INTEGER, umbral REAL,
-                PRIMARY KEY (id_semana, id_region, nombre_delito)
-            );
-            CREATE TABLE IF NOT EXISTS bce_catalogo (
-                series_id TEXT PRIMARY KEY, frecuencia TEXT, titulo_esp TEXT,
-                primera_obs TEXT, ultima_obs TEXT, actualizado TEXT,
-                es_regional INTEGER DEFAULT 1, fecha_catalogo TEXT
-            );
-            CREATE TABLE IF NOT EXISTS registros_bce (
-                series_id TEXT, nombre_region TEXT, indicador_limpio TEXT,
-                unidad_limpia TEXT, periodo TEXT, valor_corregido REAL,
-                PRIMARY KEY (series_id, periodo)
-            );
         """)
+
+    # Estas tablas son mas nuevas que bcn_indicadores.db y pueden faltar tanto en
+    # modo nube como en el .db committeado al repo (ej: registros_leystop_delitos
+    # solo la crea cargar_historico_delitos.py, corrido a mano en otra copia local).
+    # IF NOT EXISTS es no-op si la tabla ya existe con datos.
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS registros_leystop_delitos (
+            id_semana INTEGER, anno INTEGER, semana TEXT,
+            fecha_desde_iso TEXT, fecha_hasta_iso TEXT,
+            id_region INTEGER, nombre_region TEXT, nombre_delito TEXT, es_dmcs INTEGER DEFAULT 0,
+            ultima_semana_ant INTEGER, ultima_semana INTEGER,
+            dias28_ant INTEGER, dias28 INTEGER,
+            anno_fecha_ant INTEGER, anno_fecha INTEGER, umbral REAL,
+            PRIMARY KEY (id_semana, id_region, nombre_delito)
+        );
+        CREATE TABLE IF NOT EXISTS bce_catalogo (
+            series_id TEXT PRIMARY KEY, frecuencia TEXT, titulo_esp TEXT,
+            primera_obs TEXT, ultima_obs TEXT, actualizado TEXT,
+            es_regional INTEGER DEFAULT 1, fecha_catalogo TEXT
+        );
+        CREATE TABLE IF NOT EXISTS registros_bce (
+            series_id TEXT, nombre_region TEXT, indicador_limpio TEXT,
+            unidad_limpia TEXT, periodo TEXT, valor_corregido REAL,
+            PRIMARY KEY (series_id, periodo)
+        );
+    """)
+    conn.commit()
 
     total_nuevos = 0
 
