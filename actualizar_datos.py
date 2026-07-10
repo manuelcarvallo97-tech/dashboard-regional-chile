@@ -6,13 +6,15 @@ Actualizador inteligente de datos
 Lógica:
   - BCE Empleo: descarga solo desde el último período disponible en DB
   - LeyStop: descarga solo desde el último id_semana disponible en DB + 1
+  - Delitos (registros_leystop_delitos): mismas semanas nuevas que LeyStop,
+    reutilizando el array "registros" que ya trae la misma respuesta
   - Si no hay datos nuevos, no hace nada
   - Al final regenera el dashboard y sube a GitHub
 
 Uso: python actualizar_datos.py
 """
 
-import sqlite3, requests, json, time, logging, subprocess, hashlib, math
+import sqlite3, requests, json, time, logging, subprocess, hashlib, math, unicodedata
 from pathlib import Path
 from datetime import datetime
 
@@ -113,6 +115,22 @@ def sync_leystop_supabase(sb, conn, desde_id_semana):
         log.info("  Supabase leystop: sin filas nuevas"); return 0
     if sb.upsert("registros_leystop", rows, on_conflict="id_semana,id_region"):
         log.info(f"  Supabase leystop: ✓ {len(rows)} filas"); return len(rows)
+    return 0
+
+def sync_delitos_supabase(sb, conn, desde_id_semana):
+    cursor = conn.execute("""
+        SELECT id_semana, id_region, nombre_region, nombre_delito, es_dmcs,
+               ultima_semana_ant, ultima_semana, dias28_ant, dias28,
+               anno_fecha_ant, anno_fecha, umbral
+        FROM registros_leystop_delitos WHERE id_semana >= ?
+        ORDER BY id_semana, id_region
+    """, (desde_id_semana,))
+    cols = [d[0] for d in cursor.description]
+    rows = [clean_supa(dict(zip(cols, r))) for r in cursor.fetchall()]
+    if not rows:
+        log.info("  Supabase delitos: sin filas nuevas"); return 0
+    if sb.upsert("registros_leystop_delitos", rows, on_conflict="id_semana,id_region,nombre_delito"):
+        log.info(f"  Supabase delitos: ✓ {len(rows)} filas"); return len(rows)
     return 0
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -253,6 +271,78 @@ def ultimo_id_semana(conn=None):
         log.warning(f"Supabase ultimo_id_semana: {e}")
     return 159
 
+# Los 11 DMCS — nombres exactos como vienen del JSON de LeyStop
+DMCS_NOMBRES = {
+    "HOMICIDIOS Y FEMICIDIOS",
+    "VIOLACIONES Y DELITOS SEXUALES",
+    "LESIONES GRAVES",
+    "LESIONES MENOS GRAVES",
+    "LESIONES LEVES",
+    "ROBOS CON VIOLENCIA E INTIMIDACION",
+    "ROBOS POR SORPRESA",
+    "ROBOS EN LUGARES HABITADOS Y NO HABITADOS",
+    "ROBOS DE VEHICULOS Y SUS ACCESORIOS",
+    "OTROS ROBOS CON FUERZA EN LAS COSAS",
+    "HURTOS",
+}
+
+def norm(s):
+    """Normaliza texto: sin tildes, mayúsculas, para comparar DMCS."""
+    return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode().upper()
+
+def ultimo_id_semana_delitos(conn=None):
+    """Retorna el último id_semana en registros_leystop_delitos (DB local o Supabase)."""
+    if conn is not None:
+        r = conn.execute("SELECT MAX(id_semana) FROM registros_leystop_delitos").fetchone()
+        return r[0] if r and r[0] else 159
+    creds = leer_creds()
+    url = creds.get("SUPABASE_URL", "")
+    key = creds.get("SUPABASE_SERVICE_KEY", "")
+    if not url or not key:
+        return 159
+    try:
+        import urllib3; urllib3.disable_warnings()
+        r = requests.get(
+            f"{url}/rest/v1/registros_leystop_delitos",
+            headers={"apikey": key, "Authorization": f"Bearer {key}"},
+            params={"select": "id_semana", "order": "id_semana.desc", "limit": "1"},
+            timeout=15, verify=False,
+        )
+        data = r.json()
+        if data and data[0].get("id_semana"):
+            return data[0]["id_semana"]
+    except Exception as e:
+        log.warning(f"Supabase ultimo_id_semana_delitos: {e}")
+    return 159
+
+def guardar_delitos(conn, sem, id_region, registros):
+    """Guarda el array registros[] (desglose por tipo de delito) para una semana/región."""
+    n = 0
+    nombre_region = REGIONES_LS.get(id_region, str(id_region))
+    for rec in registros:
+        nombre = rec.get("nombre", "")
+        es_dmcs = 1 if norm(nombre) in {norm(d) for d in DMCS_NOMBRES} else 0
+        try:
+            conn.execute("""INSERT OR REPLACE INTO registros_leystop_delitos
+                (id_semana, anno, semana, fecha_desde_iso, fecha_hasta_iso,
+                 id_region, nombre_region, nombre_delito, es_dmcs,
+                 ultima_semana_ant, ultima_semana,
+                 dias28_ant, dias28,
+                 anno_fecha_ant, anno_fecha, umbral)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (sem["id"], sem.get("anno"), sem.get("semana", ""),
+                 sem.get("fecha_desde_iso", ""), sem.get("fecha_hasta_iso", ""),
+                 id_region, nombre_region, nombre, es_dmcs,
+                 rec.get("ultima_semana_anterior"), rec.get("ultima_semana"),
+                 rec.get("ultimos_28_dias_anterior"), rec.get("ultimos_28_dias"),
+                 rec.get("anno_a_la_fecha_anterior"), rec.get("anno_a_la_fecha"),
+                 rec.get("umbral")))
+            n += 1
+        except Exception as e:
+            log.warning(f"    Insert delito {nombre}: {e}")
+    conn.commit()
+    return n
+
 def crear_sesion_ls():
     from urllib.parse import unquote
     s = requests.Session()
@@ -386,13 +476,15 @@ def guardar_ls(conn, reg):
 
 def actualizar_leystop(conn):
     ultimo = ultimo_id_semana(conn)
+    ultimo_delitos = ultimo_id_semana_delitos(conn)
     log.info(f"LeyStop: último id_semana en DB = {ultimo}")
+    log.info(f"Delitos: último id_semana en DB = {ultimo_delitos}")
 
     s = crear_sesion_ls()
     semanas = get_semanas_ls(s)
     if not semanas:
         log.warning("LeyStop: no se pudieron obtener semanas")
-        return 0
+        return 0, 0, []
 
     # Guardar catálogo de semanas
     for x in semanas:
@@ -409,13 +501,15 @@ def actualizar_leystop(conn):
 
     if not nuevas:
         log.info("LeyStop: no hay semanas nuevas")
-        return 0
+        return 0, 0, []
 
     log.info(f"LeyStop: {len(nuevas)} semanas nuevas a descargar ({nuevas[0]['id']}→{nuevas[-1]['id']})")
 
     total = 0
+    total_delitos = 0
     for i, sem in enumerate(nuevas):
         n_sem = 0
+        n_sem_delitos = 0
         # Renovar sesión antes de cada semana
         s2 = crear_sesion_ls()
         for id_reg in REGIONES_LS:
@@ -429,16 +523,23 @@ def actualizar_leystop(conn):
                         reg = parsear_ls(data, sem["id"], sem, id_reg)
                         if reg and guardar_ls(conn, reg):
                             n_sem += 1
+                        # Delitos: mismo request, solo si es semana nueva para esa tabla
+                        if sem["id"] > ultimo_delitos:
+                            arr = data.get("registros", [])
+                            if arr:
+                                n_sem_delitos += guardar_delitos(conn, sem, id_reg, arr)
             except Exception as e:
                 log.warning(f"  Error {url}: {e}")
             time.sleep(1.5)  # Pausa conservadora para no ser baneado
 
         total += n_sem
-        log.info(f"  [{i+1}/{len(nuevas)}] {sem.get('nombre')} → {n_sem}/16 regiones")
+        total_delitos += n_sem_delitos
+        log.info(f"  [{i+1}/{len(nuevas)}] {sem.get('nombre')} → {n_sem}/16 regiones, {n_sem_delitos} delitos")
         time.sleep(2)  # Pausa entre semanas
 
     log.info(f"LeyStop: {total} registros nuevos")
-    return total
+    log.info(f"Delitos: {total_delitos} registros nuevos")
+    return total, total_delitos, nuevas
 
 # ══════════════════════════════════════════════════════════════════════════════
 # MAIN
@@ -495,6 +596,15 @@ def main():
                 id INTEGER PRIMARY KEY, nombre TEXT, anno INTEGER, semana INTEGER,
                 fecha_desde TEXT, fecha_hasta TEXT, fecha_desde_iso TEXT, fecha_hasta_iso TEXT
             );
+            CREATE TABLE IF NOT EXISTS registros_leystop_delitos (
+                id_semana INTEGER, anno INTEGER, semana TEXT,
+                fecha_desde_iso TEXT, fecha_hasta_iso TEXT,
+                id_region INTEGER, nombre_region TEXT, nombre_delito TEXT, es_dmcs INTEGER DEFAULT 0,
+                ultima_semana_ant INTEGER, ultima_semana INTEGER,
+                dias28_ant INTEGER, dias28 INTEGER,
+                anno_fecha_ant INTEGER, anno_fecha INTEGER, umbral REAL,
+                PRIMARY KEY (id_semana, id_region, nombre_delito)
+            );
         """)
 
     total_nuevos = 0
@@ -502,13 +612,16 @@ def main():
     # Capturar estado ANTES de actualizar
     # Si es DB temporal (nube), consulta Supabase para saber desde dónde continuar
     if db_existe:
-        periodo_antes   = ultimo_periodo_empleo(conn)
-        id_semana_antes = ultimo_id_semana(conn)
+        periodo_antes        = ultimo_periodo_empleo(conn)
+        id_semana_antes      = ultimo_id_semana(conn)
+        id_semana_del_antes  = ultimo_id_semana_delitos(conn)
     else:
-        periodo_antes   = ultimo_periodo_empleo()   # consulta Supabase
-        id_semana_antes = ultimo_id_semana()        # consulta Supabase
+        periodo_antes        = ultimo_periodo_empleo()          # consulta Supabase
+        id_semana_antes      = ultimo_id_semana()               # consulta Supabase
+        id_semana_del_antes  = ultimo_id_semana_delitos()       # consulta Supabase
         log.info(f"  Último período empleo en Supabase: {periodo_antes}")
         log.info(f"  Último id_semana en Supabase: {id_semana_antes}")
+        log.info(f"  Último id_semana delitos en Supabase: {id_semana_del_antes}")
 
     # ── BCE Empleo ────────────────────────────────────────────────────────────────────────
     log.info("\n── BCE Empleo Regional ──")
@@ -518,11 +631,11 @@ def main():
     except Exception as e:
         log.error(f"Error BCE: {e}")
 
-    # ── LeyStop ────────────────────────────────────────────────────────────────────────────
+    # ── LeyStop + Delitos ─────────────────────────────────────────────────────────────────
     log.info("\n── LeyStop Seguridad ──")
     try:
-        n = actualizar_leystop(conn)
-        total_nuevos += n
+        n, n_delitos, _nuevas = actualizar_leystop(conn)
+        total_nuevos += n + n_delitos
     except Exception as e:
         log.error(f"Error LeyStop: {e}")
 
@@ -534,6 +647,7 @@ def main():
             sb = SupaREST(supa_url, supa_key)
             sync_empleo_supabase(sb, conn, periodo_antes)
             sync_leystop_supabase(sb, conn, id_semana_antes)
+            sync_delitos_supabase(sb, conn, id_semana_del_antes)
             log.info("✓ Supabase sincronizado")
         except Exception as e:
             log.error(f"Error Supabase: {e}")
