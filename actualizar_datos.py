@@ -14,7 +14,7 @@ Lógica:
 Uso: python actualizar_datos.py
 """
 
-import sqlite3, requests, json, time, logging, subprocess, hashlib, math, unicodedata
+import sqlite3, requests, json, time, logging, subprocess, hashlib, math, unicodedata, re
 from pathlib import Path
 from datetime import datetime
 
@@ -234,6 +234,323 @@ def actualizar_empleo(conn, user, pwd):
 
     log.info(f"BCE Empleo: {total} registros nuevos")
     return total
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BCE CATÁLOGO + PIB REGIONAL — solo series con ultima_obs nueva
+# ══════════════════════════════════════════════════════════════════════════════
+FRECUENCIAS_BCE = ["QUARTERLY", "ANNUAL", "MONTHLY"]
+
+PALABRAS_REGIONALES = [
+    "región", "region", "regional",
+    "arica", "tarapacá", "antofagasta", "atacama", "coquimbo",
+    "valparaíso", "metropolitana", "o'higgins", "ohiggins",
+    "maule", "ñuble", "biobío", "biobio", "araucanía", "araucania",
+    "los ríos", "los rios", "los lagos", "aysén", "aysen", "magallanes",
+]
+
+def es_serie_regional(titulo):
+    t = str(titulo).lower()
+    return any(p in t for p in PALABRAS_REGIONALES)
+
+def buscar_series_frecuencia(user, pwd, frecuencia):
+    """Descarga el catálogo completo de una frecuencia via SearchSeries."""
+    try:
+        r = requests.get(BASE_URL_BCE, params={
+            "user": user, "pass": pwd,
+            "function": "SearchSeries", "frequency": frecuencia,
+        }, timeout=60)
+        data = r.json()
+        if data is None or data.get("Codigo") != 0:
+            log.warning(f"BCE catálogo [{frecuencia}]: {data.get('Descripcion') if data else 'null'}")
+            return []
+        return data.get("SeriesInfos", [])
+    except Exception as e:
+        log.warning(f"BCE catálogo [{frecuencia}]: {e}")
+        return []
+
+# Mapeo de nombres de región para estandarizar (títulos BCE)
+REGION_MAP = {
+    "metropolitana de santiago":        "Metropolitana de Santiago",
+    "región metropolitana de santiago": "Metropolitana de Santiago",
+    "region metropolitana de santiago": "Metropolitana de Santiago",
+    "región metropolitana":             "Metropolitana de Santiago",
+    "rm":                               "Metropolitana de Santiago",
+    "arica y parinacota":               "Arica y Parinacota",
+    "region of arica and parinacota":   "Arica y Parinacota",
+    "tarapacá":                         "Tarapacá",
+    "tarapaca":                         "Tarapacá",
+    "antofagasta":                      "Antofagasta",
+    "atacama":                          "Atacama",
+    "coquimbo":                         "Coquimbo",
+    "valparaíso":                       "Valparaíso",
+    "valparaiso":                       "Valparaíso",
+    "libertador general bernardo o`higgins": "O'Higgins",
+    "libertador general bernardo ohiggins":  "O'Higgins",
+    "libertador gral. bernardo o'higgins":   "O'Higgins",
+    "libertador bernardo o'higgins":         "O'Higgins",
+    "o'higgins":                        "O'Higgins",
+    "ohiggins":                         "O'Higgins",
+    "maule":                            "Maule",
+    "ñuble":                            "Ñuble",
+    "nuble":                            "Ñuble",
+    "biobío":                           "Biobío",
+    "biobio":                           "Biobío",
+    "la araucanía":                     "La Araucanía",
+    "la araucania":                     "La Araucanía",
+    "araucanía":                        "La Araucanía",
+    "los ríos":                         "Los Ríos",
+    "los rios":                         "Los Ríos",
+    "los lagos":                        "Los Lagos",
+    "aysén del general carlos ibáñez del campo": "Aysén",
+    "aysén del gral. carlos ibáñez del campo":   "Aysén",
+    "aysén":                            "Aysén",
+    "aysen":                            "Aysén",
+    "magallanes y de la antártica chilena": "Magallanes",
+    "magallanes y antártica chilena":    "Magallanes",
+    "magallanes":                       "Magallanes",
+    "xv región":                        "Arica y Parinacota",
+    "xiv región  de los ríos":          "Los Ríos",
+    "xiv región":                       "Los Ríos",
+    "xii región":                       "Magallanes",
+    "xi región":                        "Aysén",
+    "x región":                         "Los Lagos",
+    "ix región":                        "La Araucanía",
+    "viii región":                      "Biobío",
+    "vii región":                       "Maule",
+    "vi región":                        "O'Higgins",
+    "v región":                         "Valparaíso",
+    "iv región":                        "Coquimbo",
+    "iii región":                       "Atacama",
+    "ii región":                        "Antofagasta",
+    "i región":                         "Tarapacá",
+    "rm región":                        "Metropolitana de Santiago",
+}
+REGIONES_LISTA_BCE = list(REGION_MAP.keys())
+
+def normalizar_region(texto):
+    t = texto.lower()
+    for patron in sorted(REGIONES_LISTA_BCE, key=len, reverse=True):
+        if patron in t:
+            return REGION_MAP[patron]
+    return None
+
+def limpiar_titulo_bce(titulo):
+    """Extrae (indicador, region, unidad) de un título BCE. Ver limpiar_datos.py."""
+    if not titulo:
+        return None, None, None
+    t = str(titulo).strip()
+
+    es_corriente = bool(re.search(r'precios corrientes', t, re.IGNORECASE))
+    base_año = None
+    match_base = re.search(r'base\s+(\d{4})', t, re.IGNORECASE)
+    if match_base:
+        base_año = match_base.group(1)
+
+    unidad = None
+    match_unidad = re.search(r'\(([^)]+)\)\s*$', t)
+    if match_unidad:
+        unidad = match_unidad.group(1).strip()
+        t = t[:match_unidad.start()].strip().rstrip(',').strip()
+
+    if es_corriente:
+        if base_año:
+            unidad = f"miles de millones de pesos corrientes (base {base_año})"
+        else:
+            unidad = "miles de millones de pesos corrientes"
+
+    t = re.sub(r',?\s*referencia\s+\d{4}', '', t, flags=re.IGNORECASE)
+    t = re.sub(r',?\s*base\s+\d{4}', '', t, flags=re.IGNORECASE)
+    t = re.sub(r',?\s*BCCh?$', '', t, flags=re.IGNORECASE)
+    t = re.sub(r',?\s*serie\s+\w+$', '', t, flags=re.IGNORECASE)
+    t = t.strip().rstrip(',').strip()
+
+    region = normalizar_region(t)
+
+    indicador = t
+    if region:
+        for patron in sorted(REGIONES_LISTA_BCE, key=len, reverse=True):
+            if REGION_MAP.get(patron) == region:
+                for prefijo in ["región de ", "región del ", "región ", "region de ", "region del ", "region "]:
+                    indicador = re.sub(re.escape(prefijo + patron), '', indicador, flags=re.IGNORECASE)
+                indicador = re.sub(re.escape(patron), '', indicador, flags=re.IGNORECASE)
+
+    indicador = re.sub(r',\s*,', ',', indicador)
+    indicador = indicador.strip().strip(',').strip()
+    partes = [p.strip() for p in indicador.split(',') if p.strip()]
+    partes_limpias = []
+    for p in partes:
+        p_lower = p.lower()
+        if any(x in p_lower for x in [
+            'volumen a precios', 'contribución porcentual', 'precios corrientes',
+            'precios constantes', 'encadenado', 'porcentual respecto',
+            'igual periodo', 'año anterior'
+        ]):
+            continue
+        partes_limpias.append(p)
+
+    indicador = ', '.join(partes_limpias) if partes_limpias else (partes[0] if partes else t)
+    indicador = indicador.strip().strip(',').strip()
+
+    return indicador, region, unidad
+
+def corregir_valor_bce(valor, unidad):
+    """Porcentaje: el punto ya es decimal. Otros: el punto era separador de miles."""
+    if valor is None:
+        return valor
+    if unidad and 'porcentaje' in str(unidad).lower():
+        return valor
+    val_str = str(valor)
+    if '.' in val_str:
+        decimales = val_str.split('.')[1]
+        if len(decimales) == 3:
+            return valor * 1000
+    return valor
+
+def construir_filas_bce(series_id, titulo, obs_list):
+    indicador, region, unidad = limpiar_titulo_bce(titulo)
+    filas = []
+    for o in obs_list:
+        if o.get("statusCode") != "OK":
+            continue
+        val_str = str(o.get("value", "")).replace(",", ".")
+        if not val_str or val_str == "NaN":
+            continue
+        try:
+            valor = float(val_str)
+        except ValueError:
+            continue
+        periodo = o.get("indexDateString", "")
+        if not periodo:
+            continue
+        filas.append({
+            "series_id": series_id,
+            "nombre_region": region,
+            "indicador_limpio": indicador,
+            "unidad_limpia": unidad,
+            "periodo": periodo,
+            "valor_corregido": corregir_valor_bce(valor, unidad),
+        })
+    return filas
+
+def obtener_catalogo_supabase(supa_url, supa_key):
+    """Trae {series_id: ultima_obs} actual desde Supabase (paginado) para detectar cambios."""
+    catalogo = {}
+    if not supa_url or not supa_key:
+        return catalogo
+    try:
+        import urllib3; urllib3.disable_warnings()
+        offset, page = 0, 1000
+        while True:
+            r = requests.get(
+                f"{supa_url}/rest/v1/bce_catalogo",
+                headers={
+                    "apikey": supa_key, "Authorization": f"Bearer {supa_key}",
+                    "Range-Unit": "items", "Range": f"{offset}-{offset+page-1}",
+                },
+                params={"select": "series_id,ultima_obs"},
+                timeout=30, verify=False,
+            )
+            if r.status_code not in (200, 206):
+                log.warning(f"  Supabase bce_catalogo GET: HTTP {r.status_code}")
+                break
+            data = r.json()
+            for row in data:
+                catalogo[row["series_id"]] = row.get("ultima_obs")
+            if len(data) < page:
+                break
+            offset += page
+    except Exception as e:
+        log.warning(f"Supabase obtener_catalogo_supabase: {e}")
+    return catalogo
+
+def actualizar_bce(conn, user, pwd, supa_url, supa_key):
+    """
+    Refresca bce_catalogo completo (barato: 3 requests) y descarga con GetSeries
+    SOLO las series cuyo ultima_obs cambió respecto a lo que ya hay en Supabase
+    (serie nueva o con dato más reciente). Evita revisar las ~3.655 series enteras
+    en cada corrida.
+    """
+    log.info("BCE: consultando catálogo actual en Supabase para detectar cambios...")
+    catalogo_viejo = obtener_catalogo_supabase(supa_url, supa_key)
+    log.info(f"  {len(catalogo_viejo)} series ya conocidas en Supabase")
+
+    fecha = datetime.now().isoformat(timespec="seconds")
+    catalogo_nuevo = []
+    pendientes = []
+
+    for freq in FRECUENCIAS_BCE:
+        log.info(f"  Buscando series {freq}...")
+        series = buscar_series_frecuencia(user, pwd, freq)
+        regionales = [s for s in series if es_serie_regional(s.get("spanishTitle", ""))]
+        log.info(f"    {len(regionales)}/{len(series)} series regionales")
+        for s in regionales:
+            sid = s.get("seriesId")
+            ultima_obs = s.get("lastObservation")
+            fila = {
+                "series_id": sid, "frecuencia": s.get("frequencyCode"),
+                "titulo_esp": s.get("spanishTitle"), "primera_obs": s.get("firstObservation"),
+                "ultima_obs": ultima_obs, "actualizado": s.get("updatedAt"),
+                "es_regional": 1, "fecha_catalogo": fecha,
+            }
+            catalogo_nuevo.append(fila)
+            if sid not in catalogo_viejo or catalogo_viejo.get(sid) != ultima_obs:
+                pendientes.append((sid, s.get("spanishTitle", "")))
+        time.sleep(1)
+
+    log.info(f"BCE Catálogo: {len(catalogo_nuevo)} series regionales, {len(pendientes)} con dato nuevo o serie nueva")
+
+    for fila in catalogo_nuevo:
+        conn.execute("""INSERT OR REPLACE INTO bce_catalogo
+            (series_id, frecuencia, titulo_esp, primera_obs, ultima_obs, actualizado, es_regional, fecha_catalogo)
+            VALUES (?,?,?,?,?,?,?,?)""",
+            (fila["series_id"], fila["frecuencia"], fila["titulo_esp"], fila["primera_obs"],
+             fila["ultima_obs"], fila["actualizado"], fila["es_regional"], fila["fecha_catalogo"]))
+    conn.commit()
+
+    filas_bce = []
+    for i, (sid, titulo) in enumerate(pendientes):
+        obs = get_serie_bce(user, pwd, sid, "2010-01-01")
+        if obs:
+            filas = construir_filas_bce(sid, titulo, obs)
+            filas_bce.extend(filas)
+            if filas:
+                log.info(f"  [{i+1}/{len(pendientes)}] {titulo[:60]}: {len(filas)} obs")
+        time.sleep(0.3)  # límite BDE: 5 req/seg
+
+    for fila in filas_bce:
+        conn.execute("""INSERT OR REPLACE INTO registros_bce
+            (series_id, nombre_region, indicador_limpio, unidad_limpia, periodo, valor_corregido)
+            VALUES (?,?,?,?,?,?)""",
+            (fila["series_id"], fila["nombre_region"], fila["indicador_limpio"],
+             fila["unidad_limpia"], fila["periodo"], fila["valor_corregido"]))
+    conn.commit()
+
+    log.info(f"BCE: {len(filas_bce)} registros nuevos/actualizados")
+    return catalogo_nuevo, filas_bce
+
+def sync_bce_catalogo_supabase(sb, catalogo_nuevo):
+    if not catalogo_nuevo:
+        log.info("  Supabase catálogo BCE: sin filas"); return 0
+    rows = [clean_supa(f) for f in catalogo_nuevo]
+    ok_total = 0
+    for i in range(0, len(rows), 500):
+        batch = rows[i:i + 500]
+        if sb.upsert("bce_catalogo", batch, on_conflict="series_id"):
+            ok_total += len(batch)
+    log.info(f"  Supabase catálogo BCE: ✓ {ok_total} filas")
+    return ok_total
+
+def sync_bce_datos_supabase(sb, filas_bce):
+    if not filas_bce:
+        log.info("  Supabase BCE: sin filas nuevas"); return 0
+    rows = [clean_supa(f) for f in filas_bce]
+    ok_total = 0
+    for i in range(0, len(rows), 500):
+        batch = rows[i:i + 500]
+        if sb.upsert("registros_bce", batch, on_conflict="series_id,periodo"):
+            ok_total += len(batch)
+    log.info(f"  Supabase BCE: ✓ {ok_total} filas")
+    return ok_total
 
 # ══════════════════════════════════════════════════════════════════════════════
 # LEYSTOP — solo semanas nuevas
@@ -605,6 +922,16 @@ def main():
                 anno_fecha_ant INTEGER, anno_fecha INTEGER, umbral REAL,
                 PRIMARY KEY (id_semana, id_region, nombre_delito)
             );
+            CREATE TABLE IF NOT EXISTS bce_catalogo (
+                series_id TEXT PRIMARY KEY, frecuencia TEXT, titulo_esp TEXT,
+                primera_obs TEXT, ultima_obs TEXT, actualizado TEXT,
+                es_regional INTEGER DEFAULT 1, fecha_catalogo TEXT
+            );
+            CREATE TABLE IF NOT EXISTS registros_bce (
+                series_id TEXT, nombre_region TEXT, indicador_limpio TEXT,
+                unidad_limpia TEXT, periodo TEXT, valor_corregido REAL,
+                PRIMARY KEY (series_id, periodo)
+            );
         """)
 
     total_nuevos = 0
@@ -639,6 +966,15 @@ def main():
     except Exception as e:
         log.error(f"Error LeyStop: {e}")
 
+    # ── BCE Catálogo + PIB Regional ──────────────────────────────────────────────────────
+    log.info("\n── BCE Catálogo + Series Regionales ──")
+    catalogo_bce, filas_bce = [], []
+    try:
+        catalogo_bce, filas_bce = actualizar_bce(conn, bde_user, bde_pass, supa_url, supa_key)
+        total_nuevos += len(filas_bce)
+    except Exception as e:
+        log.error(f"Error BCE catálogo/series: {e}")
+
     # ── Supabase — sincronizacion incremental ──────────────────────────────────────
     if total_nuevos > 0 and supa_url and supa_key:
         log.info("\n── Sincronizando Supabase ──")
@@ -648,6 +984,8 @@ def main():
             sync_empleo_supabase(sb, conn, periodo_antes)
             sync_leystop_supabase(sb, conn, id_semana_antes)
             sync_delitos_supabase(sb, conn, id_semana_del_antes)
+            sync_bce_catalogo_supabase(sb, catalogo_bce)
+            sync_bce_datos_supabase(sb, filas_bce)
             log.info("✓ Supabase sincronizado")
         except Exception as e:
             log.error(f"Error Supabase: {e}")
