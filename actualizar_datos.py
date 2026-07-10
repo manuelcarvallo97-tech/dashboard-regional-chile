@@ -463,20 +463,45 @@ def obtener_catalogo_supabase(supa_url, supa_key):
         log.warning(f"Supabase obtener_catalogo_supabase: {e}")
     return catalogo
 
-def actualizar_bce(conn, user, pwd, supa_url, supa_key):
+def _guardar_bce_catalogo_local(conn, filas):
+    for fila in filas:
+        conn.execute("""INSERT OR REPLACE INTO bce_catalogo
+            (series_id, frecuencia, titulo_esp, primera_obs, ultima_obs, actualizado, es_regional, fecha_catalogo)
+            VALUES (?,?,?,?,?,?,?,?)""",
+            (fila["series_id"], fila["frecuencia"], fila["titulo_esp"], fila["primera_obs"],
+             fila["ultima_obs"], fila["actualizado"], fila["es_regional"], fila["fecha_catalogo"]))
+    conn.commit()
+
+def _guardar_bce_datos_local(conn, filas):
+    for fila in filas:
+        conn.execute("""INSERT OR REPLACE INTO registros_bce
+            (series_id, nombre_region, indicador_limpio, unidad_limpia, periodo, valor_corregido)
+            VALUES (?,?,?,?,?,?)""",
+            (fila["series_id"], fila["nombre_region"], fila["indicador_limpio"],
+             fila["unidad_limpia"], fila["periodo"], fila["valor_corregido"]))
+    conn.commit()
+
+def actualizar_bce(conn, user, pwd, supa_url, supa_key, sb):
     """
     Refresca bce_catalogo completo (barato: 3 requests) y descarga con GetSeries
     SOLO las series cuyo ultima_obs cambió respecto a lo que ya hay en Supabase
     (serie nueva o con dato más reciente). Evita revisar las ~3.655 series enteras
     en cada corrida.
+
+    IMPORTANTE — resumable: bce_catalogo (con el ultima_obs nuevo) y registros_bce
+    de una serie se sincronizan a Supabase JUNTOS, por lotes, durante el loop —
+    no al final. Si el job se corta a mitad de camino (backlog inicial grande,
+    puede superar el timeout), lo ya sincronizado no se pierde y esa serie deja
+    de aparecer como "pendiente" — la siguiente corrida retoma justo donde quedó,
+    usando el propio catálogo como cursor de resume (sin estado adicional).
     """
     log.info("BCE: consultando catálogo actual en Supabase para detectar cambios...")
     catalogo_viejo = obtener_catalogo_supabase(supa_url, supa_key)
     log.info(f"  {len(catalogo_viejo)} series ya conocidas en Supabase")
 
     fecha = datetime.now().isoformat(timespec="seconds")
-    catalogo_nuevo = []
-    pendientes = []
+    catalogo_estable = []  # ultima_obs sin cambios -> se puede subir de inmediato, sin riesgo
+    pendientes = []        # (series_id, titulo, fila_catalogo) con dato nuevo o serie nueva
 
     for freq in FRECUENCIAS_BCE:
         log.info(f"  Buscando series {freq}...")
@@ -492,41 +517,46 @@ def actualizar_bce(conn, user, pwd, supa_url, supa_key):
                 "ultima_obs": ultima_obs, "actualizado": s.get("updatedAt"),
                 "es_regional": 1, "fecha_catalogo": fecha,
             }
-            catalogo_nuevo.append(fila)
             if sid not in catalogo_viejo or catalogo_viejo.get(sid) != ultima_obs:
-                pendientes.append((sid, s.get("spanishTitle", "")))
+                pendientes.append((sid, s.get("spanishTitle", ""), fila))
+            else:
+                catalogo_estable.append(fila)
         time.sleep(1)
 
-    log.info(f"BCE Catálogo: {len(catalogo_nuevo)} series regionales, {len(pendientes)} con dato nuevo o serie nueva")
+    log.info(f"BCE Catálogo: {len(catalogo_estable) + len(pendientes)} series regionales, {len(pendientes)} con dato nuevo o serie nueva")
 
-    for fila in catalogo_nuevo:
-        conn.execute("""INSERT OR REPLACE INTO bce_catalogo
-            (series_id, frecuencia, titulo_esp, primera_obs, ultima_obs, actualizado, es_regional, fecha_catalogo)
-            VALUES (?,?,?,?,?,?,?,?)""",
-            (fila["series_id"], fila["frecuencia"], fila["titulo_esp"], fila["primera_obs"],
-             fila["ultima_obs"], fila["actualizado"], fila["es_regional"], fila["fecha_catalogo"]))
-    conn.commit()
+    # Las que no cambiaron: guardar y sincronizar ya (idempotente, sin riesgo de
+    # marcar como "al día" algo que no se descargó).
+    _guardar_bce_catalogo_local(conn, catalogo_estable)
+    if sb and catalogo_estable:
+        sync_bce_catalogo_supabase(sb, catalogo_estable)
 
-    filas_bce = []
-    for i, (sid, titulo) in enumerate(pendientes):
+    total_filas = 0
+    LOTE = 100
+    lote_catalogo, lote_filas = [], []
+
+    for i, (sid, titulo, fila_cat) in enumerate(pendientes):
         obs = get_serie_bce(user, pwd, sid, "2010-01-01")
-        if obs:
-            filas = construir_filas_bce(sid, titulo, obs)
-            filas_bce.extend(filas)
-            if filas:
-                log.info(f"  [{i+1}/{len(pendientes)}] {titulo[:60]}: {len(filas)} obs")
+        filas = construir_filas_bce(sid, titulo, obs) if obs else []
+
+        if filas:
+            _guardar_bce_datos_local(conn, filas)
+            total_filas += len(filas)
+            lote_filas.extend(filas)
+        _guardar_bce_catalogo_local(conn, [fila_cat])
+        lote_catalogo.append(fila_cat)
+
+        ultimo = (i == len(pendientes) - 1)
+        if sb and ((i + 1) % LOTE == 0 or ultimo):
+            sync_bce_datos_supabase(sb, lote_filas)
+            sync_bce_catalogo_supabase(sb, lote_catalogo)
+            log.info(f"  [{i+1}/{len(pendientes)}] lote sincronizado a Supabase ({len(lote_filas)} filas)")
+            lote_filas, lote_catalogo = [], []
+
         time.sleep(0.3)  # límite BDE: 5 req/seg
 
-    for fila in filas_bce:
-        conn.execute("""INSERT OR REPLACE INTO registros_bce
-            (series_id, nombre_region, indicador_limpio, unidad_limpia, periodo, valor_corregido)
-            VALUES (?,?,?,?,?,?)""",
-            (fila["series_id"], fila["nombre_region"], fila["indicador_limpio"],
-             fila["unidad_limpia"], fila["periodo"], fila["valor_corregido"]))
-    conn.commit()
-
-    log.info(f"BCE: {len(filas_bce)} registros nuevos/actualizados")
-    return catalogo_nuevo, filas_bce
+    log.info(f"BCE: {total_filas} registros nuevos/actualizados, {len(pendientes)} series revisadas")
+    return total_filas
 
 def sync_bce_catalogo_supabase(sb, catalogo_nuevo):
     if not catalogo_nuevo:
@@ -974,31 +1004,32 @@ def main():
     except Exception as e:
         log.error(f"Error LeyStop: {e}")
 
+    # sb se crea temprano porque actualizar_bce() sincroniza por lotes durante el
+    # loop (no al final) -- si el backlog inicial es grande y el job se corta por
+    # timeout, lo ya sincronizado no se pierde.
+    import urllib3; urllib3.disable_warnings()
+    sb = SupaREST(supa_url, supa_key) if (supa_url and supa_key) else None
+    if not sb:
+        log.warning("Sin credenciales Supabase en .env — datos NO se sincronizarán")
+
     # ── BCE Catálogo + PIB Regional ──────────────────────────────────────────────────────
     log.info("\n── BCE Catálogo + Series Regionales ──")
-    catalogo_bce, filas_bce = [], []
     try:
-        catalogo_bce, filas_bce = actualizar_bce(conn, bde_user, bde_pass, supa_url, supa_key)
-        total_nuevos += len(filas_bce)
+        n_bce = actualizar_bce(conn, bde_user, bde_pass, supa_url, supa_key, sb)
+        total_nuevos += n_bce
     except Exception as e:
         log.error(f"Error BCE catálogo/series: {e}")
 
-    # ── Supabase — sincronizacion incremental ──────────────────────────────────────
-    if total_nuevos > 0 and supa_url and supa_key:
-        log.info("\n── Sincronizando Supabase ──")
+    # ── Supabase — empleo/leystop/delitos (BCE ya se sincronizó por lotes arriba) ────
+    if total_nuevos > 0 and sb:
+        log.info("\n── Sincronizando Supabase (empleo / leystop / delitos) ──")
         try:
-            import urllib3; urllib3.disable_warnings()
-            sb = SupaREST(supa_url, supa_key)
             sync_empleo_supabase(sb, conn, periodo_antes)
             sync_leystop_supabase(sb, conn, id_semana_antes)
             sync_delitos_supabase(sb, conn, id_semana_del_antes)
-            sync_bce_catalogo_supabase(sb, catalogo_bce)
-            sync_bce_datos_supabase(sb, filas_bce)
             log.info("✓ Supabase sincronizado")
         except Exception as e:
             log.error(f"Error Supabase: {e}")
-    elif total_nuevos > 0:
-        log.warning("Sin credenciales Supabase en .env — datos NO sincronizados")
 
     if conn is not None:
         conn.close()
