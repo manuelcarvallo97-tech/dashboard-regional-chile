@@ -54,12 +54,18 @@ class SupaREST:
     def upsert(self, tabla, rows, on_conflict=None):
         if not rows: return True
         headers = dict(self.headers)
-        prefer = "resolution=merge-duplicates,return=minimal"
+        headers["Prefer"] = "resolution=merge-duplicates,return=minimal"
+        # on_conflict es un query param de PostgREST, NO va en el header Prefer.
+        # Bug real: con on_conflict en Prefer, PostgREST no sabe qué constraint usar
+        # para el ON CONFLICT y cae a un INSERT plano -> 409 "duplicate key" apenas
+        # se reenvía una fila que ya existe (pasó desapercibido en empleo/leystop/
+        # delitos porque esos syncs solo mandan filas genuinamente nuevas; BCE
+        # reenvía historial completo de las series pendientes y sí choca).
+        url = f"{self.base}/{tabla}"
         if on_conflict:
-            prefer += f",on_conflict={on_conflict}"
-        headers["Prefer"] = prefer
+            url += f"?on_conflict={on_conflict}"
         r = requests.post(
-            f"{self.base}/{tabla}",
+            url,
             headers=headers,
             data=json.dumps(rows, ensure_ascii=False, default=str),
             timeout=60, verify=False,
