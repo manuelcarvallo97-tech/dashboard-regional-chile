@@ -6,10 +6,12 @@
 # También se puede disparar manualmente desde la pestaña Actions.
 #
 # Secrets necesarios en GitHub → Settings → Secrets → Actions:
-#   SUPABASE_URL          → URL del proyecto Supabase
-#   SUPABASE_SERVICE_KEY  → service_role key de Supabase
-#   BDE_USER              → Usuario API Banco Central
-#   BDE_PASS              → Contraseña API Banco Central
+#   SUPABASE_URL                 → URL de tu proyecto Supabase (fuente)
+#   SUPABASE_SERVICE_KEY         → service_role key de tu Supabase
+#   BDE_USER                     → Usuario API Banco Central
+#   BDE_PASS                     → Contraseña API Banco Central
+#   WORKOS_SUPABASE_URL          → URL del Supabase de Diego (Work-OS)
+#   WORKOS_SUPABASE_SERVICE_KEY  → service_role key del Supabase de Diego
 # =====================================================
 name: Actualizar datos
 
@@ -49,6 +51,8 @@ jobs:
           echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> .env
           echo "BDE_USER=${{ secrets.BDE_USER }}" >> .env
           echo "BDE_PASS=${{ secrets.BDE_PASS }}" >> .env
+          echo "WORKOS_SUPABASE_URL=${{ secrets.WORKOS_SUPABASE_URL }}" >> .env
+          echo "WORKOS_SUPABASE_SERVICE_KEY=${{ secrets.WORKOS_SUPABASE_SERVICE_KEY }}" >> .env
 
       - name: Actualizar datos y sincronizar Supabase
         run: |

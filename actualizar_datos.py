@@ -554,9 +554,16 @@ def actualizar_bce(conn, user, pwd, supa_url, supa_key, sb):
 
         ultimo = (i == len(pendientes) - 1)
         if sb and ((i + 1) % LOTE == 0 or ultimo):
-            sync_bce_datos_supabase(sb, lote_filas)
-            sync_bce_catalogo_supabase(sb, lote_catalogo)
-            log.info(f"  [{i+1}/{len(pendientes)}] lote sincronizado a Supabase ({len(lote_filas)} filas)")
+            # El catalogo SOLO se marca "al dia" si los datos del lote se
+            # guardaron bien -- si no, el lote entero se reintenta la proxima
+            # corrida (el catalogo sigue mostrando el ultima_obs viejo, asi
+            # que estas series vuelven a salir como "pendientes").
+            datos_ok = sync_bce_datos_supabase(sb, lote_filas)
+            if datos_ok:
+                sync_bce_catalogo_supabase(sb, lote_catalogo)
+                log.info(f"  [{i+1}/{len(pendientes)}] lote sincronizado a Supabase ({len(lote_filas)} filas)")
+            else:
+                log.warning(f"  [{i+1}/{len(pendientes)}] fallo el upsert de datos -- catalogo NO se marca al dia, se reintenta despues")
             lote_filas, lote_catalogo = [], []
 
         time.sleep(0.3)  # límite BDE: 5 req/seg
@@ -577,16 +584,117 @@ def sync_bce_catalogo_supabase(sb, catalogo_nuevo):
     return ok_total
 
 def sync_bce_datos_supabase(sb, filas_bce):
+    """Retorna True si TODO el lote se guardó bien (o no había nada que guardar).
+    False si algún batch falló -- el llamador no debe marcar el catálogo "al día"."""
     if not filas_bce:
-        log.info("  Supabase BCE: sin filas nuevas"); return 0
+        return True
     rows = [clean_supa(f) for f in filas_bce]
     ok_total = 0
+    all_ok = True
     for i in range(0, len(rows), 500):
         batch = rows[i:i + 500]
         if sb.upsert("registros_bce", batch, on_conflict="series_id,periodo"):
             ok_total += len(batch)
-    log.info(f"  Supabase BCE: ✓ {ok_total} filas")
-    return ok_total
+        else:
+            all_ok = False
+    log.info(f"  Supabase BCE: {'✓' if all_ok else '✗'} {ok_total}/{len(rows)} filas")
+    return all_ok
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PROPAGACIÓN A WORK-OS (Supabase de Diego) — mismo esquema, sin transformar
+# ══════════════════════════════════════════════════════════════════════════════
+# El cron escribe en TU Supabase (SUPABASE_URL/SUPABASE_SERVICE_KEY). La pestaña
+# Métricas de Work-OS lee estas mismas 5 tablas directo del Supabase de Diego
+# (WORKOS_SUPABASE_URL/WORKOS_SUPABASE_SERVICE_KEY) -- sin este paso nada de lo
+# anterior llega ahí. Se lee el estado ACTUAL completo desde tu Supabase (no el
+# sqlite local, que puede estar desactualizado) y se hace upsert completo en el
+# de Diego -- id/created_at se excluyen a propósito (cada proyecto tiene su
+# propia secuencia; el id de Diego jamás debe pisarse con el tuyo).
+TABLAS_A_WORKOS = {
+    "bce_catalogo": {
+        "cols": "series_id,frecuencia,titulo_esp,primera_obs,ultima_obs,actualizado,es_regional,fecha_catalogo",
+        "on_conflict": "series_id",
+    },
+    "registros_bce": {
+        "cols": "series_id,nombre_region,indicador_limpio,unidad_limpia,periodo,valor_corregido",
+        "on_conflict": "series_id,periodo",
+    },
+    "registros_bce_empleo": {
+        "cols": "serie_id,nombre_region,indicador,unidad,periodo,valor",
+        "on_conflict": "serie_id,periodo",
+    },
+    "registros_leystop": {
+        "cols": ",".join([
+            "id_semana", "id_region", "nombre_region", "semana", "fecha_desde_iso", "fecha_hasta_iso", "anno",
+            "tasa_registro", "casos_total", "casos_anno_fecha", "casos_anno_fecha_anterior", "var_anno_fecha",
+            "var_ultima_semana", "var_28dias", "casos_ultima_semana", "casos_28dias",
+            "mayor_registro_1", "pct_1", "mayor_registro_2", "pct_2", "mayor_registro_3", "pct_3",
+            "mayor_registro_4", "pct_4", "mayor_registro_5", "pct_5",
+            "controles", "controles_identidad", "controles_vehicular",
+            "fiscalizaciones", "fiscal_alcohol", "fiscal_bancaria",
+            "incautaciones", "incaut_fuego", "incaut_blancas",
+            "allanamientos_anno", "vehiculos_recuperados_anno", "decomisos_anno",
+        ]),
+        "on_conflict": "id_semana,id_region",
+    },
+    "registros_leystop_delitos": {
+        "cols": ",".join([
+            "id_semana", "id_region", "nombre_region", "nombre_delito", "es_dmcs",
+            "ultima_semana_ant", "ultima_semana", "dias28_ant", "dias28", "anno_fecha_ant", "anno_fecha", "umbral",
+        ]),
+        "on_conflict": "id_semana,id_region,nombre_delito",
+    },
+}
+
+def leer_tabla_completa_supabase(url, key, tabla, cols):
+    """Lee una tabla completa desde Supabase via REST, paginado."""
+    rows = []
+    offset = 0
+    page = 1000
+    while True:
+        r = requests.get(
+            f"{url}/rest/v1/{tabla}",
+            headers={
+                "apikey": key, "Authorization": f"Bearer {key}",
+                "Range-Unit": "items", "Range": f"{offset}-{offset + page - 1}",
+            },
+            params={"select": cols},
+            timeout=60, verify=False,
+        )
+        if r.status_code not in (200, 206):
+            log.error(f"  Lectura {tabla} (tu Supabase): HTTP {r.status_code} — {r.text[:200]}")
+            break
+        data = r.json()
+        rows.extend(data)
+        if len(data) < page:
+            break
+        offset += page
+    return rows
+
+def sync_a_workos(supa_url, supa_key, workos_url, workos_key):
+    if not workos_url or not workos_key:
+        log.warning("Sin WORKOS_SUPABASE_URL/WORKOS_SUPABASE_SERVICE_KEY — no se propaga al Supabase de Diego")
+        return 0
+    log.info("\n── Propagando tablas al Supabase de Diego (Work-OS) ──")
+    workos_sb = SupaREST(workos_url, workos_key)
+    total = 0
+    for tabla, cfg in TABLAS_A_WORKOS.items():
+        try:
+            rows = leer_tabla_completa_supabase(supa_url, supa_key, tabla, cfg["cols"])
+            rows = [clean_supa(r) for r in rows]
+            log.info(f"  {tabla}: {len(rows)} filas en tu Supabase")
+            ok = 0
+            for i in range(0, len(rows), 500):
+                batch = rows[i:i + 500]
+                if workos_sb.upsert(tabla, batch, on_conflict=cfg["on_conflict"]):
+                    ok += len(batch)
+            estado = "✓" if ok == len(rows) else "✗"
+            log.info(f"  WORKOS {tabla}: {estado} {ok}/{len(rows)} filas")
+            total += ok
+        except Exception as e:
+            log.error(f"  Error propagando {tabla}: {e}")
+    log.info(f"Propagación a Diego: {total} filas totales")
+    return total
 
 # ══════════════════════════════════════════════════════════════════════════════
 # LEYSTOP — solo semanas nuevas
@@ -907,6 +1015,8 @@ def main():
     bde_pass = creds.get("BDE_PASS", "")
     supa_url = creds.get("SUPABASE_URL", "")
     supa_key = creds.get("SUPABASE_SERVICE_KEY", "")
+    workos_url = creds.get("WORKOS_SUPABASE_URL", "")
+    workos_key = creds.get("WORKOS_SUPABASE_SERVICE_KEY", "")
 
     if not bde_user:
         log.error("Sin credenciales BCE en .env")
@@ -1039,6 +1149,15 @@ def main():
 
     if conn is not None:
         conn.close()
+
+    # ── Propagación a Work-OS (Supabase de Diego) ────────────────────────────────────
+    # Corre siempre (no depende de total_nuevos) para que el panel de Diego quede
+    # al día incluso en corridas sin cambios en tu Supabase, y para completar el
+    # backfill inicial de las 5 tablas lo antes posible.
+    try:
+        sync_a_workos(supa_url, supa_key, workos_url, workos_key)
+    except Exception as e:
+        log.error(f"Error propagando a Work-OS: {e}")
 
     # ── Resultado ───────────────────────────────────────────────────────────────────────
     log.info(f'\n{"="*50}')
