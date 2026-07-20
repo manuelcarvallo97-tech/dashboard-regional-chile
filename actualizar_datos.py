@@ -623,6 +623,16 @@ TABLAS_A_WORKOS = {
         "cols": "serie_id,nombre_region,indicador,unidad,periodo,valor",
         "on_conflict": "serie_id,periodo",
     },
+    # leystop_semanas va antes que registros_leystop/registros_leystop_delitos:
+    # ambas tienen FK id_semana -> leystop_semanas.id en el Supabase de Diego.
+    # A diferencia de las demas tablas, aqui SI se propaga `id` -- no es un
+    # serial autogenerado (no tiene default nextval), es el mismo id_semana
+    # que usan las otras dos tablas para referenciarla, y debe coincidir
+    # exactamente entre tu Supabase y el de Diego.
+    "leystop_semanas": {
+        "cols": "id,nombre,semana,anno,fecha_desde_iso,fecha_hasta_iso",
+        "on_conflict": "id",
+    },
     "registros_leystop": {
         "cols": ",".join([
             "id_semana", "id_region", "nombre_region", "semana", "fecha_desde_iso", "fecha_hasta_iso", "anno",
