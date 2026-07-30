@@ -16,5 +16,16 @@ adis_endpoints.json
 adis_report.txt 
 cd 
 gitignore 
-generar_dashboard - respaldo.py 
-generar_dashboard_ORIGINAL.py 
+generar_dashboard - respaldo.py
+generar_dashboard_ORIGINAL.py
+
+# Scripts de diagnóstico puntuales (pueden contener credenciales pegadas a mano)
+_diag*.py
+_probe_*.py
+
+# Logs y cache
+*.log
+__pycache__/
+
+# Config local del editor/agente
+.claude/

@@ -20,8 +20,8 @@ import re
 SRC = Path("generar_dashboard.py")
 OUT = Path("dashboard.html")
 
-SUPABASE_URL = "https://spkfoavwjadyxjlcgkhq.supabase.co"
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwa2ZvYXZ3amFkeXhqbGNna2hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMjM0ODIsImV4cCI6MjA5Mjg5OTQ4Mn0.KdT1NtgJvDJmDzOUQY5kZX3BJgVQypygfA9_38nPJrM"
+SUPABASE_URL = "https://hufgtspktblxxkwocsof.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Zmd0c3BrdGJseHhrd29jc29mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjM5MjksImV4cCI6MjA5MDYzOTkyOX0.81qaWauO4e92TYB6LfxSk6pZ46f8sZ29alZ876Baw1I"
 
 # ── Leer el generar_dashboard.py original como texto ─────────────────────────
 src_text = SRC.read_text(encoding="utf-8")

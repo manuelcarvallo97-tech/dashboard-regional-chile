@@ -345,6 +345,14 @@ def limpiar_titulo_bce(titulo):
     if not titulo:
         return None, None, None
     t = str(titulo).strip()
+    # BCE a veces publica títulos con espacios dobles/irregulares (ej:
+    # "Región  de Los Ríos" con doble espacio antes de "de"). Sin este
+    # colapso, el regex de "región de " + patrón (más abajo) no matchea
+    # por la discrepancia de espacios, y solo se elimina el nombre de la
+    # región suelto -> queda "Región  de" pegado al indicador_limpio
+    # (bug real: pasó con Los Ríos en PIB, dejando la región fuera de
+    # 'PIB' y bajo 'PIB Región  de' en su lugar).
+    t = re.sub(r'\s+', ' ', t)
 
     es_corriente = bool(re.search(r'precios corrientes', t, re.IGNORECASE))
     base_año = None

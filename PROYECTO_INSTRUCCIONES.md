@@ -14,27 +14,45 @@ https://github.com/manuelcarvallo97-tech/dashboard-regional-chile
 
 ---
 
+## Entorno de desarrollo
+
+- **Editor:** Visual Studio Code con Claude Code
+- **Terminal de trabajo:** PowerShell o CMD dentro de VS Code
+- **Carpeta local:** `C:\Users\manuel.carvallo\OneDrive - interior.gob.cl\Documentos\Scrap`
+- **Python:** 3.12
+- **Nota red:** usar **cable de red** en el Ministerio — WiFi bloquea GitHub, LeyStop, BCE y npm
+
+---
+
 ## Estado actual — Fase 2 completa ✅
 
 ### Arquitectura
 ```
-GitHub Actions (lunes y jueves 10:00 AM Chile)
-  BCE API ──► actualizar_datos.py ──► Supabase (fuente de verdad)
-  LeyStop ──►
-
-Supabase ──► fetch() ──► dashboard.html (Vercel / GitHub Pages)
+BCE API ──► actualizar_datos.py ──► SQLite (bcn_indicadores.db)
+LeyStop ──►                                │
+                                           ▼
+                               generar_dashboard.py
+                                           │
+                                           ▼
+                               dashboard.html (datos embebidos)
+                                           │
+                               git push ──► GitHub ──► Vercel
 ```
 
-- **Base de datos:** Supabase PostgreSQL
-- **Dashboard:** HTML estático con fetch() a Supabase — sin servidor, sin build
-- **Actualización:** GitHub Actions automático lunes y jueves
-- **Minuta PDF:** Botón en el header, genera PDF con jsPDF
+- **Base de datos local:** SQLite `bcn_indicadores.db` — fuente de verdad para la generación
+- **Supabase:** también se sincroniza (módulos Seguridad, Empleo vía fetch), pero PIB y datos principales están embebidos en el HTML
+- **Dashboard:** HTML generado por `generar_dashboard.py` con todos los datos embebidos en `const PIB`, `const DELITOS`, etc.
+- **Actualización:** descargar datos → `python generar_dashboard.py` → `git add -f dashboard.html` → `git push`
+- **GitHub Actions:** actualiza SQLite/Supabase automáticamente, pero NO regenera el HTML — eso se hace manualmente
 
-### Lo que YA NO se usa
-- `generar_dashboard.py` — no se usa para publicar (solo como referencia del JS base)
-- No hay datos embebidos en el HTML
-- No hay `.bat` necesarios para publicar
-- No se hace `git push` del `dashboard.html` para actualizar datos
+### Flujo de actualización de datos PIB/datos embebidos
+```bash
+python actualizar_datos.py --solo-pib    # descarga BCE a SQLite
+python generar_dashboard.py              # regenera dashboard.html con datos nuevos
+git add -f dashboard.html
+git commit -m "Actualizacion PIB YYYY"
+git push origin main
+```
 
 ---
 
@@ -88,6 +106,31 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwa2ZvYXZ
 - Empleo mensual 16 regiones (2010–2026-03)
 - Se actualiza automáticamente vía GitHub Actions
 
+#### Series PIB — estructura crítica
+
+Las series del BCE tienen dos familias distintas con propósitos diferentes:
+
+| Familia | Código | Tipo | Uso en dashboard |
+|---------|--------|------|-----------------|
+| `F035.PIB.FLU.R.CLP.2018.*` | Flujo/nivel | Miles de millones de pesos encadenados | **Tabla PIB anual** — `unidad_limpia = 'miles de millones de pesos encadenados'` |
+| `F035.PIB.V12.R.CLP.2018.*` | Variación 12m | Porcentaje | Variación % interanual |
+| Series `.A` | Anuales | — | Valores anuales |
+| Series `.T` | Trimestrales | — | Valores trimestrales (Q1=enero, Q2=abril, Q3=julio, Q4=octubre) |
+
+**Regla importante:** para actualizar el año en la tabla de PIB del dashboard, hay que bajar las series `FLU` (niveles), NO las `V12` (variación). Bajar solo `V12` llena la DB pero el dashboard no las muestra en la vista de año porque busca `unidad_limpia = 'miles de millones de pesos encadenados'`.
+
+#### Script de actualización manual PIB
+Usar `bajar_pib.py` (en la carpeta Scrap) que baja específicamente las series `F035.PIB.FLU.R.CLP.2018.*`:
+```bash
+python bajar_pib.py
+```
+Luego regenerar y publicar el dashboard (ver flujo más abajo).
+
+#### Último período disponible (junio 2026)
+- PIB trimestral FLU: `01-10-2025` (Q4 2025) — en Supabase y SQLite ✅
+- PIB anual FLU: `01-01-2025` (año 2025) — en Supabase y SQLite ✅
+- `bce_catalogo` tiene 3.655 series (catálogo completo BCE, no solo PIB) — no usar como fuente de series a actualizar
+
 ### 2. LeyStop — Seguridad ✅
 - Semanas 160–178 en Supabase (semanas 1–19 de 2026)
 - Se actualiza automáticamente vía GitHub Actions
@@ -135,17 +178,18 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwa2ZvYXZ
 |---------|-------------|
 | `dashboard.html` | Dashboard principal — fetch a Supabase + JSONs estáticos |
 | `pdf_minuta.js` | Lógica generación PDF (jsPDF) |
-| `actualizar_datos.py` | Descarga BCE + LeyStop → SQLite → Supabase (incremental, on_conflict) |
+| `actualizar_datos.py` | Descarga BCE + LeyStop → SQLite → Supabase (incremental). Flags: `--solo-pib`, `--solo-empleo`, `--solo-leystop`, `--desde YYYY-MM-DD` |
+| `bajar_pib.py` | Script directo para bajar series PIB FLU (niveles) base 2018. Usar cuando `actualizar_datos.py --solo-pib` no funcione |
 | `cargar_historico_delitos.py` | Descarga delitos desagregados desde LeyStop |
 | `sync_delitos_supabase.py` | Sube registros_leystop_delitos a Supabase con on_conflict |
 | `migrate_to_supabase.py` | Migración histórica completa SQLite → Supabase |
-| `generar_dashboard_v2.py` | Regenera dashboard.html desde generar_dashboard.py base |
-| `parche_pdf_dashboard.py` | Inyecta botón PDF en dashboard.html |
 | `censo_regiones.json` | Datos Censo 2024 (estático, no en Supabase) |
 | `casen_regiones.json` | Datos CASEN 2024 (estático, no en Supabase) |
 | `requirements.txt` | Dependencias Python |
 | `.github/workflows/actualizar.yml` | GitHub Action lunes y jueves 10:00 AM |
 | `generar_dashboard.py` | Script original (referencia JS — NO se usa para publicar) |
+| `generar_dashboard_v2.py` | Versión alternativa — tampoco se usa para publicar |
+| `bcn_indicadores.db` | SQLite local (staging) — nunca se sube a GitHub |
 
 ---
 
@@ -159,12 +203,29 @@ LeyStop →
 
 ### Manual desde laptop (con cable de red)
 ```bash
-# Actualizar BCE + LeyStop
+# Actualizar todo (BCE empleo + LeyStop)
 python actualizar_datos.py
+
+# Actualizar solo PIB con datos nuevos del BCE
+python bajar_pib.py
+# Luego publicar:
+python generar_dashboard.py
+git add -f dashboard.html
+git commit --allow-empty -m "Actualizacion PIB YYYY"
+git push origin main
 
 # Actualizar delitos DMCS (cuando haya semanas nuevas)
 python cargar_historico_delitos.py --desde ULTIMA_SEMANA
 python sync_delitos_supabase.py
+```
+
+### Flags de actualizar_datos.py
+```bash
+python actualizar_datos.py                    # todo
+python actualizar_datos.py --solo-pib         # solo PIB
+python actualizar_datos.py --solo-empleo      # solo empleo
+python actualizar_datos.py --solo-leystop     # solo LeyStop
+python actualizar_datos.py --desde 2025-01-01 # forzar fecha inicio
 ```
 
 ---
@@ -216,8 +277,8 @@ python sync_delitos_supabase.py
 ---
 
 ## Notas importantes
-- Usar **cable de red** en el Ministerio — WiFi bloquea GitHub, LeyStop y npm
-- SSL del Ministerio requiere `verify=False` en requests a LeyStop
+- Usar **cable de red** en el Ministerio — WiFi bloquea GitHub, LeyStop, BCE y npm
+- SSL del Ministerio requiere `verify=False` en requests a LeyStop y BCE
 - Git requiere `http.sslVerify false` para conectar a GitHub desde el Ministerio
 - La DB SQLite local (`bcn_indicadores.db`) nunca se sube a GitHub
 - Las credenciales están en `.env` local y en GitHub Secrets
@@ -228,4 +289,3 @@ python sync_delitos_supabase.py
 ## Pendiente
 
 - **ADIS RSH** — población vulnerable por región (endpoint pendiente)
-- **Limpieza repo** — eliminar archivos temporales: `d.id_semana`, `dashboard_actual.html`, `sync_faltantes.py`, `region_arica_y_parinacota.json`, `region_los_lagos.json`

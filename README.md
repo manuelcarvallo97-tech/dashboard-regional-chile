@@ -184,6 +184,29 @@ data = r.json()
 
 ---
 
+## 🔐 Conexión ADIS
+
+Se agregó el script `conexion_adis.py` para probar la autenticación ADIS e invocar los endpoints de estadísticas socioeconómicas.
+
+Variables de entorno opcionales en `.env`:
+
+```env
+ADIS_URL=https://adis.gob.cl
+ADIS_RUN=11111111
+ADIS_PASS=tuClaveADIS
+ADIS_RECAPTCHA_TOKEN=token_recaptcha_si_lo_tienes
+```
+
+Ejemplo de uso:
+
+```bash
+python conexion_adis.py --login
+python conexion_adis.py --get-filtros-persona
+python conexion_adis.py --frecuentes --payload-file cuerpo.json
+```
+
+---
+
 ## 📋 Pendiente (Fase siguiente)
 
 - **ADIS RSH** — Población vulnerable por región (bloqueado: `desagregadoTerritorialType` pendiente)
